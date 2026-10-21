@@ -1,18 +1,107 @@
-/* Claymorphism — azul como cor central */
 :root {
-    --blue-700: #2c55b8;
-    --blue-600: #3b6fd8;
-    --blue-500: #5b8def;
-    --blue-100: #e3ecff;
-    --bg: #dce6fb;
-    --surface: #eaf0ff;
-    --text: #1d2b4f;
-    --muted: #6b7a9e;
-    --radius: 24px;
-    --shadow-out: 10px 10px 24px rgba(91, 123, 196, 0.35), -10px -10px 24px rgba(255, 255, 255, 0.9);
-    --shadow-in: inset 4px 4px 10px rgba(255, 255, 255, 0.8), inset -4px -4px 10px rgba(91, 123, 196, 0.25);
+    /* == 1. Color tokens (verbatim) == */
+    --bg-app:           #F7F5FB; /* tinted near-white, never pure #FFF */
+    --bg-raised:        #FFFFFF; /* only for floating sheets over --bg-app */
+
+    /* Surfaces (the clay itself) */
+    --surface-lavender: #B8A6FF; /* primary cards, hero blocks */
+    --surface-sky:      #9EC9F0; /* info, secondary cards */
+    --surface-mint:     #7DD4A8; /* success, positive stats */
+    --surface-peach:    #FFB59E; /* warm cards, highlights */
+    --surface-pink:     #F5B8D0; /* accent, playful cards */
+    --surface-lemon:    #F5D77A; /* attention rows, badges */
+
+    /* Actions & status */
+    --action-primary:   #FF7A6B; /* coral: confirm, start, play */
+    --action-on:        #FFFFFF; /* label on coral, ratio >= 4.5 */
+    --status-active:    #7DD4A8; /* green pill */
+    --status-pending:   #F5D77A; /* yellow pill */
+    --status-archived:  #C9B5FF; /* muted lavender pill */
+
+    /* Text */
+    --text-strong:      #2E2A3F; /* headings, never pure black */
+    --text-muted:       #6B6580; /* captions, secondary labels */
+
+    /* == 2. Radius tokens == */
+    --r-card:           28px;
+    --r-button:         18px;
+    --r-chip:           999px;
+    --r-input:          16px;
+    --r-icon:           20px;
+
+    /* == 4. Shadow recipes (4 stacked shadows keyed to each surface hue ~15% darker) == */
+    /* Lavender (H = 140, 108, 255) */
+    --shadow-lavender:
+        8px 8px 24px rgba(140, 108, 255, 0.35),
+        -8px -8px 24px rgba(255, 255, 255, 0.6),
+        inset 4px 4px 8px rgba(255, 255, 255, 0.5),
+        inset -6px -6px 12px rgba(140, 108, 255, 0.30);
+
+    /*Lavender Soft (0.25 strength for secondary buttons/resting items) */
+    --shadow-lavender-soft:
+        8px 8px 24px rgba(140, 108, 255, 0.25),
+        -8px -8px 24px rgba(255, 255, 255, 0.6),
+        inset 4px 4px 8px rgba(255, 255, 255, 0.5),
+        inset -6px -6px 12px rgba(140, 108, 255, 0.20);
+
+    /* Sky (H = 105, 168, 224) */
+    --shadow-sky:
+        8px 8px 24px rgba(105, 168, 224, 0.35),
+        -8px -8px 24px rgba(255, 255, 255, 0.6),
+        inset 4px 4px 8px rgba(255, 255, 255, 0.5),
+        inset -6px -6px 12px rgba(105, 168, 224, 0.30);
+
+    /* Mint (H = 82, 188, 136) */
+    --shadow-mint:
+        8px 8px 24px rgba(82, 188, 136, 0.35),
+        -8px -8px 24px rgba(255, 255, 255, 0.6),
+        inset 4px 4px 8px rgba(255, 255, 255, 0.5),
+        inset -6px -6px 12px rgba(82, 188, 136, 0.30);
+
+    /* Peach (H = 235, 138, 108) */
+    --shadow-peach:
+        8px 8px 24px rgba(235, 138, 108, 0.35),
+        -8px -8px 24px rgba(255, 255, 255, 0.6),
+        inset 4px 4px 8px rgba(255, 255, 255, 0.5),
+        inset -6px -6px 12px rgba(235, 138, 108, 0.30);
+
+    /* Pink (H = 224, 136, 172) */
+    --shadow-pink:
+        8px 8px 24px rgba(224, 136, 172, 0.35),
+        -8px -8px 24px rgba(255, 255, 255, 0.6),
+        inset 4px 4px 8px rgba(255, 255, 255, 0.5),
+        inset -6px -6px 12px rgba(224, 136, 172, 0.30);
+
+    /* Lemon (H = 222, 184, 72) */
+    --shadow-lemon:
+        8px 8px 24px rgba(222, 184, 72, 0.35),
+        -8px -8px 24px rgba(255, 255, 255, 0.6),
+        inset 4px 4px 8px rgba(255, 255, 255, 0.5),
+        inset -6px -6px 12px rgba(222, 184, 72, 0.30);
+
+    /* Coral Action CTA (H = 255, 90, 75) */
+    --shadow-coral:
+        8px 8px 24px rgba(255, 90, 75, 0.35),
+        -8px -8px 24px rgba(255, 255, 255, 0.6),
+        inset 4px 4px 8px rgba(255, 255, 255, 0.5),
+        inset -6px -6px 12px rgba(255, 90, 75, 0.30);
+
+    /* Coral Squish (:active — all shadow offsets halve) */
+    --shadow-coral-active:
+        4px 4px 12px rgba(255, 90, 75, 0.35),
+        -4px -4px 12px rgba(255, 255, 255, 0.6),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.5),
+        inset -3px -3px 6px rgba(255, 90, 75, 0.30);
+
+    /* L2 Floating Sheet (white raised surface with lavender-tinted ambient shadow) */
+    --shadow-sheet-l2:
+        12px 12px 32px rgba(140, 108, 255, 0.22),
+        -12px -12px 32px rgba(255, 255, 255, 0.8),
+        inset 4px 4px 8px rgba(255, 255, 255, 0.7),
+        inset -6px -6px 12px rgba(184, 166, 255, 0.20);
 }
 
+/* == 6. Typography == */
 @font-face {
     font-family: 'Fredoka';
     src: url('../fonts/Fredoka-VariableFont_wdth,wght.ttf') format('truetype');
@@ -21,111 +110,297 @@
     font-display: swap;
 }
 
-html,
-body {
-    font-family: 'Fredoka', sans-serif;
+*, *::before, *::after {
+    box-sizing: border-box;
 }
 
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-app);
+    color: var(--text-strong);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+}
+
+h1, h2, h3, .page-title, .clay-card-title {
+    color: var(--text-strong);
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.2;
+}
+
+/* == 3. Layout & Shell (8pt grid spacing) == */
 .app-shell {
     display: grid;
     grid-template-columns: 260px 1fr;
     min-height: 100vh;
+    background-color: var(--bg-app);
 }
 
 .sidebar {
-    padding: 28px 20px;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* 16px min gap between clay siblings */
 }
 
 .brand {
-    font-size: 1.3rem;
+    font-size: 22px;
     font-weight: 700;
-    color: var(--blue-700);
-    margin-bottom: 28px;
+    color: var(--text-strong);
+    margin-bottom: 16px;
     padding: 0 8px;
+    letter-spacing: 0;
 }
 
 .nav-item {
-    display: block;
-    padding: 12px 18px;
-    margin-bottom: 10px;
-    border-radius: 18px;
-    color: var(--text);
+    display: flex;
+    align-items: center;
+    min-height: 52px; /* Tap target 48x48 min, button height 52-56 */
+    padding: 12px 24px;
+    border-radius: var(--r-button); /* 18px */
+    color: var(--text-strong);
+    font-weight: 600;
     text-decoration: none;
-    background: var(--surface);
-    box-shadow: var(--shadow-out);
+    background-color: var(--bg-raised);
+    box-shadow: var(--shadow-lavender-soft);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
+.nav-item:hover {
+    background-color: var(--surface-lavender);
+    box-shadow: var(--shadow-lavender);
+}
+
+/* Active item uses Coral Action CTA recipe */
 .nav-item.active {
-    color: #fff;
-    background: linear-gradient(145deg, var(--blue-500), var(--blue-600));
-    box-shadow: var(--shadow-out), var(--shadow-in);
+    color: var(--action-on);
+    font-weight: 700;
+    background-color: var(--action-primary);
+    box-shadow: var(--shadow-coral);
+}
+
+.nav-item:active,
+.nav-item.active:active {
+    transform: scale(0.97);
+    box-shadow: var(--shadow-coral-active);
 }
 
 .content {
-    padding: 32px 40px;
+    padding: 32px 48px;
 }
 
 .page-title {
     margin: 0 0 24px;
-    font-size: 1.8rem;
-    color: var(--blue-700);
+    font-size: 32px; /* h1: 28-32px */
 }
 
+/* == 5. Component Recipes == */
+
+/* --- Cards (L1 resting clay surface) --- */
 .clay-card {
-    padding: 24px 28px;
-    border-radius: var(--radius);
-    background: var(--surface);
-    box-shadow: var(--shadow-out), var(--shadow-in);
+    padding: 28px; /* Default 28px padding */
+    border-radius: var(--r-card); /* 28px */
+    background-color: var(--surface-lavender);
+    box-shadow: var(--shadow-lavender);
+    color: var(--text-strong);
+    border: none;
+}
+
+/* Semantic surface modifiers for .clay-card */
+.clay-card.surface-sky {
+    background-color: var(--surface-sky);
+    box-shadow: var(--shadow-sky);
+}
+
+.clay-card.surface-mint {
+    background-color: var(--surface-mint);
+    box-shadow: var(--shadow-mint);
+}
+
+.clay-card.surface-peach {
+    background-color: var(--surface-peach);
+    box-shadow: var(--shadow-peach);
+}
+
+.clay-card.surface-pink {
+    background-color: var(--surface-pink);
+    box-shadow: var(--shadow-pink);
+}
+
+.clay-card.surface-lemon {
+    background-color: var(--surface-lemon);
+    box-shadow: var(--shadow-lemon);
+}
+
+.clay-card.surface-raised {
+    background-color: var(--bg-raised);
+    box-shadow: var(--shadow-sheet-l2);
 }
 
 .clay-card-title {
     margin: 0 0 12px;
-    font-size: 1.15rem;
+    font-size: 22px; /* h2: 22px */
 }
 
 .muted {
-    color: var(--muted);
+    color: var(--text-muted);
+    font-size: 13px; /* caption: 13px */
+    font-weight: 600;
 }
 
+/* --- Steps / Chips / Status Pills --- */
 .steps {
     display: flex;
-    gap: 12px;
-    margin: 0 0 24px;
+    flex-wrap: wrap;
+    gap: 16px; /* 16px min breathing room between clay siblings */
+    margin: 0 0 32px;
     padding: 0;
     list-style: none;
 }
 
 .step {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    border-radius: 999px;
-    background: var(--surface);
-    box-shadow: var(--shadow-out);
-    color: var(--muted);
+    gap: 12px;
+    min-height: 48px;
+    padding: 8px 20px;
+    border-radius: var(--r-chip); /* 999px fully round */
+    background-color: var(--surface-archived, #C9B5FF);
+    color: var(--text-strong);
+    font-size: 16px;
+    font-weight: 600;
+    /* Half-strength shadow for pills/chips */
+    box-shadow:
+        4px 4px 12px rgba(140, 108, 255, 0.22),
+        -4px -4px 12px rgba(255, 255, 255, 0.55),
+        inset 2px 2px 5px rgba(255, 255, 255, 0.5),
+        inset -3px -3px 6px rgba(140, 108, 255, 0.20);
 }
 
 .step-number {
     display: inline-grid;
     place-items: center;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    background: var(--blue-100);
-    font-weight: 600;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--r-chip);
+    background-color: var(--bg-raised);
+    color: var(--text-strong);
+    font-size: 13px;
+    font-weight: 700;
 }
 
+/* Active step -> Pending/Attention or Sky clay */
 .step.active {
-    color: #fff;
-    background: linear-gradient(145deg, var(--blue-500), var(--blue-600));
+    background-color: var(--surface-sky);
+    color: var(--text-strong);
+    box-shadow: var(--shadow-sky);
 }
 
 .step.active .step-number {
-    background: #fff;
-    color: var(--blue-700);
+    background-color: var(--bg-raised);
+    color: var(--text-strong);
 }
 
+/* Done step -> Mint active status */
 .step.done {
-    color: var(--blue-700);
+    background-color: var(--status-active);
+    color: var(--text-strong);
+    box-shadow:
+        4px 4px 12px rgba(82, 188, 136, 0.25),
+        -4px -4px 12px rgba(255, 255, 255, 0.55),
+        inset 2px 2px 5px rgba(255, 255, 255, 0.5),
+        inset -3px -3px 6px rgba(82, 188, 136, 0.22);
 }
+
+/* --- Buttons (Primary Hero CTA & Secondary) --- */
+.clay-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 54px;
+    padding: 0 24px;
+    border: none;
+    border-radius: var(--r-button); /* 18px */
+    font-family: 'Fredoka', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.clay-btn-primary {
+    background-color: var(--action-primary);
+    color: var(--action-on);
+    box-shadow: var(--shadow-coral);
+}
+
+.clay-btn-primary:active {
+    transform: scale(0.97);
+    box-shadow: var(--shadow-coral-active);
+}
+
+.clay-btn-secondary {
+    background-color: var(--surface-lavender);
+    color: var(--text-strong);
+    box-shadow: var(--shadow-lavender-soft);
+}
+
+.clay-btn-secondary:active {
+    transform: scale(0.97);
+    box-shadow:
+        4px 4px 12px rgba(140, 108, 255, 0.20),
+        -4px -4px 12px rgba(255, 255, 255, 0.5),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.5),
+        inset -3px -3px 6px rgba(140, 108, 255, 0.18);
+}
+
+/* --- Input (Pressed-inward well, INSET shadow only) --- */
+.clay-input {
+    width: 100%;
+    height: 52px;
+    padding: 0 16px;
+    border: none;
+    outline: none;
+    border-radius: var(--r-input); /* 16px */
+    background-color: var(--bg-app);
+    color: var(--text-strong);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    box-shadow:
+        inset 3px 3px 8px rgba(140, 108, 255, 0.20),
+        inset -3px -3px 8px #FFFFFF;
+}
+
+.clay-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* --- Status Pills / Chips --- */
+.clay-chip {
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    padding: 6px 14px;
+    border-radius: var(--r-chip); /* 999px */
+    color: var(--text-strong);
+    font-size: 13px;
+    font-weight: 600;
+    background-color: var(--status-archived);
+    box-shadow:
+        4px 4px 12px rgba(140, 108, 255, 0.18),
+        -4px -4px 12px rgba(255, 255, 255, 0.4),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+        inset -3px -3px 6px rgba(140, 108, 255, 0.15);
+}
+
+.clay-chip.active   { background-color: var(--status-active); }
+.clay-chip.pending  { background-color: var(--status-pending); }
+.clay-chip.archived { background-color: var(--status-archived); }
