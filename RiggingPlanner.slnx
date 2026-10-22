@@ -1,10 +1,12 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/RiggingPlanner.App/RiggingPlanner.App.csproj" />
     <Project Path="src/RiggingPlanner.Application/RiggingPlanner.Application.csproj" />
     <Project Path="src/RiggingPlanner.Domain/RiggingPlanner.Domain.csproj" />
     <Project Path="src/RiggingPlanner.Infrastructure/RiggingPlanner.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/RiggingPlanner.Domain.Tests/RiggingPlanner.Domain.Tests.csproj" />
+    <Project Path="tests/RiggingPlanner.Infrastructure.Tests/RiggingPlanner.Infrastructure.Tests.csproj" />
   </Folder>
 </Solution>

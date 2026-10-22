@@ -22,4 +22,4 @@ jobs:
         run: dotnet build RiggingPlanner.slnx -c Release
 
       - name: Test
-        run: dotnet test tests/RiggingPlanner.Domain.Tests -c Release --no-build
+        run: dotnet test RiggingPlanner.slnx -c Release --no-build
