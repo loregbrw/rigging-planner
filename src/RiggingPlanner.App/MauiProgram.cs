@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
+using RiggingPlanner.Infrastructure;
 
 namespace RiggingPlanner.App;
 
@@ -15,12 +16,27 @@ public static class MauiProgram
 			});
 
 		builder.Services.AddMauiBlazorWebView();
+		builder.Services.AddInfrastructure(GetDatabasePath());
 
 #if DEBUG
 		builder.Services.AddBlazorWebViewDeveloperTools();
 		builder.Logging.AddDebug();
 #endif
 
-		return builder.Build();
+		var app = builder.Build();
+		app.Services.ApplyMigrations();
+
+		return app;
+	}
+
+	private static string GetDatabasePath()
+	{
+		var directory = Path.Combine(
+			Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+			"RiggingPlanner");
+
+		Directory.CreateDirectory(directory);
+
+		return Path.Combine(directory, "rigging-planner.db");
 	}
 }

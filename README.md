@@ -18,6 +18,15 @@ Projeto da matéria *Jornada de Aprendizagem — Sistemas Inteligentes Conectado
 dotnet run --project src/RiggingPlanner.App
 ```
 
+## Banco de dados
+SQLite local (arquivo único) com EF Core. O arquivo fica em `%LOCALAPPDATA%\RiggingPlanner\rigging-planner.db` e as migrations são aplicadas automaticamente quando o app abre.
+
+Para criar uma migration nova (após alterar entidades):
+```powershell
+dotnet tool restore
+dotnet ef migrations add NomeDaMigration --project src/RiggingPlanner.Infrastructure --startup-project src/RiggingPlanner.Infrastructure --output-dir Persistence/Migrations
+```
+
 ## Estrutura
 ```
 src/
