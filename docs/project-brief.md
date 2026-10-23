@@ -148,6 +148,7 @@ Antes: aplicação web com autenticação por e-mail. **Agora:** aplicação **d
 | Frontend | **Blazor Hybrid (.NET MAUI)**, UI **100% em português (pt-BR)** |
 | Versão | **.NET 10** |
 | Persistência | **SQLite** local com **EF Core + migrations** |
+| Banco de dados | Arquivo único em `%LOCALAPPDATA%\RiggingPlanner\rigging-planner.db`; `IDbContextFactory` (contexto curto por operação); migrations aplicadas ao abrir o app |
 | Arquitetura | Arquitetura limpa, **simples** (sem overengineering): `Domain`, `Application`, `Infrastructure`, `App` |
 | Estilo visual | **Claymorphism**, com azul como cor central; CSS próprio, sem biblioteca de componentes |
 | Código | Nomes (classes, variáveis, métodos) em **inglês** |
@@ -177,7 +178,7 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **App (UI):** Razor Components num WebView nativo (via .NET MAUI). Telas: lista de planos (com pastas), novo plano em 5 etapas (dados de entrada, capacidade de carga, anexos, preview, exportação) e cadastro de acessórios.
 - **Domain:** cadastro único de dados do plano (guindaste, carga, acessórios, cliente, planejador/RT), numeração sequencial de planos, regras de consistência de dados.
 - **Application:** casos de uso (criar/editar plano, gerenciar pastas, gerenciar acessórios, anexar arquivos, gerar PDF) e as interfaces que a infraestrutura implementa.
-- **Infrastructure:** SQLite com EF Core (dados de entrada, cadastro de acessórios com histórico/alertas, planos, numeração, pastas), armazenamento dos anexos e geração/junção do PDF final.
+- **Infrastructure:** SQLite com EF Core (`AppDbContext` e migrations em `Persistence/`; dados de entrada, cadastro de acessórios com histórico/alertas, planos, numeração, pastas), armazenamento dos anexos e geração/junção do PDF final.
 - **Backup:** previsto para o futuro (cópia local do banco); fora do escopo agora.
 
 ## 12. Funcionalidades
@@ -238,7 +239,7 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **Metodologia:** Scrum, com planejamento acompanhado via GitHub Projects.
 - **Sprints:** ciclos de duas semanas.
 - **Prazo final do projeto:** 20/11/2026.
-- **Status atual:** arquitetura definida (Seção 11); protótipos de tela feitos como inspiração; desenvolvimento iniciado — esqueleto do repositório (commit 1). Etapas realizadas e próximas: `docs/progress.md`.
+- **Status atual:** arquitetura definida (Seção 11); protótipos de tela feitos como inspiração; desenvolvimento iniciado — esqueleto do repositório (commit 1) e banco de dados com EF Core + SQLite (commit 2). Etapas realizadas e próximas: `docs/progress.md`.
 
 ## 18. Notas Gerais / Pontos em Aberto do Time
 - Os detalhes de UX/fluxo de telas seguem em aberto: os protótipos são só inspiração e podem ser alterados.
@@ -246,3 +247,4 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 
 ## 19. Histórico de Alterações deste Documento
 - **20/10/2026:** removidos usuários, perfis, autenticação e compartilhamento; sistema passa a ser desktop local de uso individual; stack fixada (.NET 10, MAUI Blazor Hybrid Windows, EF Core + SQLite); interpolação e backup fora do escopo; saída só em PDF; organização por pastas de um nível; estrutura do PDF final confirmada com plano de exemplo; corrigida a codificação de caracteres do arquivo.
+- **22/10/2026:** definido onde fica o banco, o uso de `IDbContextFactory` e a aplicação automática das migrations (commit 2).

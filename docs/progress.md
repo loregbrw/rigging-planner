@@ -17,11 +17,21 @@
 - [x] CI no GitHub Actions (build + testes)
 - [x] `docs/project-brief.md` atualizado (desktop local, sem usuários/autenticação)
 
+### Commit 2 — Banco de dados (EF Core + SQLite)
+- [x] Pacotes `Microsoft.EntityFrameworkCore.Sqlite` e `.Design` na `Infrastructure`
+- [x] `AppDbContext` (carrega as configurações de entidade da assembly) e fábrica de design-time
+- [x] `AddInfrastructure(databasePath)`: registra `IDbContextFactory<AppDbContext>` (um contexto curto por operação)
+- [x] Banco em `%LOCALAPPDATA%\RiggingPlanner\rigging-planner.db`, criado no primeiro uso
+- [x] Migrations aplicadas automaticamente ao abrir o app (`ApplyMigrations`)
+- [x] Migration inicial `InitialCreate` (vazia: as tabelas chegam junto das entidades)
+- [x] Ferramenta `dotnet-ef` como tool local do repositório (`.config/dotnet-tools.json`)
+- [x] Projeto `RiggingPlanner.Infrastructure.Tests` com teste que aplica as migrations em um banco temporário
+- [x] CI passa a rodar os testes da solution inteira
+
 ## Próximas etapas (previstas — ordem a confirmar)
 
 | # | Etapa | Observação |
 |---|---|---|
-| 2 | SQLite + EF Core + migrations | Banco em `LocalApplicationData`, migrations aplicadas ao abrir o app |
 | 3 | Planos e pastas | Lista de planos, pastas de um nível, criar/abrir/duplicar |
 | 4 | Dados de entrada | Cliente, guindaste, carga, planejador |
 | 5 | Cadastro de acessórios | Histórico, alertas de desgaste/descarte |
