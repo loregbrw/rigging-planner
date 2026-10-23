@@ -1,0 +1,15 @@
+<ol class="steps">
+    @for (var i = 0; i < Steps.Count; i++)
+    {
+        var cssClass = i == Current ? "step active" : i < Current ? "step done" : "step";
+        <li class="@cssClass">
+            <span class="step-number">@(i + 1)</span>
+            <span>@Steps[i]</span>
+        </li>
+    }
+</ol>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Steps { get; set; } = [];
+    [Parameter] public int Current { get; set; }
+}

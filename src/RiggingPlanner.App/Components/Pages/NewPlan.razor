@@ -1,0 +1,13 @@
+@page "/new-plan"
+
+<h1 class="page-title">Novo plano</h1>
+
+<StepIndicator Steps="steps" Current="0" />
+
+<ClayCard Title="Dados de entrada">
+    <p class="muted">Esta etapa será implementada nos próximos commits.</p>
+</ClayCard>
+
+@code {
+    private readonly string[] steps = ["Dados de entrada", "Capacidade", "Anexos", "Preview", "Exportação"];
+}

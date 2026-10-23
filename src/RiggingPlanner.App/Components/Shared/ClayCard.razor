@@ -1,0 +1,12 @@
+<section class="clay-card">
+    @if (!string.IsNullOrWhiteSpace(Title))
+    {
+        <h2 class="clay-card-title">@Title</h2>
+    }
+    @ChildContent
+</section>
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
