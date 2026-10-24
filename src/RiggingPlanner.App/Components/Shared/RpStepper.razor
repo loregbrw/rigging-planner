@@ -1,0 +1,16 @@
+<ol class="rp-stepper" aria-label="Etapas do plano">
+    @for (var i = 0; i < Steps.Count; i++)
+    {
+        var isCurrent = i == Current;
+        var isComplete = i < Current;
+        <li class="rp-step @(isComplete ? "is-complete" : string.Empty)" aria-current="@(isCurrent ? "step" : null)">
+            <span class="rp-step__dot">@(i + 1)</span>
+            <span class="rp-step__label">@Steps[i]</span>
+        </li>
+    }
+</ol>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Steps { get; set; } = [];
+    [Parameter] public int Current { get; set; }
+}

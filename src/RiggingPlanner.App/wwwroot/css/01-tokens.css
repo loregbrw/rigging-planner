@@ -1,0 +1,115 @@
+@layer rp.tokens {
+    :root {
+        color-scheme: light;
+
+        --rp-primary-50: #EEF5FA;
+        --rp-primary-100: #DBE9F3;
+        --rp-primary-200: #B7D3E6;
+        --rp-primary-300: #86B5D4;
+        --rp-primary-400: #4A8DBD;
+        --rp-primary-500: #1F6CA3;
+        --rp-primary-600: #0A5588;
+        --rp-primary-700: #003F68;
+        --rp-primary-800: #003252;
+        --rp-primary-900: #00243B;
+        --rp-primary-950: #001726;
+
+        --rp-neutral-0: #FFFFFF;
+        --rp-neutral-50: #F6F8FA;
+        --rp-neutral-100: #EEF1F5;
+        --rp-neutral-200: #E1E6ED;
+        --rp-neutral-300: #CBD3DD;
+        --rp-neutral-400: #9AA6B5;
+        --rp-neutral-500: #6B7888;
+        --rp-neutral-600: #4F5B6B;
+        --rp-neutral-700: #3A4452;
+        --rp-neutral-800: #262E3A;
+        --rp-neutral-900: #151B24;
+
+        --rp-success-50: #E7F5EE;
+        --rp-success-600: #1F8A5B;
+        --rp-success-800: #0F5C3A;
+        --rp-warning-50: #FFF4DD;
+        --rp-warning-600: #D98E04;
+        --rp-warning-800: #7A4B00;
+        --rp-danger-50: #FDEBEC;
+        --rp-danger-600: #D13B47;
+        --rp-danger-800: #8F1D27;
+
+        --rp-accent: var(--rp-primary-700);
+        --rp-accent-hover: var(--rp-primary-600);
+        --rp-accent-active: var(--rp-primary-800);
+        --rp-on-accent: #FFFFFF;
+        --rp-surface: var(--rp-neutral-0);
+        --rp-surface-subtle: var(--rp-neutral-50);
+        --rp-surface-sunken: var(--rp-neutral-100);
+        --rp-text: var(--rp-neutral-900);
+        --rp-text-secondary: var(--rp-neutral-600);
+        --rp-text-muted: #5F6C7D;
+        --rp-text-disabled: var(--rp-neutral-400);
+        --rp-link: var(--rp-primary-600);
+        --rp-border-subtle: var(--rp-neutral-200);
+        --rp-border-default: var(--rp-neutral-300);
+        --rp-border-strong: var(--rp-neutral-400);
+        --rp-hover-bg: var(--rp-primary-50);
+        --rp-selected-bg: var(--rp-primary-100);
+        --rp-focus: var(--rp-primary-500);
+        --rp-overlay: rgba(0, 23, 38, .45);
+
+        --rp-sidebar-bg: linear-gradient(180deg, rgba(0, 63, 104, .97), rgba(0, 36, 59, .98));
+        --rp-sidebar-text: rgba(255, 255, 255, .8);
+        --rp-sidebar-hover: rgba(255, 255, 255, .09);
+        --rp-sidebar-active: rgba(255, 255, 255, .16);
+
+        --rp-font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+        --rp-font-brand: "Segoe UI", system-ui, sans-serif;
+        --rp-font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+        --rp-text-xs: .75rem;
+        --rp-text-sm: .8125rem;
+        --rp-text-md: .875rem;
+        --rp-text-lg: 1rem;
+        --rp-text-xl: 1.125rem;
+        --rp-text-2xl: 1.375rem;
+        --rp-text-3xl: 1.75rem;
+        --rp-weight-regular: 400;
+        --rp-weight-medium: 500;
+        --rp-weight-semibold: 600;
+        --rp-weight-bold: 700;
+        --rp-lh-tight: 1.2;
+        --rp-lh-normal: 1.5;
+
+        --rp-space-1: .25rem;
+        --rp-space-2: .5rem;
+        --rp-space-3: .75rem;
+        --rp-space-4: 1rem;
+        --rp-space-5: 1.25rem;
+        --rp-space-6: 1.5rem;
+        --rp-space-8: 2rem;
+        --rp-space-12: 3rem;
+        --rp-radius-sm: 6px;
+        --rp-radius-md: 10px;
+        --rp-radius-lg: 14px;
+        --rp-radius-pill: 999px;
+        --rp-border-width: 1px;
+        --rp-shadow-xs: 0 1px 2px rgba(0, 36, 59, .06);
+        --rp-shadow-sm: 0 1px 3px rgba(0, 36, 59, .08), 0 1px 2px rgba(0, 36, 59, .04);
+        --rp-shadow-md: 0 4px 12px -2px rgba(0, 36, 59, .1), 0 2px 4px rgba(0, 36, 59, .05);
+        --rp-ring: 0 0 0 3px rgba(31, 108, 163, .3);
+        --rp-glass-bg: rgba(255, 255, 255, .68);
+        --rp-glass-bg-strong: rgba(255, 255, 255, .88);
+        --rp-glass-edge: rgba(0, 63, 104, .1);
+        --rp-glass-filter: blur(14px) saturate(140%);
+
+        --rp-sidebar-w: 264px;
+        --rp-topbar-h: 56px;
+        --rp-content-max: 1280px;
+        --rp-control-h-md: 38px;
+        --rp-row-h: 40px;
+        --rp-z-sidebar: 20;
+        --rp-z-topbar: 30;
+        --rp-z-sticky: 10;
+        --rp-dur-fast: 120ms;
+        --rp-dur-base: 180ms;
+        --rp-ease: cubic-bezier(.2, 0, 0, 1);
+    }
+}

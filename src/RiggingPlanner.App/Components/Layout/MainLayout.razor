@@ -1,12 +1,21 @@
 @inherits LayoutComponentBase
 
-<div class="app-shell">
-    <aside class="sidebar">
-        <div class="brand">Guindastes Ribas</div>
+<div class="rp-shell">
+    <aside class="rp-sidebar">
+        <div class="rp-brand">
+            <span class="rp-brand__name">Guindastes Ribas</span>
+            <span class="rp-brand__caption">Rigging Planner</span>
+        </div>
         <NavMenu />
     </aside>
 
-    <main class="content">
-        @Body
-    </main>
+    <div class="rp-content">
+        <header class="rp-topbar">
+            <span class="rp-muted">Planejamento de rigging</span>
+            <span class="rp-data">Operação local</span>
+        </header>
+        <main class="rp-main">
+            @Body
+        </main>
+    </div>
 </div>

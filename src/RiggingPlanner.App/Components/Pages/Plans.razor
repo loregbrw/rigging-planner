@@ -1,7 +1,19 @@
 @page "/"
 
-<h1 class="page-title">Planos</h1>
+<RpPageHeader Title="Planos" Subtitle="Organize e acompanhe seus planos de rigging">
+    <Actions>
+        <RpButton Variant="primary">Novo plano</RpButton>
+    </Actions>
+</RpPageHeader>
 
-<ClayCard Title="Planos de rigging">
-    <p class="muted">Nenhum plano criado ainda.</p>
-</ClayCard>
+<div class="rp-stack">
+    <RpCard Title="Planos de rigging">
+        <div class="rp-empty">
+            <p class="rp-empty__title">Nenhum plano criado ainda</p>
+            <p class="rp-muted">Comece criando um plano para centralizar os dados da operação.</p>
+            <div>
+                <RpButton Variant="primary">Criar primeiro plano</RpButton>
+            </div>
+        </div>
+    </RpCard>
+</div>
