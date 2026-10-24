@@ -4,6 +4,12 @@
 
 ## Etapas realizadas
 
+### Refatoração visual — Design system e componentes
+- [x] Tokens, reset, base, layout e componentes CSS separados em camadas `rp.*`
+- [x] Shell com sidebar azul-marinho, topbar glass sutil e conteúdo rolável
+- [x] Componentes Razor reutilizáveis para cards, botões, cabeçalhos e stepper
+- [x] Remoção do CSS legado clay, Bootstrap e fonte externa
+
 ### Commit 1 — Esqueleto do repositório
 - [x] Solution `RiggingPlanner.slnx` com projetos `Domain`, `Application`, `Infrastructure`, `App` e `Domain.Tests`
 - [x] Referências entre projetos (arquitetura limpa simples)

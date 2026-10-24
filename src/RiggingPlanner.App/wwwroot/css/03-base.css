@@ -1,0 +1,28 @@
+@layer rp.base {
+    html, body {
+        background: var(--rp-surface-subtle);
+        color: var(--rp-text);
+        font: var(--rp-weight-regular) var(--rp-text-md)/var(--rp-lh-normal) var(--rp-font-ui);
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { font-size: var(--rp-text-2xl); font-weight: var(--rp-weight-semibold); line-height: var(--rp-lh-tight); }
+    h2 { font-size: var(--rp-text-xl); font-weight: var(--rp-weight-semibold); }
+    a { color: var(--rp-link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    :focus-visible { outline: 2px solid var(--rp-focus); outline-offset: 2px; }
+    ::selection { background: var(--rp-primary-200); color: var(--rp-primary-950); }
+    .rp-data { font-variant-numeric: tabular-nums; }
+    .rp-muted { color: var(--rp-text-secondary); }
+
+    #blazor-error-ui {
+        position: fixed;
+        inset: auto 0 0;
+        z-index: 1000;
+        display: none;
+        padding: var(--rp-space-3) var(--rp-space-5);
+        background: var(--rp-danger-800);
+        color: #fff;
+    }
+    #blazor-error-ui .dismiss { float: right; cursor: pointer; }
+}

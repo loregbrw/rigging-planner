@@ -1,0 +1,17 @@
+<section class="rp-card @Class">
+    @if (!string.IsNullOrWhiteSpace(Title))
+    {
+        <header class="rp-card__header">
+            <h2 class="rp-card__title">@Title</h2>
+        </header>
+    }
+    <div class="rp-card__body">
+        @ChildContent
+    </div>
+</section>
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

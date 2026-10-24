@@ -1,0 +1,10 @@
+<button type="@Type" class="rp-btn rp-btn--@Variant @Class">
+    @ChildContent
+</button>
+
+@code {
+    [Parameter] public string Variant { get; set; } = "secondary";
+    [Parameter] public string Type { get; set; } = "button";
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
