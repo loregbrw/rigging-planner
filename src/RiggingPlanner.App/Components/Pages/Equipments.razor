@@ -17,10 +17,10 @@
                 <div class="rp-field rp-col-8"><label class="rp-label">Modelo do caminhão</label><InputText class="rp-input" @bind-Value="form.TruckModel" /><ValidationMessage For="() => form.TruckModel" /></div>
                 <div class="rp-field rp-col-4"><label class="rp-label">Placa</label><InputText class="rp-input" @bind-Value="form.LicensePlate" /><ValidationMessage For="() => form.LicensePlate" /></div>
                 <div class="rp-field rp-col-4"><label class="rp-label">Chassi</label><InputText class="rp-input" @bind-Value="form.ChassisNumber" /><ValidationMessage For="() => form.ChassisNumber" /></div>
-                <div class="rp-field rp-col-4"><label class="rp-label">Ano de fabricação</label><InputNumber class="rp-input rp-input--num" @bind-Value="form.ManufactureYear" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label">Ano de fabricação</label><InputNumber class="rp-input rp-input--num" step="1" inputmode="numeric" @bind-Value="form.ManufactureYear" /></div>
                 <div class="rp-field rp-col-4"><label class="rp-label">Marca do guindaste</label><InputText class="rp-input" @bind-Value="form.CraneBrand" /><ValidationMessage For="() => form.CraneBrand" /></div>
                 <div class="rp-field rp-col-4"><label class="rp-label">Modelo do guindaste</label><InputText class="rp-input" @bind-Value="form.CraneModel" /><ValidationMessage For="() => form.CraneModel" /></div>
-                <div class="rp-field rp-col-4"><label class="rp-label">Capacidade nominal (t)</label><InputNumber class="rp-input rp-input--num" @bind-Value="form.NominalCapacity" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label">Capacidade nominal (t)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="form.NominalCapacity" /></div>
             </div>
             <div class="rp-form-actions"><button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">Cadastrar equipamento</button></div>
         </EditForm>

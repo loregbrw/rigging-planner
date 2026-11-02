@@ -11,6 +11,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<EquipmentReport> EquipmentReports => Set<EquipmentReport>();
     public DbSet<Accessory> Accessories => Set<Accessory>();
     public DbSet<AccessoryEvent> AccessoryEvents => Set<AccessoryEvent>();
+    public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<PlanNumberCounter> PlanNumberCounters => Set<PlanNumberCounter>();
@@ -62,15 +63,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Accessory>(entity =>
         {
             ConfigureGuidKey(entity);
-            entity.Property(x => x.Category).HasMaxLength(80).IsRequired();
-            entity.Property(x => x.Description).HasMaxLength(500).IsRequired();
-            entity.Property(x => x.DrawingRef).HasMaxLength(100);
-            entity.Property(x => x.Status).HasMaxLength(40).IsRequired();
-            entity.Property(x => x.LengthM).HasPrecision(18, 3);
-            entity.Property(x => x.CapacityT).HasPrecision(18, 3);
+            entity.Property(x => x.Name).HasMaxLength(500).IsRequired();
             entity.Property(x => x.UnitWeightKg).HasPrecision(18, 3);
+            entity.Property(x => x.Status).HasMaxLength(40).IsRequired();
             entity.HasIndex(x => x.Status);
+            entity.HasOne(x => x.Tag).WithMany(x => x.Accessories).HasForeignKey(x => x.TagId).OnDelete(DeleteBehavior.SetNull);
         });
+
+        modelBuilder.Entity<Tag>(entity =>
+        {
+            ConfigureGuidKey(entity);
+            entity.Property(x => x.Name).HasMaxLength(100).UseCollation("NOCASE").IsRequired();
+            entity.HasIndex(x => x.Name).IsUnique();
+        });
+
 
         modelBuilder.Entity<AccessoryEvent>(entity =>
         {

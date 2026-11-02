@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using RiggingPlanner.Infrastructure;
+using System.Globalization;
 
 namespace RiggingPlanner.App;
 
@@ -7,6 +8,12 @@ public static class MauiProgram
 {
 	public static MauiApp CreateMauiApp()
 	{
+		var ptBr = CultureInfo.GetCultureInfo("pt-BR");
+		CultureInfo.DefaultThreadCurrentCulture = ptBr;
+		CultureInfo.DefaultThreadCurrentUICulture = ptBr;
+		CultureInfo.CurrentCulture = ptBr;
+		CultureInfo.CurrentUICulture = ptBr;
+
 		var builder = MauiApp.CreateBuilder();
 		builder
 			.UseMauiApp<App>()

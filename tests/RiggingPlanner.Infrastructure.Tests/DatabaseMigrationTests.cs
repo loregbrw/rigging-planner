@@ -60,6 +60,36 @@ public class DatabaseMigrationTests : IDisposable
         }
     }
 
+    [Fact]
+    public void Migrate_SimplifiesAccessories_AndPreservesLegacyCategoryAsTag()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite($"Data Source={databasePath};Pooling=False")
+            .Options;
+
+        var accessoryId = Guid.NewGuid();
+        using (var context = new AppDbContext(options))
+        {
+            context.Database.Migrate("20261029225112_InitialCreate");
+            context.Database.ExecuteSqlInterpolated($"""
+                INSERT INTO Accessories
+                    (Id, Category, Description, UnitWeightKg, Status, CreatedAt, UpdatedAt)
+                VALUES
+                    ({accessoryId}, {"manilha"}, {"Manilha 3 t"}, {12.5m}, {"active"}, {DateTime.Now}, {DateTime.Now});
+                """);
+            context.Database.Migrate();
+        }
+
+        using (var context = new AppDbContext(options))
+        {
+            var accessory = context.Accessories.Include(x => x.Tag).Single(x => x.Id == accessoryId);
+
+            Assert.Equal("Manilha 3 t", accessory.Name);
+            Assert.Equal("manilha", accessory.Tag!.Name);
+            Assert.Equal(12.5m, accessory.UnitWeightKg);
+        }
+    }
+
     public void Dispose()
     {
         File.Delete(databasePath);

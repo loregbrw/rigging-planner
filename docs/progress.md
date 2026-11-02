@@ -58,6 +58,7 @@
 - [x] Inclusão e remoção de itens de lingada e dispositivos, usando acessórios cadastrados ou descrição avulsa
 - [x] Persistência dos itens em `plan_accessories` e dos parâmetros digitados da configuração do guindaste
 - [x] Exibição dos totais de lingada, dispositivos, carga bruta em kg/t e taxa de utilização do guindaste
+- [x] Tags de acessórios normalizadas em tabela própria, com autocomplete, chips coloridos, uma tag por acessório e administração
 
 ## Próximas etapas (previstas — ordem a confirmar)
 

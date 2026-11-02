@@ -108,7 +108,7 @@ Documento em Word com o desenho da carga içada, os ângulos, os pontos de fixa�
 
 Uma solução ideal deveria:
 
-- Ter um **cadastro único de dados de entrada**: nome/identificação do guindaste (placa, chassi, capacidade), dimensões e peso da carga, dados dos acessórios de içamento (cinta, manilha, balancim — comprimento, capacidade, peso), dados do planejador/rigger (nome, RPP, CREA) e da empresa cliente/CNPJ.
+- Ter um **cadastro único de dados de entrada**: nome/identificação do guindaste (placa, chassi, capacidade), dimensões e peso da carga, dados dos acessórios de içamento (nome, peso unitário e tags), dados do planejador/rigger (nome, RPP, CREA) e da empresa cliente/CNPJ.
 - **Reaproveitar automaticamente** esses dados no documento final, preenchendo as seções que hoje são copiadas manualmente entre Excel, SolidWorks e Word (ex.: primeira página do plano, com a maior parte das informações).
 - Permitir **anexar imagens/desenhos técnicos** (as folhas geradas no SolidWorks) e os **PDFs de ART e laudo** emitidos fora do sistema, integrando tudo num único PDF final.
 - **Manter o texto padrão** das seções que quase não mudam entre planos (procedimento de içamento, isolamento de área, NRs aplicáveis, patolamento do guindaste), alterando apenas o que é específico de cada operação (ex.: modelo do guindaste — MD45.007, MD55, DM130, MD300L etc.).
@@ -206,7 +206,9 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 | `riggers` *(premissa)* | `id` PK; `full_name`; `display_name`; `rpp_number`; `crea_number`; `is_active` |
 | `equipments` (conjunto caminhão + guindaste) | `id` PK; `equipment_type`; `truck_model`; `license_plate`; `chassis_number` (único); `manufacture_year`; `crane_brand`; `crane_model`; `nominal_capacity`; `is_active`; `created_at`; `updated_at` |
 | `equipment_reports` (laudo + ART do laudo, um PDF) | `id` PK; `equipment_id` FK; `file_id` FK; `art_number`; `valid_from`; `valid_to`; `created_at` |
-| `accessories` *(premissa)* | `id` PK; `category` (cinta plana, cinta tubular, laço de cabo de aço, manilha, balancim, outro); `description`; `length_m` (nulo); `capacity_t` (nulo); `unit_weight_kg`; `drawing_ref` (nulo); `status`; `review_due_date` (nulo); `created_at`; `updated_at` |
+| `accessories` *(premissa)* | `id` PK; `name`; `unit_weight_kg`; `status`; `review_due_date` (nulo); `created_at`; `updated_at` |
+| `tags` | `id` PK; `name` (único); `created_at` |
+| `accessories` → `tags` | `tag_id` FK opcional; cada acessório possui no máximo uma tag |
 | `accessory_events` *(premissa)* | `id` PK; `accessory_id` FK; `event_date`; `event_type` (texto livre); `notes` |
 
 **Arquivos, pastas e numeração**
@@ -282,7 +284,7 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 | **Equipamento (caminhão + guindaste)** | Tela de equipamentos | Escolhido na lista; dados do caminhão e do guindaste copiados para o plano |
 | **Laudo + ART do laudo** | Tela de laudos do equipamento (PDF único, início e fim de validade, nº da ART) **ou** direto na tela do plano, se o equipamento não tiver laudo | Escolhido entre os laudos do equipamento do plano; a tela separa **válidos** e **vencidos** |
 | **Rigger** *(premissa)* | Tela de riggers **ou** direto na tela do plano | Escolhido na lista; nome de exibição e RPP copiados; "Supervisor Responsável" é texto livre |
-| **Acessórios** *(premissa)* | Tela de acessórios (categoria, descrição, comprimento, capacidade, peso, situação, histórico) | Escolhidos na lista, com quantidade; descrição e peso unitário copiados; o item fica em "lingada" ou "dispositivo" |
+| **Acessórios** *(premissa)* | Tela de acessórios (nome, peso unitário, tags, situação, histórico) | Tags são selecionadas por autocomplete e administradas separadamente; escolhidos na lista, com quantidade; nome e peso unitário copiados; o item fica em "lingada" ou "dispositivo" |
 | **ART do plano** | Não há cadastro: é anexada ao plano | PDF anexado e número da ART digitado uma vez no plano (reaproveitado nas outras páginas) |
 | **Desenhos (SolidWorks)** | Não há cadastro: são anexados ao plano | Quantidade livre; o usuário define a ordem |
 | **Carga, local, data, configuração do guindaste, resultados** | Digitados no plano a cada trabalho | Gravados no plano; totais e taxa do guindaste calculados na exibição |

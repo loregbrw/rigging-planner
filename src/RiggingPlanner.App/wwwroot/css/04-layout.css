@@ -59,6 +59,7 @@
     }
     .rp-col-4 { grid-column: span 4; }
     .rp-col-6 { grid-column: span 6; }
+    .rp-col-3 { grid-column: span 3; }
     .rp-col-8 { grid-column: span 8; }
     .rp-col-12 { grid-column: span 12; }
     .rp-form-actions {
@@ -71,6 +72,6 @@
     @media (max-width: 900px) {
         .rp-shell { grid-template-columns: 220px minmax(0, 1fr); }
         .rp-main { padding: var(--rp-space-5); }
-        .rp-col-4, .rp-col-6, .rp-col-8 { grid-column: span 12; }
+        .rp-col-3, .rp-col-4, .rp-col-6, .rp-col-8 { grid-column: span 12; }
     }
 }
