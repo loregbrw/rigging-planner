@@ -61,6 +61,12 @@
 - [x] Tags de acessórios normalizadas em tabela própria, com autocomplete, chips coloridos, uma tag por acessório e administração
 - [x] Ciclo de vida de cadastros: ativos separados de inativos, reativação e exclusão definitiva protegida por vínculos
 - [x] Finalização de planos com bloqueio de edição e snapshot histórico do rigger, incluindo CREA
+- [x] Cadastro independente de clientes, com nome, CNPJ, ativação/inativação e exclusão protegida
+- [x] Cliente no plano por autocomplete: cadastro existente preenche e bloqueia o CNPJ; cliente novo exige nome e CNPJ no próprio formulário
+- [x] CNPJ obrigatório com máscara `00.000.000/0000-00` no cadastro e no plano
+- [x] Cliente no plano usa seletor visual semelhante ao seletor de tags
+- [x] Cliente no plano usa o mesmo comportamento de teclado do seletor de tags (setas, Enter, criação e remoção)
+- [x] Máscara de CNPJ aceita formatos legado numérico e novo alfanumérico
 
 ## Estado atual
 
@@ -80,7 +86,6 @@
 - [x] Confirmações de exclusão posicionadas junto ao registro selecionado, inclusive no administrador de tags
 
 ### Modelado, mas ainda sem fluxo completo na interface
-- [ ] Clientes como cadastro independente
 - [ ] Pastas de um nível
 - [ ] Laudos de equipamento e seus arquivos
 - [ ] Arquivos armazenados, desenhos anexados e ART do plano
@@ -91,7 +96,7 @@
 
 | # | Etapa | Situação atual |
 |---|---|---|
-| 1 | Cadastro independente de clientes | A entidade existe; a UI atual digita cliente e CNPJ diretamente no plano |
+| 1 | Cadastro independente de clientes | Implementado: tela de clientes, seleção no plano e cadastro rápido durante o preenchimento |
 | 2 | Pastas e organização | Entidade prevista; sem tela ou operações |
 | 3 | Laudos e anexos | Entidades previstas; sem cadastro, seleção ou armazenamento operacional |
 | 4 | Preview | Ainda não implementado |

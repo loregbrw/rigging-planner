@@ -1,0 +1,216 @@
+@page "/clients"
+@using System.ComponentModel.DataAnnotations
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+<RpPageHeader Title="Clientes" Subtitle="Cadastre as empresas clientes para reutilizar nos planos de rigging" />
+
+<div class="rp-stack">
+    <RpCard Title="@(editingId is null ? "Novo cliente" : "Editar cliente")">
+        @if (message is not null)
+        {
+            <div class="rp-alert @(isError ? "rp-alert--danger" : "rp-alert--success")">@message</div>
+        }
+        <EditForm Model="form" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <div class="rp-form-grid">
+                <div class="rp-field rp-col-8">
+                    <label class="rp-label">Nome / Razão social</label>
+                    <InputText class="rp-input" @bind-Value="form.Name" />
+                    <ValidationMessage For="() => form.Name" />
+                </div>
+                <div class="rp-field rp-col-4">
+                    <label class="rp-label" for="client-cnpj">CNPJ</label>
+                    <input id="client-cnpj" class="rp-input" inputmode="numeric" maxlength="18"
+                           value="@form.Cnpj" @oninput="OnCnpjInput" placeholder="00.000.000/0000-00" />
+                    <ValidationMessage For="() => form.Cnpj" />
+                </div>
+            </div>
+            <div class="rp-form-actions">
+                <button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">@(editingId is null ? "Cadastrar cliente" : "Salvar alterações")</button>
+                @if (editingId is not null)
+                {
+                    <button class="rp-btn rp-btn--ghost" type="button" @onclick="CancelEdit">Cancelar</button>
+                }
+            </div>
+        </EditForm>
+    </RpCard>
+
+    <RpCard Title="Clientes ativos">
+        <div class="rp-table-wrap"><table class="rp-table"><thead><tr><th>Nome</th><th>CNPJ</th><th></th></tr></thead><tbody>
+            @foreach (var client in activeClients)
+            {
+                <tr><td>@client.Name</td><td>@(client.Cnpj ?? "-")</td><td class="rp-row-actions"><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => BeginEdit(client)">Editar</button> <button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(client)">Inativar</button></td></tr>
+            }
+        </tbody></table></div>
+    </RpCard>
+
+    <RpCard Title="Clientes inativos">
+        <p class="rp-muted">Clientes inativos não podem ser selecionados em novos planos.</p>
+        @if (inactiveClients.Count == 0)
+        {
+            <p class="rp-muted">Nenhum cliente inativo.</p>
+        }
+        else
+        {
+            <div class="rp-table-wrap rp-table-wrap--muted"><table class="rp-table"><thead><tr><th>Nome</th><th>CNPJ</th><th></th></tr></thead><tbody>
+                @foreach (var client in inactiveClients)
+                {
+                    <tr class="rp-row--inactive"><td>@client.Name</td><td>@(client.Cnpj ?? "-")</td><td class="rp-row-actions"><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(client)">Reativar</button> <button class="rp-btn rp-btn--danger-outline rp-btn--sm" disabled="@(deleteId == client.Id)" @onclick="() => AskDelete(client)">Excluir definitivamente</button></td></tr>
+                    @if (deleteId == client.Id)
+                    {
+                        <tr class="rp-row--inactive"><td colspan="3"><div class="rp-alert rp-alert--danger rp-confirm"><span>@(deleteMessage ?? "Você está prestes a excluir este cliente permanentemente. Planos já finalizados preservam os dados históricos; planos em andamento impedem a exclusão.")</span><button class="rp-btn rp-btn--danger rp-btn--sm" @onclick="DeleteAsync">Excluir definitivamente</button><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="CancelDelete">Cancelar</button></div></td></tr>
+                    }
+                }
+            </tbody></table></div>
+        }
+    </RpCard>
+</div>
+
+@code {
+    private List<Client> activeClients = [];
+    private List<Client> inactiveClients = [];
+    private ClientForm form = new();
+    private Guid? editingId;
+    private Guid? deleteId;
+    private string? message;
+    private string? deleteMessage;
+    private bool isError;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        activeClients = await db.Clients.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync();
+        inactiveClients = await db.Clients.AsNoTracking().Where(x => !x.IsActive).OrderBy(x => x.Name).ToListAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        isSaving = true;
+        message = null;
+        isError = false;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var name = form.Name.Trim();
+        var cnpj = FormatCnpj(form.Cnpj);
+        if (cnpj is null || NormalizeCnpj(cnpj)?.Length != 14)
+        {
+            form.Cnpj = string.Empty;
+            isError = true;
+            message = "Informe um CNPJ válido no formato 00.000.000/0000-00 ou 00.000.000/E08G-12.";
+            isSaving = false;
+            return;
+        }
+
+        var duplicate = (await db.Clients.AsNoTracking().Where(x => x.Id != editingId).Select(x => x.Cnpj).ToListAsync())
+            .Any(value => NormalizeCnpj(value) == NormalizeCnpj(cnpj));
+        if (duplicate)
+        {
+            message = "Já existe um cliente cadastrado com este CNPJ.";
+            isError = true;
+            isSaving = false;
+            return;
+        }
+
+        var stored = editingId is null ? null : await db.Clients.FindAsync(editingId.Value);
+        if (editingId is not null && stored is null)
+        {
+            message = "O cliente não foi encontrado.";
+            isError = true;
+            isSaving = false;
+            return;
+        }
+
+        if (stored is null)
+        {
+            db.Clients.Add(new Client { Id = Guid.NewGuid(), Name = name, Cnpj = cnpj, IsActive = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now });
+        }
+        else
+        {
+            stored.Name = name;
+            stored.Cnpj = cnpj;
+            stored.UpdatedAt = DateTime.Now;
+        }
+
+        await db.SaveChangesAsync();
+        form = new();
+        editingId = null;
+        message = stored is null ? "Cliente cadastrado com sucesso." : "Cliente atualizado com sucesso.";
+        isSaving = false;
+        await LoadAsync();
+    }
+
+    private void BeginEdit(Client client)
+    {
+        editingId = client.Id;
+        form = new() { Name = client.Name, Cnpj = FormatCnpj(client.Cnpj) ?? string.Empty };
+        message = null;
+    }
+
+    private void CancelEdit()
+    {
+        editingId = null;
+        form = new();
+        message = null;
+    }
+
+    private async Task ToggleStatusAsync(Client client)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var stored = await db.Clients.FindAsync(client.Id);
+        if (stored is null) return;
+        stored.IsActive = !stored.IsActive;
+        stored.UpdatedAt = DateTime.Now;
+        await db.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private void AskDelete(Client client) { deleteId = client.Id; deleteMessage = null; }
+    private void CancelDelete() { deleteId = null; deleteMessage = null; }
+
+    private async Task DeleteAsync()
+    {
+        if (deleteId is null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var client = await db.Clients.FindAsync(deleteId.Value);
+        if (client is null) { CancelDelete(); return; }
+        if (await db.RiggingPlans.AnyAsync(x => x.ClientId == client.Id && x.DeletedAt == null && x.Status != "finalized"))
+        {
+            deleteMessage = "Não é possível excluir: o cliente está ligado a um plano em andamento.";
+            return;
+        }
+        db.Clients.Remove(client);
+        await db.SaveChangesAsync();
+        CancelDelete();
+        await LoadAsync();
+    }
+
+    private sealed class ClientForm
+    {
+        [Required(ErrorMessage = "Informe o nome ou a razão social.")]
+        public string Name { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Informe o CNPJ.")]
+        [RegularExpression(@"^[A-Z0-9]{2}\.[A-Z0-9]{3}\.[A-Z0-9]{3}/[A-Z0-9]{4}-\d{2}$", ErrorMessage = "Use o formato 00.000.000/0000-00 ou 00.000.000/E08G-12.")]
+        public string Cnpj { get; set; } = string.Empty;
+    }
+
+    private void OnCnpjInput(ChangeEventArgs args) => form.Cnpj = FormatCnpj(args.Value?.ToString()) ?? string.Empty;
+
+    private static string? FormatCnpj(string? value)
+    {
+        var digits = NormalizeCnpj(value);
+        return digits?.Length == 14
+            ? $"{digits[..2]}.{digits[2..5]}.{digits[5..8]}/{digits[8..12]}-{digits[12..]}"
+            : digits;
+    }
+
+    private static string? NormalizeCnpj(string? value)
+    {
+        var normalized = new string((value ?? string.Empty).ToUpperInvariant().Where(char.IsLetterOrDigit).ToArray());
+        var prefix = new string(normalized.Take(12).Where(char.IsLetterOrDigit).ToArray());
+        var suffix = new string(normalized.Skip(12).Where(char.IsDigit).Take(2).ToArray());
+        var digits = prefix + suffix;
+        return digits.Length == 0 ? null : digits;
+    }
+}

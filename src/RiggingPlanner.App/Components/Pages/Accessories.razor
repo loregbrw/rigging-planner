@@ -29,38 +29,20 @@
                 </div>
                 <div class="rp-field rp-col-3">
                     <label class="rp-label" for="tag-input">Tag</label>
-                    <div class="rp-tag-picker">
-                        @if (SelectedFormTag is not null)
-                        {
-                            <span class="rp-tag rp-tag-picker__selected" style="@TagStyle(SelectedFormTag.Name)">
-                                @SelectedFormTag.Name
-                                <button type="button" class="rp-tag__remove" aria-label="Remover @SelectedFormTag.Name" @onclick="RemoveFormTag">×</button>
-                            </span>
-                        }
-                        else
-                        {
-                            <input id="tag-input" @ref="tagInputElement" class="rp-input" placeholder="Selecionar ou criar"
-                                   value="@tagInput" @oninput="OnTagInput" @onkeydown="HandleTagKeyDown"
-                                   autocomplete="off" />
-                                @if (TagSuggestions.Count > 0 || (!string.IsNullOrWhiteSpace(tagInput) && !HasExactTag))
-                            {
-                                <div class="rp-autocomplete">
-                                        @foreach (var tag in TagSuggestions.Select((tag, index) => (tag, index)))
-                                    {
-                                            <button type="button" class="rp-autocomplete__item @(highlightedTagIndex == tag.index ? "rp-autocomplete__item--active" : string.Empty)" @onclick="() => SelectFormTag(tag.tag)">
-                                                <span class="rp-tag" style="@TagStyle(tag.tag.Name)">@tag.tag.Name</span>
-                                        </button>
-                                    }
-                                        @if (!string.IsNullOrWhiteSpace(tagInput) && !HasExactTag)
-                                        {
-                                            <button type="button" class="rp-autocomplete__item rp-autocomplete__create @(highlightedTagIndex == TagSuggestions.Count ? "rp-autocomplete__item--active" : string.Empty)" @onclick="CreateAndSelectTagAsync">
-                                                Criar tag “@tagInput.Trim()”
-                                            </button>
-                                        }
-                                    </div>
-                            }
-                        }
-                    </div>
+                    <RpTagPicker TItem="Tag"
+                                 InputId="tag-input"
+                                 InputValue="@tagInput"
+                                 Suggestions="TagSuggestions"
+                                 SelectedItem="SelectedFormTag"
+                                 ItemText="@(tag => tag.Name)"
+                                 SelectedStyle="@(tag => TagStyle(tag.Name))"
+                                 ItemStyle="@(tag => TagStyle(tag.Name))"
+                                 CanCreate="@(!string.IsNullOrWhiteSpace(tagInput) && !HasExactTag)"
+                                 CreateLabel="@($"Criar tag “{tagInput.Trim()}”")"
+                                 OnInput="OnTagInput"
+                                 OnSelect="SelectFormTag"
+                                 OnCreate="CreateAndSelectTagAsync"
+                                 OnRemove="RemoveFormTag" />
                     <small class="rp-help">Uma tag por acessório.</small>
                 </div>
             </div>
@@ -197,8 +179,6 @@
     private Guid? editingTagId;
     private string editingTagName = string.Empty;
     private Tag? tagToDelete;
-    private ElementReference tagInputElement;
-    private int highlightedTagIndex = -1;
     private Guid? deleteId;
 
     private Tag? SelectedFormTag => allTags.FirstOrDefault(x => x.Id == form.TagId);
@@ -208,14 +188,6 @@
         : allTags.Where(x => x.Id != form.TagId && x.Name.Contains(tagInput.Trim(), StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (form.TagId is null)
-        {
-            await JS.InvokeVoidAsync("riggingPlanner.preventTagSubmit", tagInputElement);
-        }
-    }
 
     private async Task LoadAsync()
     {
@@ -293,60 +265,22 @@
         tagInput = string.Empty;
     }
 
-    private async Task HandleTagKeyDown(KeyboardEventArgs args)
-    {
-        var optionCount = TagSuggestions.Count + (!string.IsNullOrWhiteSpace(tagInput) && !HasExactTag ? 1 : 0);
-        if (args.Key == "ArrowDown" && optionCount > 0)
-        {
-            highlightedTagIndex = highlightedTagIndex >= optionCount - 1 ? 0 : highlightedTagIndex + 1;
-        }
-        else if (args.Key == "ArrowUp" && optionCount > 0)
-        {
-            highlightedTagIndex = highlightedTagIndex <= 0 ? optionCount - 1 : highlightedTagIndex - 1;
-        }
-        else if (args.Key == "Enter")
-        {
-            if (highlightedTagIndex >= 0 && highlightedTagIndex < TagSuggestions.Count)
-            {
-                SelectFormTag(TagSuggestions[highlightedTagIndex]);
-            }
-            else if (highlightedTagIndex == TagSuggestions.Count && optionCount > TagSuggestions.Count)
-            {
-                await CreateAndSelectTagAsync();
-            }
-            else if (optionCount == 1)
-            {
-                if (TagSuggestions.Count == 1)
-                {
-                    SelectFormTag(TagSuggestions[0]);
-                }
-                else
-                {
-                    await CreateAndSelectTagAsync();
-                }
-            }
-        }
-    }
-
     private void OnTagInput(ChangeEventArgs args)
     {
         tagInput = args.Value?.ToString() ?? string.Empty;
         form.TagId = null;
-        highlightedTagIndex = -1;
     }
 
     private void SelectFormTag(Tag tag)
     {
         form.TagId = tag.Id;
         tagInput = string.Empty;
-        highlightedTagIndex = -1;
     }
 
     private void RemoveFormTag()
     {
         form.TagId = null;
         tagInput = string.Empty;
-        highlightedTagIndex = -1;
     }
 
     private void BeginEdit(Accessory accessory)

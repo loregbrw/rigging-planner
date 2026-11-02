@@ -36,6 +36,12 @@
     <RpCard Title="Equipamentos inativos">
         @if (message is not null) { <div class="rp-alert rp-alert--danger">@message</div> }
         <p class="rp-muted">Equipamentos inativos não podem ser selecionados em novos planos.</p>
+        @if (inactiveEquipments.Count == 0)
+        {
+            <p class="rp-muted">Nenhum equipamento inativo.</p>
+        }
+        else
+        {
         <div class="rp-table-wrap rp-table-wrap--muted"><table class="rp-table"><thead><tr><th>Guindaste</th><th>Caminhão</th><th>Placa</th><th>Chassi</th><th></th></tr></thead><tbody>
             @foreach (var equipment in inactiveEquipments)
             {
@@ -46,6 +52,7 @@
                 }
             }
         </tbody></table></div>
+        }
     </RpCard>
 </div>
 

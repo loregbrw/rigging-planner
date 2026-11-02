@@ -431,7 +431,8 @@ Regras:
 | 3. Anexos | 3 zonas: desenhos (imagens), ART do plano (PDF), laudo (PDF) | `rp-dropzone`, `rp-attachment-list` |
 | 4. Preview | Visualizador de folhas A4 com zoom | `rp-doc-preview`, `rp-doc-page` |
 | 5. Exportação | Lista ordenada das partes do PDF + ação principal | `rp-parts`, `rp-alert`, `rp-progress` |
-| **Acessórios** | Tabela + filtros; edição em **drawer** (ou modal) | `rp-table`, `rp-badge`, `rp-drawer`/`rp-modal` |
+| **Cadastros** (clientes, equipamentos, riggers e acessórios) | Tabelas separadas por ativos/inativos, formulário de cadastro/edição e confirmação de exclusão protegida | `rp-table`, `rp-badge`, `rp-form-grid`, `rp-alert`, `rp-btn` |
+| **Cliente no plano** | Mesmo seletor interativo de tags, com chip, setas, Enter, criação e remoção; cliente existente preenche o CNPJ bloqueado; nome e CNPJ ocupam colunas lado a lado | `rp-tag-picker`, `rp-autocomplete`, `rp-input`, `rp-help` |
 
 ### 6.2 Estrutura do shell
 ```
@@ -444,7 +445,7 @@ Regras:
 └───────────┴───────────────────────────────────────────┘
 ```
 - **A topbar e o rodapé do wizard rolam "por cima" do conteúdo** (por isso o glass tem o que desfocar).
-- Navegação principal (apenas o que o brief documenta): **Planos**, **Novo plano**, **Acessórios**. Itens como "Configurações" **não** estão no brief **[PENDENTE]**.
+- Navegação principal: **Planos**, **Novo plano** e os cadastros de **clientes, acessórios, equipamentos e riggers**. Itens como "Configurações" **não** estão no brief **[PENDENTE]**.
 - **Breadcrumb** na topbar: `Planos / <Pasta> / Plano 2607036`.
 - Tela de planos: ação primária **"Novo plano"** sempre no canto superior direito do `rp-page-header`.
 - **Pastas de um único nível** (F5): lista simples, sem árvore recursiva.

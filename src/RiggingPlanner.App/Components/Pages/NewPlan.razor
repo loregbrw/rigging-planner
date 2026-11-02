@@ -1,8 +1,10 @@
 @page "/new-plan"
 @page "/new-plan/{PlanId:guid}"
 @using System.ComponentModel.DataAnnotations
+@using Microsoft.JSInterop
 @inject IDbContextFactory<AppDbContext> DbFactory
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <RpPageHeader Title="@(PlanId is null ? "Novo plano" : isReadOnly ? "Plano finalizado" : "Editar plano")" Subtitle="Preencha os dados sem perder informações entre as etapas" />
 
@@ -37,14 +39,42 @@
                     <label class="rp-label" for="plan-date">Data do plano</label>
                     <InputDate id="plan-date" class="rp-input" @bind-Value="form.PlanDate" />
                 </div>
-                <div class="rp-field rp-col-8">
-                    <label class="rp-label" for="client">Cliente</label>
-                    <InputText id="client" class="rp-input" @bind-Value="form.ClientName" />
-                </div>
-                <div class="rp-field rp-col-6">
-                    <label class="rp-label" for="cnpj">CNPJ do cliente</label>
-                    <InputText id="cnpj" class="rp-input" @bind-Value="form.ClientCnpj" />
-                </div>
+                <section class="rp-client-section rp-col-12" aria-labelledby="client-section-title">
+                    <h3 id="client-section-title" class="rp-section-title">Cliente</h3>
+                    <div class="rp-client-fields">
+                        <div class="rp-field">
+                            <label class="rp-label" for="client-name">Nome / Razão social</label>
+                            <RpTagPicker TItem="Client"
+                                         InputId="client-name"
+                                         InputValue="@(form.ClientName ?? string.Empty)"
+                                         Suggestions="ClientSuggestions"
+                                         SelectedItem="@(SelectedClient ?? (isNewClientSelected ? new Client { Name = form.ClientName ?? string.Empty } : null))"
+                                         ItemText="@(client => client.Name)"
+                                         CanCreate="@(!string.IsNullOrWhiteSpace(form.ClientName) && !HasExactClient)"
+                                         CreateLabel="@($"Criar cliente “{form.ClientName?.Trim()}”")"
+                                         OnInput="OnClientNameInput"
+                                         OnSelect="SelectClient"
+                                         OnCreate="CreateClientFromInput"
+                                         OnRemove="RemoveSelectedClient" />
+                            <span class="rp-help">Selecione um cadastro existente ou crie um cliente novo.</span>
+                        </div>
+                        <div class="rp-field">
+                            <label class="rp-label" for="cnpj">CNPJ</label>
+                            <input id="cnpj" class="rp-input @(IsExistingClient ? "rp-input--disabled" : string.Empty)"
+                                   inputmode="text" maxlength="18" placeholder="00.000.000/0000-00"
+                                   disabled="@IsExistingClient" value="@form.ClientCnpj" @oninput="OnClientCnpjInput"
+                                   title="@(IsExistingClient ? "CNPJ preenchido pelo cadastro e não editável" : "Informe o CNPJ do novo cliente")" />
+                            @if (IsExistingClient)
+                            {
+                                <span class="rp-help rp-help--disabled">CNPJ do cadastro selecionado — não editável.</span>
+                            }
+                            else
+                            {
+                                <span class="rp-help">Obrigatório para novo cliente.</span>
+                            }
+                        </div>
+                    </div>
+                </section>
                 <div class="rp-field rp-col-6">
                     <label class="rp-label" for="load">Descrição da carga</label>
                     <InputText id="load" class="rp-input" @bind-Value="form.LoadDescription" />
@@ -107,15 +137,23 @@
     private readonly PlanForm form = new();
     private List<Equipment> equipmentOptions = [];
     private List<Rigger> riggerOptions = [];
+    private List<Client> clientOptions = [];
     private bool isSaving;
     private bool isReadOnly;
     private string? errorMessage;
+    private Client? SelectedClient => clientOptions.FirstOrDefault(x => x.Id == form.ClientId);
+    private bool HasExactClient => clientOptions.Any(x => string.Equals(x.Name, form.ClientName?.Trim(), StringComparison.CurrentCultureIgnoreCase));
+    private List<Client> ClientSuggestions => string.IsNullOrWhiteSpace(form.ClientName)
+        ? []
+        : clientOptions.Where(x => x.Name.Contains(form.ClientName.Trim(), StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
+    private bool isNewClientSelected;
 
     protected override async Task OnInitializedAsync()
     {
         await using var db = await DbFactory.CreateDbContextAsync();
         equipmentOptions = await db.Equipments.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.CraneModel).ToListAsync();
         riggerOptions = await db.Riggers.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.DisplayName).ToListAsync();
+        clientOptions = await db.Clients.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync();
         if (PlanId is null) return;
 
         var plan = await db.RiggingPlans.AsNoTracking().SingleOrDefaultAsync(x => x.Id == PlanId);
@@ -124,18 +162,27 @@
             errorMessage = "Plano não encontrado.";
             return;
         }
+
         isReadOnly = plan.Status == "finalized";
         if (isReadOnly)
         {
             equipmentOptions = await db.Equipments.AsNoTracking().OrderBy(x => x.CraneModel).ToListAsync();
             riggerOptions = await db.Riggers.AsNoTracking().OrderBy(x => x.DisplayName).ToListAsync();
+            clientOptions = await db.Clients.AsNoTracking().OrderBy(x => x.Name).ToListAsync();
+        }
+        else if (plan.ClientId is not null && clientOptions.All(x => x.Id != plan.ClientId))
+        {
+            var linkedClient = await db.Clients.AsNoTracking().SingleOrDefaultAsync(x => x.Id == plan.ClientId);
+            if (linkedClient is not null) clientOptions.Add(linkedClient);
         }
 
         form.OperationName = plan.OperationName;
         form.Location = plan.Location;
         form.PlanDate = plan.PlanDate;
+        form.ClientId = plan.ClientId;
         form.ClientName = plan.ClientName;
-        form.ClientCnpj = plan.ClientCnpj;
+        form.ClientCnpj = FormatCnpj(plan.ClientCnpj) ?? string.Empty;
+        isNewClientSelected = plan.ClientId is null && !string.IsNullOrWhiteSpace(plan.ClientName);
         form.LoadDescription = plan.LoadDescription;
         form.WeightKg = plan.WeightKg;
         form.LengthM = plan.LengthM;
@@ -167,8 +214,10 @@
                 existingPlan.PlanDate = form.PlanDate;
                 existingPlan.Location = form.Location.Trim();
                 existingPlan.OperationName = form.OperationName.Trim();
-                existingPlan.ClientName = form.ClientName?.Trim();
-                existingPlan.ClientCnpj = form.ClientCnpj?.Trim();
+                var existingClient = await ResolveClientAsync(db);
+                existingPlan.ClientId = existingClient?.Id;
+                existingPlan.ClientName = existingClient?.Name ?? form.ClientName?.Trim();
+                existingPlan.ClientCnpj = existingClient?.Cnpj ?? FormatCnpj(form.ClientCnpj);
                 existingPlan.LoadDescription = form.LoadDescription.Trim();
                 existingPlan.LengthM = form.LengthM;
                 existingPlan.WidthM = form.WidthM;
@@ -184,24 +233,7 @@
                 return;
             }
 
-            Client? client = null;
-
-            if (!string.IsNullOrWhiteSpace(form.ClientName))
-            {
-                client = string.IsNullOrWhiteSpace(form.ClientCnpj)
-                    ? null
-                    : await db.Clients.FirstOrDefaultAsync(x => x.Cnpj == form.ClientCnpj);
-                if (client is null)
-                {
-                    client = new Client
-                    {
-                        Id = Guid.NewGuid(), Name = form.ClientName.Trim(),
-                        Cnpj = string.IsNullOrWhiteSpace(form.ClientCnpj) ? null : form.ClientCnpj.Trim(),
-                        CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now
-                    };
-                    db.Clients.Add(client);
-                }
-            }
+            var client = await ResolveClientAsync(db);
 
             var yearMonth = form.PlanDate.ToString("yyMM");
             var counter = await db.PlanNumberCounters.SingleOrDefaultAsync(x => x.YearMonth == yearMonth);
@@ -240,6 +272,89 @@
         finally { isSaving = false; }
     }
 
+    private async Task<Client?> ResolveClientAsync(AppDbContext db)
+    {
+        if (form.ClientId is not null)
+        {
+            return await db.Clients.SingleOrDefaultAsync(x => x.Id == form.ClientId);
+        }
+
+        if (string.IsNullOrWhiteSpace(form.ClientName))
+        {
+            return null;
+        }
+
+        var cnpj = FormatCnpj(form.ClientCnpj);
+        if (cnpj is null || NormalizeCnpj(cnpj)?.Length != 14)
+        {
+            throw new InvalidOperationException("Informe um CNPJ válido no formato 00.000.000/0000-00 ou 00.000.000/E08G-12.");
+        }
+
+        if ((await db.Clients.AsNoTracking().Select(x => x.Cnpj).ToListAsync()).Any(value => NormalizeCnpj(value) == NormalizeCnpj(cnpj)))
+        {
+            throw new InvalidOperationException("Já existe um cliente cadastrado com este CNPJ. Selecione-o na lista.");
+        }
+
+        var client = new Client
+        {
+            Id = Guid.NewGuid(), Name = form.ClientName.Trim(), Cnpj = cnpj,
+            CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now
+        };
+        db.Clients.Add(client);
+        return client;
+    }
+
+    private bool IsExistingClient => form.ClientId is not null;
+
+    private void OnClientNameInput(ChangeEventArgs args)
+    {
+        form.ClientName = args.Value?.ToString()?.Trim();
+        form.ClientId = null;
+        form.ClientCnpj = string.Empty;
+    }
+
+    private void SelectClient(Client client)
+    {
+        form.ClientId = client.Id;
+        form.ClientName = client.Name;
+        form.ClientCnpj = FormatCnpj(client.Cnpj) ?? string.Empty;
+    }
+
+    private void CreateClientFromInput()
+    {
+        if (string.IsNullOrWhiteSpace(form.ClientName)) return;
+        form.ClientId = null;
+        isNewClientSelected = true;
+    }
+
+    private void RemoveSelectedClient()
+    {
+        form.ClientId = null;
+        form.ClientName = string.Empty;
+        form.ClientCnpj = string.Empty;
+        isNewClientSelected = false;
+    }
+
+    private void OnClientCnpjInput(ChangeEventArgs args) => form.ClientCnpj = FormatCnpj(args.Value?.ToString()) ?? string.Empty;
+
+
+    private static string? FormatCnpj(string? value)
+    {
+        var digits = NormalizeCnpj(value);
+        return digits?.Length == 14
+            ? $"{digits[..2]}.{digits[2..5]}.{digits[5..8]}/{digits[8..12]}-{digits[12..]}"
+            : digits;
+    }
+
+    private static string? NormalizeCnpj(string? value)
+    {
+        var normalized = new string((value ?? string.Empty).ToUpperInvariant().Where(char.IsLetterOrDigit).ToArray());
+        var prefix = new string(normalized.Take(12).Where(char.IsLetterOrDigit).ToArray());
+        var suffix = new string(normalized.Skip(12).Where(char.IsDigit).Take(2).ToArray());
+        var digits = prefix + suffix;
+        return digits.Length == 0 ? null : digits;
+    }
+
     private static void ApplyReferences(RiggingPlan plan, IReadOnlyCollection<Equipment> equipmentOptions, IReadOnlyCollection<Rigger> riggerOptions)
     {
         var equipment = plan.EquipmentId is null ? null : equipmentOptions.FirstOrDefault(x => x.Id == plan.EquipmentId);
@@ -272,8 +387,9 @@
         [Required(ErrorMessage = "Informe o local.")]
         public string Location { get; set; } = string.Empty;
         public DateTime PlanDate { get; set; } = DateTime.Today;
+        public Guid? ClientId { get; set; }
         public string? ClientName { get; set; }
-        public string? ClientCnpj { get; set; }
+        public string ClientCnpj { get; set; } = string.Empty;
         [Required(ErrorMessage = "Informe a descrição da carga.")]
         public string LoadDescription { get; set; } = string.Empty;
         public decimal? WeightKg { get; set; }

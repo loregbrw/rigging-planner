@@ -17,7 +17,7 @@
 
 O repositório contém uma aplicação desktop Windows em .NET MAUI Blazor Hybrid com SQLite/EF Core. Já estão implementados os fluxos de planos em rascunho, dados de entrada, capacidade de carga, cadastro de acessórios, tags, riggers e equipamentos. A interface também permite finalizar planos, tornando-os somente leitura, e separar, reativar e excluir definitivamente cadastros inativos com confirmação e verificação de vínculos.
 
-O modelo de dados já possui entidades para clientes, pastas, laudos, arquivos, desenhos e exportações, mas esses fluxos ainda não possuem telas ou operações completas na aplicação. Anexos, preview, geração de PDF, lixeira de planos, pastas e cadastro de laudos devem ser tratados como funcionalidades planejadas, não como recursos já disponíveis.
+O modelo de dados já possui entidades para clientes, pastas, laudos, arquivos, desenhos e exportações. O cadastro de clientes, sua seleção no plano e o cadastro rápido de um novo cliente durante o preenchimento já estão disponíveis. Anexos, preview, geração de PDF, lixeira de planos, pastas e cadastro de laudos devem ser tratados como funcionalidades planejadas, não como recursos já disponíveis.
 
 ## 2. Empresa Parceira
 - **Nome:** Guindastes Ribas Ltda.
@@ -284,7 +284,7 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **Dados de entrada:** cliente, local, data, guindaste (placa, chassi, capacidade), carga (descrição, dimensões, peso), acessórios, planejador/rigger (nome, RPP, CREA).
 - **Riggers:** cadastro (nome completo, nome de exibição, RPP, CREA), escolhido no plano e cadastrável ali mesmo. O "Supervisor Responsável" é texto livre e opcional no plano.
 - **Cadastros em uso:** riggers, equipamentos e acessórios possuem ativos/inativos. A exclusão definitiva é bloqueada por vínculos em planos em andamento; planos finalizados preservam os dados copiados.
-- **Clientes:** nome e CNPJ são informados diretamente no plano e a entidade é criada/reutilizada ao salvar; uma tela independente ainda não foi implementada.
+- **Clientes:** há uma tela independente para cadastrar, editar, ativar/inativar e excluir clientes inativos. O CNPJ é obrigatório e usa máscara compatível com os formatos legado `00.000.000/0000-00` e novo alfanumérico `00.000.000/E08G-12`. No plano, o nome/razão social usa o mesmo seletor interativo de tags, com setas, Enter, criação e remoção; ao selecionar um cliente existente, o CNPJ é preenchido e bloqueado.
 - **Equipamentos e laudos:** o cadastro do equipamento está implementado. Laudos, PDFs, validade, ART do laudo e sua seleção no plano estão modelados, mas ainda sem fluxo de interface.
 - **Capacidade de carga:** interface tipo planilha com os mesmos grupos de campos da folha-resumo (Seção 6.2), com os dados reaproveitados dos demais passos (sem redigitação). Capacidade de carga, taxas dos acessórios, esforço nas sapatas, resistência do terreno e vento são digitados pelo engenheiro; pesos totais, carga bruta, conversão para t e taxa de utilização do guindaste são calculados na exibição.
 - **Cadastro de acessórios:** implementado com nome, peso unitário, uma tag opcional, busca/filtro, edição, ativação/inativação, reativação e exclusão definitiva protegida. Histórico de eventos e alertas de desgaste/descarte permanecem planejados.
@@ -298,7 +298,7 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 
 | Caso | Onde é cadastrado | Como entra no plano |
 |---|---|---|
-| **Cliente** | Nome e CNPJ são digitados na tela do plano; a entidade de cliente é criada/reutilizada ao salvar | Nome e CNPJ são copiados para o plano. Não existe ainda uma tela independente de clientes |
+| **Cliente** | Tela de clientes (nome e CNPJ), com cadastro rápido também disponível na tela do plano | O nome possui autocomplete; clientes existentes preenchem o CNPJ automaticamente e novos clientes exigem nome e CNPJ; ambos são copiados para o plano |
 | **Equipamento (caminhão + guindaste)** | Tela de equipamentos | Equipamentos ativos são escolhidos no plano; os dados são copiados para o plano |
 | **Laudo + ART do laudo** | Modelado nas entidades, mas sem tela implementada | Vínculo previsto; o fluxo de cadastro e seleção ainda não está disponível na UI |
 | **Rigger** | Tela de riggers | Riggers ativos são escolhidos no plano; nome de exibição, RPP e CREA são copiados |
@@ -310,7 +310,7 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 | **Finalização** | Ação na lista de planos, com confirmação | Implementado: plano finalizado fica somente para leitura e recebe `FinalizedAt`; não existe reabertura |
 | **Exclusão** | Ainda não existe ação de exclusão de planos na UI | Lixeira e exclusão definitiva de planos são funcionalidades planejadas |
 | **Exportação** | Ainda não existe tela de exportação | Geração do PDF, escolha da pasta e histórico são funcionalidades planejadas |
-| **Cadastros em uso** | Telas de riggers, equipamentos e acessórios | Implementado: ativos/inativos, reativação e exclusão definitiva protegida contra vínculos em planos em andamento |
+| **Cadastros em uso** | Telas de clientes, riggers, equipamentos e acessórios | Implementado: ativos/inativos, reativação e exclusão definitiva protegida contra vínculos em planos em andamento |
 
 ## 13. Organização dos Planos
 - Atualmente os planos são exibidos em uma única lista, sem tela de pastas e sem filtro por pasta.
@@ -383,3 +383,4 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **27/10/2026 (2ª rodada):** conversões kg → t e contas simples (somas, taxa de utilização do guindaste) feitas só na exibição, sem gravar valores derivados; mês do número do plano vem da data do plano; removida a função de duplicar plano; adicionada lixeira com exclusão definitiva; dados da empresa e texto do procedimento embutidos no app; cadastro de riggers; cadastros em uso só são inativados; corrigida a grafia "Keffer" para "Kaefer" e a menção a vários guindastes por plano.
 - **27/10/2026 (3ª rodada):** incluídas as Seções 11.4 (modelo de dados: tabelas, colunas, chaves, cardinalidades e regras) e 12.1 (fluxo de cadastro e vínculo ao plano, por caso).
 - **02/11/2026:** brief alinhado ao estado real do repositório: implementados planos em rascunho/finalizados, capacidade, acessórios com uma tag, tags administráveis, riggers, equipamentos e ciclo de vida de cadastros; entidades sem UI foram marcadas como modeladas ou planejadas; dúvidas já decididas foram removidas da lista de pendências.
+- **02/11/2026 (cadastro de clientes):** adicionados cadastro independente de clientes, ciclo de vida de ativos/inativos, seleção no plano e cadastro rápido durante o preenchimento; o plano mantém o snapshot do nome e CNPJ.
