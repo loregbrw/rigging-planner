@@ -42,6 +42,23 @@
 - [x] Migration `InitialCreate` regenerada com as tabelas e índices do modelo inicial
 - [x] Teste de schema, migration e persistência de plano com cliente relacionado
 
+### Etapa 3 — Planos, cadastro de acessórios e navegação
+- [x] Tela de planos conectada ao SQLite via `IDbContextFactory`
+- [x] Criação de planos com validação, numeração automática AAMMNNN e cliente reutilizável
+- [x] Abertura e edição dos dados principais de um plano existente
+- [x] Tela de acessórios com cadastro, listagem e ativação/inativação persistidas
+- [x] Menu lateral organizado por seções de operação e cadastros
+- [x] Estados vazios, tabelas, badges, validações e mensagens de sucesso/erro adicionados à UI
+
+### Etapas 4 e 6 — Dados de entrada e capacidade de carga
+- [x] Cadastro persistente de equipamentos (caminhão + guindaste), com ativação/inativação
+- [x] Cadastro persistente de riggers, com nome completo, nome de exibição, RPP e CREA
+- [x] Seleção de equipamento e rigger no plano, copiando os dados para manter o plano autossuficiente
+- [x] Tela de capacidade de carga vinculada ao plano
+- [x] Inclusão e remoção de itens de lingada e dispositivos, usando acessórios cadastrados ou descrição avulsa
+- [x] Persistência dos itens em `plan_accessories` e dos parâmetros digitados da configuração do guindaste
+- [x] Exibição dos totais de lingada, dispositivos, carga bruta em kg/t e taxa de utilização do guindaste
+
 ## Próximas etapas (previstas — ordem a confirmar)
 
 | # | Etapa | Observação |

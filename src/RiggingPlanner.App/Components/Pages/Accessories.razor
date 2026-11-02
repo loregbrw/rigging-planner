@@ -1,10 +1,89 @@
 @page "/accessories"
+@using System.ComponentModel.DataAnnotations
+@inject IDbContextFactory<AppDbContext> DbFactory
 
 <RpPageHeader Title="Acessórios" Subtitle="Mantenha o histórico e a disponibilidade dos equipamentos" />
 
-<RpCard Title="Cadastro de acessórios">
-    <div class="rp-empty">
-        <p class="rp-empty__title">Nenhum acessório cadastrado ainda</p>
-        <p class="rp-muted">Os alertas de desgaste e descarte aparecerão nesta área.</p>
-    </div>
-</RpCard>
+<div class="rp-stack">
+    <RpCard Title="Novo acessório">
+        @if (!string.IsNullOrWhiteSpace(message))
+        {
+            <div class="rp-alert rp-alert--success">@message</div>
+        }
+        <EditForm Model="form" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <div class="rp-form-grid">
+                <div class="rp-field rp-col-4"><label class="rp-label" for="category">Categoria</label><InputSelect id="category" class="rp-select" @bind-Value="form.Category"><option value="cinta plana">Cinta plana</option><option value="cinta tubular">Cinta tubular</option><option value="laço de cabo de aço">Laço de cabo de aço</option><option value="manilha">Manilha</option><option value="balancim">Balancim</option><option value="outro">Outro</option></InputSelect></div>
+                <div class="rp-field rp-col-8"><label class="rp-label" for="description">Descrição</label><InputText id="description" class="rp-input" @bind-Value="form.Description" /><ValidationMessage For="() => form.Description" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label" for="length">Comprimento (m)</label><InputNumber id="length" class="rp-input rp-input--num" @bind-Value="form.LengthM" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label" for="capacity">Capacidade (t)</label><InputNumber id="capacity" class="rp-input rp-input--num" @bind-Value="form.CapacityT" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label" for="unit-weight">Peso unitário (kg)</label><InputNumber id="unit-weight" class="rp-input rp-input--num" @bind-Value="form.UnitWeightKg" /></div>
+            </div>
+            <div class="rp-form-actions"><button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">Cadastrar acessório</button></div>
+        </EditForm>
+    </RpCard>
+
+    <RpCard Title="Acessórios cadastrados">
+        @if (accessories.Count == 0)
+        {
+            <div class="rp-empty"><p class="rp-empty__title">Nenhum acessório cadastrado ainda</p><p class="rp-muted">Cadastre cintas, manilhas, laços e balancins para reaproveitá-los nos planos.</p></div>
+        }
+        else
+        {
+            <div class="rp-table-wrap"><table class="rp-table"><thead><tr><th>Categoria</th><th>Descrição</th><th class="rp-num">Capacidade</th><th class="rp-num">Peso</th><th>Status</th><th></th></tr></thead><tbody>
+                @foreach (var accessory in accessories)
+                {
+                    <tr><td>@accessory.Category</td><td>@accessory.Description</td><td class="rp-num">@(accessory.CapacityT?.ToString("N2") ?? "-") t</td><td class="rp-num">@accessory.UnitWeightKg.ToString("N2") kg</td><td><span class="rp-badge @(accessory.Status == "active" ? "rp-badge--success" : "rp-badge--warning")">@(accessory.Status == "active" ? "Ativo" : "Inativo")</span></td><td><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(accessory)">@(accessory.Status == "active" ? "Inativar" : "Ativar")</button></td></tr>
+                }
+            </tbody></table></div>
+        }
+    </RpCard>
+</div>
+
+@code {
+    private List<Accessory> accessories = [];
+    private AccessoryForm form = new();
+    private string? message;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        accessories = await db.Accessories.AsNoTracking().OrderBy(x => x.Category).ThenBy(x => x.Description).ToListAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        isSaving = true;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.Accessories.Add(new Accessory { Id = Guid.NewGuid(), Category = form.Category, Description = form.Description.Trim(), LengthM = form.LengthM, CapacityT = form.CapacityT, UnitWeightKg = form.UnitWeightKg, Status = "active", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now });
+        await db.SaveChangesAsync();
+        form = new();
+        message = "Acessório cadastrado com sucesso.";
+        isSaving = false;
+        await LoadAsync();
+    }
+
+    private async Task ToggleStatusAsync(Accessory accessory)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var stored = await db.Accessories.FindAsync(accessory.Id);
+        if (stored is null) return;
+        stored.Status = stored.Status == "active" ? "inactive" : "active";
+        stored.UpdatedAt = DateTime.Now;
+        await db.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private sealed class AccessoryForm
+    {
+        public string Category { get; set; } = "cinta plana";
+        [Required(ErrorMessage = "Informe a descrição.")]
+        public string Description { get; set; } = string.Empty;
+        public decimal? LengthM { get; set; }
+        public decimal? CapacityT { get; set; }
+        public decimal UnitWeightKg { get; set; }
+    }
+}

@@ -1,0 +1,92 @@
+@page "/equipments"
+@using System.ComponentModel.DataAnnotations
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+<RpPageHeader Title="Equipamentos" Subtitle="Cadastre o conjunto caminhão + guindaste para reaproveitar nos planos" />
+
+<div class="rp-stack">
+    <RpCard Title="Novo equipamento">
+        @if (message is not null)
+        {
+            <div class="rp-alert rp-alert--success">@message</div>
+        }
+        <EditForm Model="form" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <div class="rp-form-grid">
+                <div class="rp-field rp-col-4"><label class="rp-label">Tipo</label><InputText class="rp-input" @bind-Value="form.EquipmentType" /></div>
+                <div class="rp-field rp-col-8"><label class="rp-label">Modelo do caminhão</label><InputText class="rp-input" @bind-Value="form.TruckModel" /><ValidationMessage For="() => form.TruckModel" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label">Placa</label><InputText class="rp-input" @bind-Value="form.LicensePlate" /><ValidationMessage For="() => form.LicensePlate" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label">Chassi</label><InputText class="rp-input" @bind-Value="form.ChassisNumber" /><ValidationMessage For="() => form.ChassisNumber" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label">Ano de fabricação</label><InputNumber class="rp-input rp-input--num" @bind-Value="form.ManufactureYear" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label">Marca do guindaste</label><InputText class="rp-input" @bind-Value="form.CraneBrand" /><ValidationMessage For="() => form.CraneBrand" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label">Modelo do guindaste</label><InputText class="rp-input" @bind-Value="form.CraneModel" /><ValidationMessage For="() => form.CraneModel" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label">Capacidade nominal (t)</label><InputNumber class="rp-input rp-input--num" @bind-Value="form.NominalCapacity" /></div>
+            </div>
+            <div class="rp-form-actions"><button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">Cadastrar equipamento</button></div>
+        </EditForm>
+    </RpCard>
+    <RpCard Title="Equipamentos cadastrados">
+        <div class="rp-table-wrap"><table class="rp-table"><thead><tr><th>Guindaste</th><th>Caminhão</th><th>Placa</th><th>Chassi</th><th>Status</th><th></th></tr></thead><tbody>
+            @foreach (var equipment in equipments)
+            {
+                <tr><td>@equipment.CraneBrand @equipment.CraneModel</td><td>@equipment.TruckModel</td><td>@equipment.LicensePlate</td><td>@equipment.ChassisNumber</td><td><span class="rp-badge @(equipment.IsActive ? "rp-badge--success" : "rp-badge--warning")">@(equipment.IsActive ? "Ativo" : "Inativo")</span></td><td><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(equipment)">@(equipment.IsActive ? "Inativar" : "Ativar")</button></td></tr>
+            }
+        </tbody></table></div>
+    </RpCard>
+</div>
+
+@code {
+    private List<Equipment> equipments = [];
+    private EquipmentForm form = new();
+    private string? message;
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        equipments = await db.Equipments.AsNoTracking().OrderBy(x => x.CraneModel).ToListAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        isSaving = true;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        db.Equipments.Add(new Equipment
+        {
+            Id = Guid.NewGuid(), EquipmentType = form.EquipmentType.Trim(), TruckModel = form.TruckModel.Trim(),
+            LicensePlate = form.LicensePlate.Trim().ToUpperInvariant(), ChassisNumber = form.ChassisNumber.Trim(),
+            ManufactureYear = form.ManufactureYear, CraneBrand = form.CraneBrand.Trim(), CraneModel = form.CraneModel.Trim(),
+            NominalCapacity = form.NominalCapacity, IsActive = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now
+        });
+        await db.SaveChangesAsync();
+        form = new();
+        message = "Equipamento cadastrado com sucesso.";
+        isSaving = false;
+        await LoadAsync();
+    }
+
+    private async Task ToggleStatusAsync(Equipment equipment)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var stored = await db.Equipments.FindAsync(equipment.Id);
+        if (stored is null) return;
+        stored.IsActive = !stored.IsActive;
+        stored.UpdatedAt = DateTime.Now;
+        await db.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private sealed class EquipmentForm
+    {
+        public string EquipmentType { get; set; } = "munck";
+        [Required(ErrorMessage = "Informe o caminhão.")] public string TruckModel { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Informe a placa.")] public string LicensePlate { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Informe o chassi.")] public string ChassisNumber { get; set; } = string.Empty;
+        public int? ManufactureYear { get; set; }
+        [Required(ErrorMessage = "Informe a marca.")] public string CraneBrand { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Informe o modelo.")] public string CraneModel { get; set; } = string.Empty;
+        public decimal? NominalCapacity { get; set; }
+    }
+}
