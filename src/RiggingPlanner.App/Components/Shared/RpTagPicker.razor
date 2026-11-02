@@ -1,0 +1,137 @@
+@typeparam TItem
+@inject IJSRuntime JS
+
+<div class="rp-tag-picker">
+    @if (SelectedItem is not null)
+    {
+        <span class="rp-tag rp-tag-picker__selected" style="@SelectedStyle?.Invoke(SelectedItem)">
+            @ItemText(SelectedItem)
+            <button type="button" class="rp-tag__remove" aria-label="Remover seleção" @onclick="RemoveAsync">×</button>
+        </span>
+    }
+    else
+    {
+        <input id="@InputId" @ref="inputElement" class="rp-input" placeholder="@Placeholder"
+               value="@InputValue" @oninput="HandleInputAsync" @onkeydown="HandleKeyDownAsync"
+               autocomplete="off" />
+        @if (Suggestions.Count > 0 || (CanCreate && !string.IsNullOrWhiteSpace(InputValue)))
+        {
+            <div class="rp-autocomplete">
+                @foreach (var item in Suggestions.Select((item, index) => (item, index)))
+                {
+                    <button type="button" class="rp-autocomplete__item @(highlightedIndex == item.index ? "rp-autocomplete__item--active" : string.Empty)"
+                            @onclick="() => SelectAsync(item.item)">
+                        @if (ItemStyle is not null)
+                        {
+                            <span class="rp-tag" style="@ItemStyle(item.item)">@ItemText(item.item)</span>
+                        }
+                        else
+                        {
+                            @ItemText(item.item)
+                        }
+                    </button>
+                }
+                @if (CanCreate && !string.IsNullOrWhiteSpace(InputValue))
+                {
+                    <button type="button" class="rp-autocomplete__item rp-autocomplete__create @(highlightedIndex == Suggestions.Count ? "rp-autocomplete__item--active" : string.Empty)"
+                            @onclick="CreateAsync">
+                        @CreateLabel
+                    </button>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public string InputId { get; set; } = string.Empty;
+    [Parameter] public string Placeholder { get; set; } = "Selecionar ou criar";
+    [Parameter] public string InputValue { get; set; } = string.Empty;
+    [Parameter] public IReadOnlyList<TItem> Suggestions { get; set; } = [];
+    [Parameter] public TItem? SelectedItem { get; set; }
+    [Parameter] public Func<TItem, string> ItemText { get; set; } = item => item?.ToString() ?? string.Empty;
+    [Parameter] public Func<TItem, string>? SelectedStyle { get; set; }
+    [Parameter] public Func<TItem, string>? ItemStyle { get; set; }
+    [Parameter] public bool CanCreate { get; set; }
+    [Parameter] public string CreateLabel { get; set; } = string.Empty;
+    [Parameter] public EventCallback<ChangeEventArgs> OnInput { get; set; }
+    [Parameter] public EventCallback<KeyboardEventArgs> OnKeyDown { get; set; }
+    [Parameter] public EventCallback<TItem> OnSelect { get; set; }
+    [Parameter] public EventCallback OnCreate { get; set; }
+    [Parameter] public EventCallback OnRemove { get; set; }
+
+    private ElementReference inputElement;
+    private int highlightedIndex = -1;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (SelectedItem is null)
+        {
+            await JS.InvokeVoidAsync("riggingPlanner.preventTagSubmit", inputElement);
+        }
+    }
+
+    private async Task HandleInputAsync(ChangeEventArgs args)
+    {
+        highlightedIndex = -1;
+        await OnInput.InvokeAsync(args);
+    }
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        var optionCount = Suggestions.Count + (CanCreate && !string.IsNullOrWhiteSpace(InputValue) ? 1 : 0);
+        if (args.Key == "ArrowDown" && optionCount > 0)
+        {
+            highlightedIndex = highlightedIndex >= optionCount - 1 ? 0 : highlightedIndex + 1;
+            return;
+        }
+
+        if (args.Key == "ArrowUp" && optionCount > 0)
+        {
+            highlightedIndex = highlightedIndex <= 0 ? optionCount - 1 : highlightedIndex - 1;
+            return;
+        }
+
+        if (args.Key != "Enter") return;
+
+        if (highlightedIndex >= 0 && highlightedIndex < Suggestions.Count)
+        {
+            await SelectAsync(Suggestions[highlightedIndex]);
+        }
+        else if (highlightedIndex == Suggestions.Count && CanCreate && optionCount > Suggestions.Count)
+        {
+            await CreateAsync();
+        }
+        else if (optionCount == 1)
+        {
+            if (Suggestions.Count == 1)
+            {
+                await SelectAsync(Suggestions[0]);
+            }
+            else
+            {
+                await CreateAsync();
+            }
+        }
+
+        await OnKeyDown.InvokeAsync(args);
+    }
+
+    private async Task SelectAsync(TItem item)
+    {
+        highlightedIndex = -1;
+        await OnSelect.InvokeAsync(item);
+    }
+
+    private async Task CreateAsync()
+    {
+        highlightedIndex = -1;
+        await OnCreate.InvokeAsync();
+    }
+
+    private async Task RemoveAsync()
+    {
+        highlightedIndex = -1;
+        await OnRemove.InvokeAsync();
+    }
+}

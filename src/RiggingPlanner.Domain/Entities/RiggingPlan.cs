@@ -45,6 +45,7 @@ public sealed class RiggingPlan
     public Guid? RiggerId { get; set; }
     public string? RiggerName { get; set; }
     public string? RiggerRpp { get; set; }
+    public string? RiggerCrea { get; set; }
     public string? SupervisorName { get; set; }
     public string? ArtNumber { get; set; }
     public Guid? ArtFileId { get; set; }
