@@ -33,27 +33,21 @@
             }
         </tbody></table></div>
     </RpCard>
-    <RpCard Title="Equipamentos inativos">
-        @if (message is not null) { <div class="rp-alert rp-alert--danger">@message</div> }
-        <p class="rp-muted">Equipamentos inativos não podem ser selecionados em novos planos.</p>
-        @if (inactiveEquipments.Count == 0)
-        {
-            <p class="rp-muted">Nenhum equipamento inativo.</p>
-        }
-        else
-        {
-        <div class="rp-table-wrap rp-table-wrap--muted"><table class="rp-table"><thead><tr><th>Guindaste</th><th>Caminhão</th><th>Placa</th><th>Chassi</th><th></th></tr></thead><tbody>
-            @foreach (var equipment in inactiveEquipments)
-            {
+    @if (message is not null) { <div class="rp-alert rp-alert--danger">@message</div> }
+    <RpInactiveSection TItem="Equipment"
+                       Title="Equipamentos inativos"
+                       Description="Equipamentos inativos não podem ser selecionados em novos planos."
+                       EmptyText="Nenhum equipamento inativo."
+                       Items="inactiveEquipments">
+        <HeaderTemplate><th>Guindaste</th><th>Caminhão</th><th>Placa</th><th>Chassi</th><th></th></HeaderTemplate>
+        <RowTemplate Context="equipment">
                 <tr class="rp-row--inactive"><td>@equipment.CraneBrand @equipment.CraneModel</td><td>@equipment.TruckModel</td><td>@equipment.LicensePlate</td><td>@equipment.ChassisNumber</td><td class="rp-row-actions"><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(equipment)">Reativar</button> <button class="rp-btn rp-btn--danger-outline rp-btn--sm" disabled="@(deleteId == equipment.Id)" @onclick="() => AskDelete(equipment)">Excluir definitivamente</button></td></tr>
                 @if (deleteId == equipment.Id)
                 {
                     <tr class="rp-row--inactive"><td colspan="5"><div class="rp-alert rp-alert--danger rp-confirm"><span>Você está prestes a excluir este equipamento permanentemente. Essa informação não poderá ser recuperada. Planos já finalizados continuam preservando os dados históricos; planos em andamento impedem a exclusão.</span><button class="rp-btn rp-btn--danger rp-btn--sm" @onclick="DeleteAsync">Excluir definitivamente</button><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="CancelDelete">Cancelar</button></div></td></tr>
-                }
             }
-        </tbody></table></div>
-        }
-    </RpCard>
+        </RowTemplate>
+    </RpInactiveSection>
 </div>
 
 @code {

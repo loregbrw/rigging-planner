@@ -92,17 +92,13 @@
             </tbody></table></div>
         }
     </RpCard>
-    <RpCard Title="Acessórios inativos">
-        <p class="rp-muted">Acessórios inativos não podem ser editados nem adicionados a novos planos.</p>
-        @if (inactiveAccessories.Count == 0)
-        {
-            <p class="rp-muted">Nenhum acessório inativo.</p>
-        }
-        else
-        {
-            <div class="rp-table-wrap rp-table-wrap--muted"><table class="rp-table"><thead><tr><th>Nome</th><th>Tag</th><th class="rp-num">Peso unitário</th><th></th></tr></thead><tbody>
-                @foreach (var accessory in inactiveAccessories)
-                {
+    <RpInactiveSection TItem="Accessory"
+                       Title="Acessórios inativos"
+                       Description="Acessórios inativos não podem ser editados nem adicionados a novos planos."
+                       EmptyText="Nenhum acessório inativo."
+                       Items="inactiveAccessories">
+        <HeaderTemplate><th>Nome</th><th>Tag</th><th class="rp-num">Peso unitário</th><th></th></HeaderTemplate>
+        <RowTemplate Context="accessory">
                     <tr class="rp-row--inactive">
                         <td>@accessory.Name</td>
                         <td>@if (accessory.Tag is not null) { <span class="rp-tag" style="@TagStyle(accessory.Tag.Name)">@accessory.Tag.Name</span> }</td>
@@ -113,10 +109,8 @@
                     {
                         <tr class="rp-row--inactive"><td colspan="4"><div class="rp-alert rp-alert--danger rp-confirm"><span>Você está prestes a excluir este acessório permanentemente. Essa informação não poderá ser recuperada. Planos já finalizados continuam preservando a descrição e o peso usados; planos em andamento impedem a exclusão.</span><button class="rp-btn rp-btn--danger rp-btn--sm" @onclick="DeleteAsync">Excluir definitivamente</button><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="CancelDelete">Cancelar</button></div></td></tr>
                     }
-                }
-            </tbody></table></div>
-        }
-    </RpCard>
+        </RowTemplate>
+    </RpInactiveSection>
 </div>
 
 @if (showTagManager)

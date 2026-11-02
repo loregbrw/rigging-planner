@@ -1,0 +1,32 @@
+@typeparam TItem
+
+<RpCard Title="@Title">
+    <p class="rp-muted">@Description</p>
+    @if (Items.Count == 0)
+    {
+        <p class="rp-muted">@EmptyText</p>
+    }
+    else
+    {
+        <div class="rp-table-wrap rp-table-wrap--muted">
+            <table class="rp-table">
+                <thead><tr>@HeaderTemplate</tr></thead>
+                <tbody>
+                    @foreach (var item in Items)
+                    {
+                        @RowTemplate!(item)
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</RpCard>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Description { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string EmptyText { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public IReadOnlyList<TItem> Items { get; set; } = [];
+    [Parameter, EditorRequired] public RenderFragment? HeaderTemplate { get; set; }
+    [Parameter, EditorRequired] public RenderFragment<TItem>? RowTemplate { get; set; }
+}
