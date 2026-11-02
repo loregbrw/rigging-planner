@@ -62,18 +62,44 @@
 - [x] Ciclo de vida de cadastros: ativos separados de inativos, reativação e exclusão definitiva protegida por vínculos
 - [x] Finalização de planos com bloqueio de edição e snapshot histórico do rigger, incluindo CREA
 
-## Próximas etapas (previstas — ordem a confirmar)
+## Estado atual
 
-| # | Etapa | Observação |
+### Implementado na aplicação
+- [x] Lista de planos não excluídos, criação e edição de planos em rascunho
+- [x] Numeração automática no formato AAMMNNN, reiniciada por mês da data do plano
+- [x] Cadastro e seleção de equipamentos ativos, com cópia dos dados para o plano
+- [x] Cadastro e seleção de riggers ativos, com cópia de nome, RPP e CREA para o plano
+- [x] Cadastro de acessórios com nome, peso unitário e uma tag opcional
+- [x] Tags normalizadas, autocomplete com criação, seleção por teclado, chips coloridos e administração
+- [x] Pesquisa automática de acessórios por nome ou tag e filtro por tag
+- [x] Tela de capacidade com acessórios cadastrados ou itens avulsos, quantidade, peso unitário e seções de lingada/dispositivo
+- [x] Totais de itens, carga bruta, conversão kg/t e taxa de utilização calculados na exibição
+- [x] Campos decimais com entrada pt-BR por meio de `RpDecimalInput`
+- [x] Finalização de plano com confirmação e bloqueio de edição
+- [x] Separação visual de ativos/inativos, reativação e exclusão definitiva protegida para riggers, equipamentos e acessórios
+- [x] Confirmações de exclusão posicionadas junto ao registro selecionado, inclusive no administrador de tags
+
+### Modelado, mas ainda sem fluxo completo na interface
+- [ ] Clientes como cadastro independente
+- [ ] Pastas de um nível
+- [ ] Laudos de equipamento e seus arquivos
+- [ ] Arquivos armazenados, desenhos anexados e ART do plano
+- [ ] Histórico de exportações
+- [ ] Lixeira e exclusão definitiva de planos
+
+### Próximas etapas
+
+| # | Etapa | Situação atual |
 |---|---|---|
-| 3 | Planos e pastas | Lista de planos, pastas de um nível, criar/abrir/duplicar |
-| 4 | Dados de entrada | Cliente, guindaste, carga, planejador |
-| 5 | Cadastro de acessórios | Histórico, alertas de desgaste/descarte |
-| 6 | Capacidade de carga | Interface tipo planilha, reaproveitando os dados |
-| 7 | Anexos | Imagens do SolidWorks, PDF da ART, PDF do laudo |
-| 8 | Preview | Visualização do plano antes de finalizar |
-| 9 | Exportação em PDF | Gerar páginas + juntar desenhos, ART e laudo |
-| 10 | Instalador | App instalável, pronto para abrir |
+| 1 | Cadastro independente de clientes | A entidade existe; a UI atual digita cliente e CNPJ diretamente no plano |
+| 2 | Pastas e organização | Entidade prevista; sem tela ou operações |
+| 3 | Laudos e anexos | Entidades previstas; sem cadastro, seleção ou armazenamento operacional |
+| 4 | Preview | Ainda não implementado |
+| 5 | Exportação em PDF | Ainda não implementada |
+| 6 | Lixeira de planos | Ainda não implementada |
+| 7 | Instalador | Ainda não validado/entregue |
+
+O histórico de eventos, alertas de desgaste de acessórios e interpolação de capacidade permanecem fora da implementação atual; interpolação e backup local continuam fora do escopo definido.
 
 ## Fora do escopo por enquanto
 Interpolação de capacidade, backup do banco, exportação em DOCX.
