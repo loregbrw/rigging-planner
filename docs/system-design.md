@@ -217,17 +217,17 @@ Regras:
     --rp-sidebar-active:  rgba(255,255,255,.16);
 
     /* ── Tipografia ────────────────────────────────────────────── */
-    --rp-font-ui:    "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-    --rp-font-brand: "Michroma", "Inter", "Segoe UI", sans-serif;   /* só marca/título de página, opcional */
+    --rp-font-ui:    "Fredoka", "Segoe UI", system-ui, sans-serif;
+    --rp-font-brand: "Fredoka", "Segoe UI", system-ui, sans-serif;
     --rp-font-mono:  "Cascadia Mono", Consolas, ui-monospace, monospace;
 
-    --rp-text-xs:  .75rem;     /* 12 */
-    --rp-text-sm:  .8125rem;   /* 13 – tabelas, rótulos */
-    --rp-text-md:  .875rem;    /* 14 – corpo padrão */
-    --rp-text-lg:  1rem;       /* 16 */
-    --rp-text-xl:  1.125rem;   /* 18 */
-    --rp-text-2xl: 1.375rem;   /* 22 – título de página */
-    --rp-text-3xl: 1.75rem;    /* 28 */
+    --rp-text-xs:  .8125rem;   /* 13 */
+    --rp-text-sm:  .875rem;     /* 14 – tabelas, rótulos */
+    --rp-text-md:  1rem;        /* 16 – corpo padrão */
+    --rp-text-lg:  1.125rem;    /* 18 */
+    --rp-text-xl:  1.25rem;     /* 20 */
+    --rp-text-2xl: 1.5rem;      /* 24 – título de página */
+    --rp-text-3xl: 1.875rem;    /* 30 */
 
     --rp-weight-regular: 400;
     --rp-weight-medium:  500;

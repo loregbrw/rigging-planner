@@ -1,4 +1,8 @@
 @page "/new-plan"
+@page "/new-plan/{PlanId:guid}"
+@using System.ComponentModel.DataAnnotations
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
 
 <RpPageHeader Title="Novo plano" Subtitle="Preencha os dados sem perder informações entre as etapas" />
 
@@ -6,10 +10,259 @@
     <RpStepper Steps="steps" Current="0" />
 
     <RpCard Title="Dados de entrada">
-        <p class="rp-muted">Esta etapa será implementada nos próximos commits.</p>
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="rp-alert rp-alert--danger">@errorMessage</div>
+        }
+
+        <EditForm Model="form" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <div class="rp-form-grid">
+                <div class="rp-field rp-col-6">
+                    <label class="rp-label" for="operation">Nome da operação</label>
+                    <InputText id="operation" class="rp-input" @bind-Value="form.OperationName" />
+                    <ValidationMessage For="() => form.OperationName" />
+                </div>
+                <div class="rp-field rp-col-6">
+                    <label class="rp-label" for="location">Local</label>
+                    <InputText id="location" class="rp-input" @bind-Value="form.Location" />
+                    <ValidationMessage For="() => form.Location" />
+                </div>
+                <div class="rp-field rp-col-4">
+                    <label class="rp-label" for="plan-date">Data do plano</label>
+                    <InputDate id="plan-date" class="rp-input" @bind-Value="form.PlanDate" />
+                </div>
+                <div class="rp-field rp-col-8">
+                    <label class="rp-label" for="client">Cliente</label>
+                    <InputText id="client" class="rp-input" @bind-Value="form.ClientName" />
+                </div>
+                <div class="rp-field rp-col-6">
+                    <label class="rp-label" for="cnpj">CNPJ do cliente</label>
+                    <InputText id="cnpj" class="rp-input" @bind-Value="form.ClientCnpj" />
+                </div>
+                <div class="rp-field rp-col-6">
+                    <label class="rp-label" for="load">Descrição da carga</label>
+                    <InputText id="load" class="rp-input" @bind-Value="form.LoadDescription" />
+                    <ValidationMessage For="() => form.LoadDescription" />
+                </div>
+                <div class="rp-field rp-col-6">
+                    <label class="rp-label" for="equipment">Guindaste / equipamento</label>
+                    <InputSelect id="equipment" class="rp-select" @bind-Value="form.EquipmentId">
+                        <option value="">Selecione um equipamento</option>
+                        @foreach (var equipment in equipmentOptions)
+                        {
+                            <option value="@equipment.Id">@equipment.CraneBrand @equipment.CraneModel — @equipment.LicensePlate</option>
+                        }
+                    </InputSelect>
+                    <a class="rp-inline-link" href="equipments">Cadastrar equipamento</a>
+                </div>
+                <div class="rp-field rp-col-6">
+                    <label class="rp-label" for="rigger">Rigger responsável</label>
+                    <InputSelect id="rigger" class="rp-select" @bind-Value="form.RiggerId">
+                        <option value="">Selecione um rigger</option>
+                        @foreach (var rigger in riggerOptions)
+                        {
+                            <option value="@rigger.Id">@rigger.DisplayName — RPP @rigger.RppNumber</option>
+                        }
+                    </InputSelect>
+                    <a class="rp-inline-link" href="riggers">Cadastrar rigger</a>
+                </div>
+                <div class="rp-field rp-col-4">
+                    <label class="rp-label" for="weight">Peso da carga (kg)</label>
+                    <InputNumber id="weight" class="rp-input rp-input--num" @bind-Value="form.WeightKg" />
+                </div>
+                <div class="rp-field rp-col-4">
+                    <label class="rp-label" for="length">Comprimento (m)</label>
+                    <InputNumber id="length" class="rp-input rp-input--num" @bind-Value="form.LengthM" />
+                </div>
+                <div class="rp-field rp-col-4">
+                    <label class="rp-label" for="width">Largura (m)</label>
+                    <InputNumber id="width" class="rp-input rp-input--num" @bind-Value="form.WidthM" />
+                </div>
+                <div class="rp-field rp-col-12">
+                    <label class="rp-label" for="observations">Observações</label>
+                    <InputTextArea id="observations" class="rp-textarea" @bind-Value="form.Observations" />
+                </div>
+            </div>
+            <div class="rp-form-actions">
+                <a class="rp-btn rp-btn--ghost" href="">Cancelar</a>
+                <button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">Salvar plano</button>
+            </div>
+        </EditForm>
     </RpCard>
 </div>
 
 @code {
     private readonly string[] steps = ["Dados de entrada", "Capacidade", "Anexos", "Preview", "Exportação"];
+    [Parameter] public Guid? PlanId { get; set; }
+    private readonly PlanForm form = new();
+    private List<Equipment> equipmentOptions = [];
+    private List<Rigger> riggerOptions = [];
+    private bool isSaving;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        equipmentOptions = await db.Equipments.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.CraneModel).ToListAsync();
+        riggerOptions = await db.Riggers.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.DisplayName).ToListAsync();
+        if (PlanId is null) return;
+
+        var plan = await db.RiggingPlans.AsNoTracking().SingleOrDefaultAsync(x => x.Id == PlanId);
+        if (plan is null)
+        {
+            errorMessage = "Plano não encontrado.";
+            return;
+        }
+
+        form.OperationName = plan.OperationName;
+        form.Location = plan.Location;
+        form.PlanDate = plan.PlanDate;
+        form.ClientName = plan.ClientName;
+        form.ClientCnpj = plan.ClientCnpj;
+        form.LoadDescription = plan.LoadDescription;
+        form.WeightKg = plan.WeightKg;
+        form.LengthM = plan.LengthM;
+        form.WidthM = plan.WidthM;
+        form.Observations = plan.Observations;
+        form.EquipmentId = plan.EquipmentId;
+        form.RiggerId = plan.RiggerId;
+    }
+
+    private async Task SaveAsync()
+    {
+        isSaving = true;
+        errorMessage = null;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            await using var transaction = await db.Database.BeginTransactionAsync();
+
+            if (PlanId is not null)
+            {
+                var existingPlan = await db.RiggingPlans.SingleOrDefaultAsync(x => x.Id == PlanId);
+                if (existingPlan is null)
+                {
+                    errorMessage = "Plano não encontrado.";
+                    return;
+                }
+
+                existingPlan.PlanDate = form.PlanDate;
+                existingPlan.Location = form.Location.Trim();
+                existingPlan.OperationName = form.OperationName.Trim();
+                existingPlan.ClientName = form.ClientName?.Trim();
+                existingPlan.ClientCnpj = form.ClientCnpj?.Trim();
+                existingPlan.LoadDescription = form.LoadDescription.Trim();
+                existingPlan.LengthM = form.LengthM;
+                existingPlan.WidthM = form.WidthM;
+                existingPlan.WeightKg = form.WeightKg;
+                existingPlan.Observations = string.IsNullOrWhiteSpace(form.Observations) ? null : form.Observations.Trim();
+                existingPlan.EquipmentId = form.EquipmentId;
+                existingPlan.RiggerId = form.RiggerId;
+                ApplyReferences(existingPlan, equipmentOptions, riggerOptions);
+                existingPlan.UpdatedAt = DateTime.Now;
+                await db.SaveChangesAsync();
+                await transaction.CommitAsync();
+                Navigation.NavigateTo("/");
+                return;
+            }
+
+            Client? client = null;
+
+            if (!string.IsNullOrWhiteSpace(form.ClientName))
+            {
+                client = string.IsNullOrWhiteSpace(form.ClientCnpj)
+                    ? null
+                    : await db.Clients.FirstOrDefaultAsync(x => x.Cnpj == form.ClientCnpj);
+                if (client is null)
+                {
+                    client = new Client
+                    {
+                        Id = Guid.NewGuid(), Name = form.ClientName.Trim(),
+                        Cnpj = string.IsNullOrWhiteSpace(form.ClientCnpj) ? null : form.ClientCnpj.Trim(),
+                        CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now
+                    };
+                    db.Clients.Add(client);
+                }
+            }
+
+            var yearMonth = form.PlanDate.ToString("yyMM");
+            var counter = await db.PlanNumberCounters.SingleOrDefaultAsync(x => x.YearMonth == yearMonth);
+            if (counter is null)
+            {
+                counter = new PlanNumberCounter { YearMonth = yearMonth, LastSequence = 0 };
+                db.PlanNumberCounters.Add(counter);
+            }
+            counter.LastSequence++;
+
+            var newPlan = new RiggingPlan
+            {
+                Id = Guid.NewGuid(), PlanNumber = $"{yearMonth}{counter.LastSequence:000}",
+                PlanDate = form.PlanDate, Location = form.Location.Trim(),
+                OperationName = form.OperationName.Trim(), Client = client,
+                ClientName = client?.Name ?? form.ClientName?.Trim(),
+                ClientCnpj = client?.Cnpj ?? form.ClientCnpj?.Trim(),
+                LoadDescription = form.LoadDescription.Trim(), LengthM = form.LengthM,
+                WidthM = form.WidthM, WeightKg = form.WeightKg,
+                EquipmentId = form.EquipmentId, RiggerId = form.RiggerId,
+                Observations = string.IsNullOrWhiteSpace(form.Observations) ? null : form.Observations.Trim(),
+                CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now
+            };
+            ApplyReferences(newPlan, equipmentOptions, riggerOptions);
+            db.RiggingPlans.Add(newPlan);
+
+            await db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            Navigation.NavigateTo("/");
+        }
+
+        catch (Exception exception)
+        {
+            errorMessage = $"Não foi possível salvar o plano: {exception.Message}";
+        }
+        finally { isSaving = false; }
+    }
+
+    private static void ApplyReferences(RiggingPlan plan, IReadOnlyCollection<Equipment> equipmentOptions, IReadOnlyCollection<Rigger> riggerOptions)
+    {
+        var equipment = plan.EquipmentId is null ? null : equipmentOptions.FirstOrDefault(x => x.Id == plan.EquipmentId);
+        if (equipment is not null)
+        {
+            plan.EquipmentId = equipment.Id;
+            plan.TruckModel = equipment.TruckModel;
+            plan.LicensePlate = equipment.LicensePlate;
+            plan.ChassisNumber = equipment.ChassisNumber;
+            plan.ManufactureYear = equipment.ManufactureYear;
+            plan.CraneBrand = equipment.CraneBrand;
+            plan.CraneModel = equipment.CraneModel;
+            plan.CraneNominalCapacity = equipment.NominalCapacity;
+        }
+
+        var rigger = plan.RiggerId is null ? null : riggerOptions.FirstOrDefault(x => x.Id == plan.RiggerId);
+        if (rigger is not null)
+        {
+            plan.RiggerId = rigger.Id;
+            plan.RiggerName = rigger.DisplayName;
+            plan.RiggerRpp = rigger.RppNumber;
+        }
+    }
+
+    private sealed class PlanForm
+    {
+        [Required(ErrorMessage = "Informe o nome da operação.")]
+        public string OperationName { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Informe o local.")]
+        public string Location { get; set; } = string.Empty;
+        public DateTime PlanDate { get; set; } = DateTime.Today;
+        public string? ClientName { get; set; }
+        public string? ClientCnpj { get; set; }
+        [Required(ErrorMessage = "Informe a descrição da carga.")]
+        public string LoadDescription { get; set; } = string.Empty;
+        public decimal? WeightKg { get; set; }
+        public decimal? LengthM { get; set; }
+        public decimal? WidthM { get; set; }
+        public string? Observations { get; set; }
+        public Guid? EquipmentId { get; set; }
+        public Guid? RiggerId { get; set; }
+    }
 }
