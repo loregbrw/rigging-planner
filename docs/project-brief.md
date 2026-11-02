@@ -125,6 +125,18 @@ Referência mental citada pelo engenheiro: o conceito de uma "macro" que, a part
 - Um aplicativo interativo de cálculo de capacidade em tempo real — projeto de **outra equipe de Jornada de Aprendizagem** (aparentemente liderada por alguém chamado Elton).
 - **Backup do banco de dados** — será feito eventualmente (backup local), mas não é prioridade agora.
 - **Exportação em `.docx`** — a saída é apenas PDF.
+
+### 8.1 Ciclo de vida dos cadastros e histórico
+
+Cadastros reutilizáveis, como riggers e acessórios, não devem ser apagados imediatamente quando deixam de ser usados. O fluxo padrão é:
+
+- **Ativo:** aparece nos cadastros e pode ser selecionado em novos planos; pode ser editado.
+- **Inativo:** fica separado dos ativos, com aparência esmaecida; não pode ser editado nem selecionado em novos planos. Pode ser reativado ou excluído definitivamente.
+- **Exclusão definitiva:** exige confirmação explícita. É bloqueada quando o cadastro está sendo usado por um plano em andamento. Se estiver ligado somente a planos finalizados, o cadastro pode ser removido, pois o plano mantém os dados copiados no momento da operação.
+
+Planos finalizados são somente leitura e preservam seu histórico mesmo que cadastros reutilizáveis sejam posteriormente excluídos. O plano mantém os valores necessários para reconstrução do documento, incluindo descrição e peso dos itens de acessórios e nome, RPP e CREA do rigger. A finalização registra `FinalizedAt`; planos em rascunho continuam editáveis.
+
+Esse fluxo diferencia **inativar** (remoção lógica e reversível) de **excluir definitivamente** (remoção física protegida por verificação de vínculos). Tags podem ser excluídas com desvinculação dos acessórios, sem alterar o histórico dos planos.
 - Usuários, perfis de acesso, autenticação, fluxo de aprovação e compartilhamento em rede/internet — o sistema é local e de uso individual (Seção 11).
 
 ## 9. Respostas da Empresa — Levantamento de Requisitos

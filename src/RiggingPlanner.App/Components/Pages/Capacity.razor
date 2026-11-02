@@ -20,6 +20,8 @@ else
     <div class="rp-stack">
         @if (message is not null) { <div class="rp-alert rp-alert--success">@message</div> }
         @if (errorMessage is not null) { <div class="rp-alert rp-alert--danger">@errorMessage</div> }
+        @if (isReadOnly) { <div class="rp-alert rp-alert--info">Este plano foi finalizado e está somente para leitura.</div> }
+        <fieldset disabled="@isReadOnly" class="rp-readonly-fields">
         <RpCard Title="@($"Plano {plan.PlanNumber} — {plan.LoadDescription}")">
             <div class="rp-form-grid">
                 <div class="rp-field rp-col-4"><label class="rp-label">Comprimento da lança (m)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.BoomLengthM" /></div>
@@ -67,6 +69,7 @@ else
                 <div class="rp-summary-grid__total"><span>Utilização do guindaste</span><strong>@(utilization?.ToString("N1") ?? "-")%</strong></div>
             </div>
         </RpCard>
+        </fieldset>
     </div>
 }
 
@@ -80,6 +83,7 @@ else
     private string accessorySearch = string.Empty;
     private bool isLoading = true;
     private bool isSaving;
+    private bool isReadOnly;
     private string? message;
     private string? errorMessage;
     private decimal lingadaTotal => items.Where(x => x.Section == "lingada").Sum(x => x.Quantity * x.UnitWeightKg);
@@ -92,6 +96,7 @@ else
     {
         await using var db = await DbFactory.CreateDbContextAsync();
         plan = await db.RiggingPlans.SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+        isReadOnly = plan?.Status == "finalized";
         accessories = await db.Accessories.AsNoTracking().Include(x => x.Tag).Where(x => x.Status == "active").OrderBy(x => x.Name).ToListAsync();
         filteredAccessories = accessories;
         if (plan is not null) items = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
@@ -100,7 +105,7 @@ else
 
     private async Task SavePlanAsync()
     {
-        if (plan is null) return;
+        if (plan is null || isReadOnly) return;
         isSaving = true;
         await using var db = await DbFactory.CreateDbContextAsync();
         db.RiggingPlans.Update(plan);
@@ -112,7 +117,7 @@ else
 
     private async Task AddItemAsync()
     {
-        if (plan is null || itemForm.Quantity is not > 0) { errorMessage = "Informe uma quantidade maior que zero."; return; }
+        if (plan is null || isReadOnly || itemForm.Quantity is not > 0) { errorMessage = "Informe uma quantidade maior que zero."; return; }
         var accessory = itemForm.AccessoryId is null ? null : accessories.FirstOrDefault(x => x.Id == itemForm.AccessoryId);
         if (accessory is null && string.IsNullOrWhiteSpace(itemForm.Description)) { errorMessage = "Selecione um acessório ou informe a descrição."; return; }
         await using var db = await DbFactory.CreateDbContextAsync();
@@ -161,6 +166,7 @@ else
 
     private async Task RemoveItemAsync(Guid id)
     {
+        if (isReadOnly) return;
         await using var db = await DbFactory.CreateDbContextAsync();
         var item = await db.PlanAccessories.FindAsync(id);
         if (item is null) return;

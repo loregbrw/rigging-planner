@@ -128,6 +128,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(x => x.QuadrantEnd).HasMaxLength(100);
             entity.Property(x => x.RiggerName).HasMaxLength(200);
             entity.Property(x => x.RiggerRpp).HasMaxLength(50);
+            entity.Property(x => x.RiggerCrea).HasMaxLength(50);
             entity.Property(x => x.SupervisorName).HasMaxLength(200);
             entity.Property(x => x.ArtNumber).HasMaxLength(50);
             entity.Property(x => x.Observations).HasMaxLength(4000);

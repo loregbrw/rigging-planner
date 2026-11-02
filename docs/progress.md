@@ -59,6 +59,8 @@
 - [x] Persistência dos itens em `plan_accessories` e dos parâmetros digitados da configuração do guindaste
 - [x] Exibição dos totais de lingada, dispositivos, carga bruta em kg/t e taxa de utilização do guindaste
 - [x] Tags de acessórios normalizadas em tabela própria, com autocomplete, chips coloridos, uma tag por acessório e administração
+- [x] Ciclo de vida de cadastros: ativos separados de inativos, reativação e exclusão definitiva protegida por vínculos
+- [x] Finalização de planos com bloqueio de edição e snapshot histórico do rigger, incluindo CREA
 
 ## Próximas etapas (previstas — ordem a confirmar)
 

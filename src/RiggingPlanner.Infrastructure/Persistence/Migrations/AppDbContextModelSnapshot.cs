@@ -527,6 +527,10 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("RiggerCrea")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid?>("RiggerId")
                         .HasColumnType("TEXT");
 

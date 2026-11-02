@@ -4,12 +4,16 @@
 @inject IDbContextFactory<AppDbContext> DbFactory
 @inject NavigationManager Navigation
 
-<RpPageHeader Title="Novo plano" Subtitle="Preencha os dados sem perder informações entre as etapas" />
+<RpPageHeader Title="@(PlanId is null ? "Novo plano" : isReadOnly ? "Plano finalizado" : "Editar plano")" Subtitle="Preencha os dados sem perder informações entre as etapas" />
 
 <div class="rp-stack">
     <RpStepper Steps="steps" Current="0" />
 
     <RpCard Title="Dados de entrada">
+        @if (isReadOnly)
+        {
+            <div class="rp-alert rp-alert--info">Este plano foi finalizado e está somente para leitura.</div>
+        }
         @if (!string.IsNullOrWhiteSpace(errorMessage))
         {
             <div class="rp-alert rp-alert--danger">@errorMessage</div>
@@ -17,6 +21,7 @@
 
         <EditForm Model="form" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
+            <fieldset disabled="@isReadOnly" class="rp-readonly-fields">
             <div class="rp-form-grid">
                 <div class="rp-field rp-col-6">
                     <label class="rp-label" for="operation">Nome da operação</label>
@@ -86,8 +91,12 @@
             </div>
             <div class="rp-form-actions">
                 <a class="rp-btn rp-btn--ghost" href="">Cancelar</a>
-                <button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">Salvar plano</button>
+                @if (!isReadOnly)
+                {
+                    <button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">Salvar plano</button>
+                }
             </div>
+            </fieldset>
         </EditForm>
     </RpCard>
 </div>
@@ -99,6 +108,7 @@
     private List<Equipment> equipmentOptions = [];
     private List<Rigger> riggerOptions = [];
     private bool isSaving;
+    private bool isReadOnly;
     private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
@@ -113,6 +123,12 @@
         {
             errorMessage = "Plano não encontrado.";
             return;
+        }
+        isReadOnly = plan.Status == "finalized";
+        if (isReadOnly)
+        {
+            equipmentOptions = await db.Equipments.AsNoTracking().OrderBy(x => x.CraneModel).ToListAsync();
+            riggerOptions = await db.Riggers.AsNoTracking().OrderBy(x => x.DisplayName).ToListAsync();
         }
 
         form.OperationName = plan.OperationName;
@@ -131,6 +147,7 @@
 
     private async Task SaveAsync()
     {
+        if (isReadOnly) return;
         isSaving = true;
         errorMessage = null;
         try
@@ -244,6 +261,7 @@
             plan.RiggerId = rigger.Id;
             plan.RiggerName = rigger.DisplayName;
             plan.RiggerRpp = rigger.RppNumber;
+            plan.RiggerCrea = rigger.CreaNumber;
         }
     }
 

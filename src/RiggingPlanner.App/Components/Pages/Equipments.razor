@@ -25,28 +25,45 @@
             <div class="rp-form-actions"><button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">Cadastrar equipamento</button></div>
         </EditForm>
     </RpCard>
-    <RpCard Title="Equipamentos cadastrados">
+    <RpCard Title="Equipamentos ativos">
         <div class="rp-table-wrap"><table class="rp-table"><thead><tr><th>Guindaste</th><th>Caminhão</th><th>Placa</th><th>Chassi</th><th>Status</th><th></th></tr></thead><tbody>
-            @foreach (var equipment in equipments)
+            @foreach (var equipment in activeEquipments)
             {
-                <tr><td>@equipment.CraneBrand @equipment.CraneModel</td><td>@equipment.TruckModel</td><td>@equipment.LicensePlate</td><td>@equipment.ChassisNumber</td><td><span class="rp-badge @(equipment.IsActive ? "rp-badge--success" : "rp-badge--warning")">@(equipment.IsActive ? "Ativo" : "Inativo")</span></td><td><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(equipment)">@(equipment.IsActive ? "Inativar" : "Ativar")</button></td></tr>
+                <tr><td>@equipment.CraneBrand @equipment.CraneModel</td><td>@equipment.TruckModel</td><td>@equipment.LicensePlate</td><td>@equipment.ChassisNumber</td><td><span class="rp-badge rp-badge--success">Ativo</span></td><td><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(equipment)">Inativar</button></td></tr>
+            }
+        </tbody></table></div>
+    </RpCard>
+    <RpCard Title="Equipamentos inativos">
+        @if (message is not null) { <div class="rp-alert rp-alert--danger">@message</div> }
+        <p class="rp-muted">Equipamentos inativos não podem ser selecionados em novos planos.</p>
+        <div class="rp-table-wrap rp-table-wrap--muted"><table class="rp-table"><thead><tr><th>Guindaste</th><th>Caminhão</th><th>Placa</th><th>Chassi</th><th></th></tr></thead><tbody>
+            @foreach (var equipment in inactiveEquipments)
+            {
+                <tr class="rp-row--inactive"><td>@equipment.CraneBrand @equipment.CraneModel</td><td>@equipment.TruckModel</td><td>@equipment.LicensePlate</td><td>@equipment.ChassisNumber</td><td class="rp-row-actions"><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(equipment)">Reativar</button> <button class="rp-btn rp-btn--danger-outline rp-btn--sm" disabled="@(deleteId == equipment.Id)" @onclick="() => AskDelete(equipment)">Excluir definitivamente</button></td></tr>
+                @if (deleteId == equipment.Id)
+                {
+                    <tr class="rp-row--inactive"><td colspan="5"><div class="rp-alert rp-alert--danger rp-confirm"><span>Você está prestes a excluir este equipamento permanentemente. Essa informação não poderá ser recuperada. Planos já finalizados continuam preservando os dados históricos; planos em andamento impedem a exclusão.</span><button class="rp-btn rp-btn--danger rp-btn--sm" @onclick="DeleteAsync">Excluir definitivamente</button><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="CancelDelete">Cancelar</button></div></td></tr>
+                }
             }
         </tbody></table></div>
     </RpCard>
 </div>
 
 @code {
-    private List<Equipment> equipments = [];
+    private List<Equipment> activeEquipments = [];
+    private List<Equipment> inactiveEquipments = [];
     private EquipmentForm form = new();
-    private string? message;
     private bool isSaving;
+    private Guid? deleteId;
+    private string? message;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
     private async Task LoadAsync()
     {
         await using var db = await DbFactory.CreateDbContextAsync();
-        equipments = await db.Equipments.AsNoTracking().OrderBy(x => x.CraneModel).ToListAsync();
+        activeEquipments = await db.Equipments.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.CraneModel).ToListAsync();
+        inactiveEquipments = await db.Equipments.AsNoTracking().Where(x => !x.IsActive).OrderBy(x => x.CraneModel).ToListAsync();
     }
 
     private async Task SaveAsync()
@@ -75,6 +92,30 @@
         stored.IsActive = !stored.IsActive;
         stored.UpdatedAt = DateTime.Now;
         await db.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private void AskDelete(Equipment equipment) => deleteId = equipment.Id;
+    private void CancelDelete() => deleteId = null;
+
+    private async Task DeleteAsync()
+    {
+        if (deleteId is null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var equipment = await db.Equipments.FindAsync(deleteId.Value);
+        if (equipment is null) { CancelDelete(); return; }
+        var inProgressUse = await db.RiggingPlans.AnyAsync(x => x.EquipmentId == equipment.Id
+            && x.DeletedAt == null && x.Status != "finalized");
+        if (inProgressUse)
+        {
+            message = "Não é possível excluir: o equipamento está ligado a um plano em andamento.";
+            CancelDelete();
+            return;
+        }
+        db.Equipments.Remove(equipment);
+        await db.SaveChangesAsync();
+        message = null;
+        CancelDelete();
         await LoadAsync();
     }
 
