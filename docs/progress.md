@@ -4,6 +4,12 @@
 
 ## Etapas realizadas
 
+### Refatoração visual — Design system e componentes
+- [x] Tokens, reset, base, layout e componentes CSS separados em camadas `rp.*`
+- [x] Shell com sidebar azul-marinho, topbar glass sutil e conteúdo rolável
+- [x] Componentes Razor reutilizáveis para cards, botões, cabeçalhos e stepper
+- [x] Remoção do CSS legado clay, Bootstrap e fonte externa
+
 ### Commit 1 — Esqueleto do repositório
 - [x] Solution `RiggingPlanner.slnx` com projetos `Domain`, `Application`, `Infrastructure`, `App` e `Domain.Tests`
 - [x] Referências entre projetos (arquitetura limpa simples)
@@ -23,10 +29,18 @@
 - [x] `AddInfrastructure(databasePath)`: registra `IDbContextFactory<AppDbContext>` (um contexto curto por operação)
 - [x] Banco em `%LOCALAPPDATA%\RiggingPlanner\rigging-planner.db`, criado no primeiro uso
 - [x] Migrations aplicadas automaticamente ao abrir o app (`ApplyMigrations`)
-- [x] Migration inicial `InitialCreate` (vazia: as tabelas chegam junto das entidades)
+- [x] Migration inicial `InitialCreate` (estrutura inicial criada via EF)
 - [x] Ferramenta `dotnet-ef` como tool local do repositório (`.config/dotnet-tools.json`)
 - [x] Projeto `RiggingPlanner.Infrastructure.Tests` com teste que aplica as migrations em um banco temporário
 - [x] CI passa a rodar os testes da solution inteira
+
+### Commit 3 — Modelo persistente inicial
+- [x] Entidades EF para clientes, riggers, equipamentos, laudos, acessórios e histórico
+- [x] Entidades para arquivos, pastas, numeração mensal, planos, itens, desenhos e exportações
+- [x] Relacionamentos, índices únicos e regras de exclusão mapeados conforme o modelo da seção 11.4 do brief
+- [x] Campos copiados para o plano mantidos separados das referências aos cadastros
+- [x] Migration `InitialCreate` regenerada com as tabelas e índices do modelo inicial
+- [x] Teste de schema, migration e persistência de plano com cliente relacionado
 
 ## Próximas etapas (previstas — ordem a confirmar)
 

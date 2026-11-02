@@ -1,12 +1,14 @@
 @page "/new-plan"
 
-<h1 class="page-title">Novo plano</h1>
+<RpPageHeader Title="Novo plano" Subtitle="Preencha os dados sem perder informações entre as etapas" />
 
-<StepIndicator Steps="steps" Current="0" />
+<div class="rp-stack">
+    <RpStepper Steps="steps" Current="0" />
 
-<ClayCard Title="Dados de entrada">
-    <p class="muted">Esta etapa será implementada nos próximos commits.</p>
-</ClayCard>
+    <RpCard Title="Dados de entrada">
+        <p class="rp-muted">Esta etapa será implementada nos próximos commits.</p>
+    </RpCard>
+</div>
 
 @code {
     private readonly string[] steps = ["Dados de entrada", "Capacidade", "Anexos", "Preview", "Exportação"];
