@@ -1,0 +1,14 @@
+<Project>
+    <PropertyGroup>
+        <!-- Speed up incremental builds across SDK and Visual Studio / CLI -->
+        <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+
+        <!-- Prevent parasite artifacts, build drops and documentation from inflating project items -->
+        <DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**;**/artifacts/**;docs\**</DefaultItemExcludes>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Prevent dotnet watch from triggering rebuilds when docs, test files or artifacts are changed -->
+        <Watch Remove="docs\**;artifacts\**;*.md;**/*.md;tests\**" />
+    </ItemGroup>
+</Project>

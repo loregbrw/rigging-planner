@@ -22,6 +22,9 @@ public static class DependencyInjection
         var factory = services.GetRequiredService<IDbContextFactory<AppDbContext>>();
 
         using var context = factory.CreateDbContext();
-        context.Database.Migrate();
+        if (context.Database.GetPendingMigrations().Any())
+        {
+            context.Database.Migrate();
+        }
     }
 }
