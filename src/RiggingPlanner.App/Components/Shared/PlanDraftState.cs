@@ -21,6 +21,8 @@ public sealed class PlanDraftState
         Form.OperationName = string.Empty;
         Form.Location = string.Empty;
         Form.PlanDate = DateTime.Today;
+        Form.ArtNumber = string.Empty;
+        Form.SupervisorName = string.Empty;
         Form.ClientId = null;
         Form.ClientName = null;
         Form.ClientCnpj = string.Empty;
@@ -36,6 +38,7 @@ public sealed class PlanDraftState
         Form.EquipmentChassisNumber = string.Empty;
         Form.EquipmentLicensePlate = string.Empty;
         Form.EquipmentManufactureYear = null;
+        Form.EquipmentNominalCapacity = null;
         Form.IsNewEquipment = false;
         Form.RiggerId = null;
         Form.RiggerFullName = string.Empty;

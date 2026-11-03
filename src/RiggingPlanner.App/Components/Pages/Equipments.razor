@@ -20,6 +20,7 @@
                 <div class="rp-field rp-col-4"><label class="rp-label">Chassi <span class="rp-required-marker" aria-hidden="true">*</span></label><InputText class="rp-input" @bind-Value="form.ChassisNumber" /><ValidationMessage For="() => form.ChassisNumber" /></div>
                 <div class="rp-field rp-col-4"><label class="rp-label">Placas <span class="rp-required-marker" aria-hidden="true">*</span></label><InputText class="rp-input" @bind-Value="form.LicensePlate" /><ValidationMessage For="() => form.LicensePlate" /></div>
                 <div class="rp-field rp-col-4"><label class="rp-label">Ano de fabricação <span class="rp-required-marker" aria-hidden="true">*</span></label><InputNumber class="rp-input rp-input--num" step="1" inputmode="numeric" @bind-Value="form.ManufactureYear" /><ValidationMessage For="() => form.ManufactureYear" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label">Capacidade nominal (t) <span class="rp-required-marker" aria-hidden="true">*</span></label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="form.NominalCapacity" /><ValidationMessage For="() => form.NominalCapacity" /></div>
             </div>
             <RpEquipmentArtEditor Items="artItems" />
             <div class="rp-form-actions">
@@ -99,7 +100,7 @@
         stored.ManufactureYear = form.ManufactureYear;
         stored.CraneBrand = string.Empty;
         stored.CraneModel = form.CraneModel.Trim();
-        stored.NominalCapacity = null;
+        stored.NominalCapacity = form.NominalCapacity;
         stored.UpdatedAt = DateTime.Now;
         if (editingId is null) db.Equipments.Add(stored);
 
@@ -134,6 +135,7 @@
             CraneModel = equipment.CraneModel, TruckModel = equipment.TruckModel,
             ChassisNumber = equipment.ChassisNumber, LicensePlate = equipment.LicensePlate,
             ManufactureYear = equipment.ManufactureYear
+            ,NominalCapacity = equipment.NominalCapacity
         };
         message = null;
         isError = false;
@@ -326,5 +328,7 @@
         [Required(ErrorMessage = "Informe o chassi.")] public string ChassisNumber { get; set; } = string.Empty;
         [Required(ErrorMessage = "Informe o ano de fabricação.")] public int? ManufactureYear { get; set; }
         [Required(ErrorMessage = "Informe o modelo.")] public string CraneModel { get; set; } = string.Empty;
+        [Range(typeof(decimal), "0.01", "100000", ErrorMessage = "Informe a capacidade nominal.")]
+        public decimal? NominalCapacity { get; set; }
     }
 }

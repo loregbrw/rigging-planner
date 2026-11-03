@@ -12,21 +12,26 @@
         <DataAnnotationsValidator />
         <fieldset disabled="@IsReadOnly" class="rp-readonly-fields">
             <div class="rp-form-grid">
-                <div class="rp-field rp-col-12">
-                    <label class="rp-label" for="operation">Descrição da operação <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                    <InputText id="operation" class="rp-input" @bind-Value="Model.OperationName" />
-                    <ValidationMessage For="() => Model.OperationName" />
-                </div>
-                <div class="rp-field rp-col-6">
-                    <label class="rp-label" for="location">Local <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                    <InputText id="location" class="rp-input" @bind-Value="Model.Location" />
-                    <ValidationMessage For="() => Model.Location" />
-                </div>
-                <div class="rp-field rp-col-6">
-                    <label class="rp-label" for="plan-date">Data do plano <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                    <InputDate id="plan-date" class="rp-input" @bind-Value="Model.PlanDate" />
-                    <ValidationMessage For="() => Model.PlanDate" />
-                </div>
+                <section class="rp-client-section rp-col-12" aria-labelledby="identification-section-title">
+                    <h3 id="identification-section-title" class="rp-section-title">Identificação do plano</h3>
+                    <div class="rp-form-grid">
+                        <div class="rp-field rp-col-12">
+                            <label class="rp-label" for="operation">Descrição da operação <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                            <InputText id="operation" class="rp-input" @bind-Value="Model.OperationName" />
+                            <ValidationMessage For="() => Model.OperationName" />
+                        </div>
+                        <div class="rp-field rp-col-6">
+                            <label class="rp-label" for="location">Local <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                            <InputText id="location" class="rp-input" @bind-Value="Model.Location" />
+                            <ValidationMessage For="() => Model.Location" />
+                        </div>
+                        <div class="rp-field rp-col-6">
+                            <label class="rp-label" for="plan-date">Data do plano <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                            <InputDate id="plan-date" class="rp-input" @bind-Value="Model.PlanDate" />
+                            <ValidationMessage For="() => Model.PlanDate" />
+                        </div>
+                    </div>
+                </section>
                 <section class="rp-client-section rp-col-12" aria-labelledby="client-section-title">
                     <h3 id="client-section-title" class="rp-section-title">Cliente <span class="rp-required-marker" aria-hidden="true">*</span></h3>
                     <div class="rp-client-fields">
@@ -109,6 +114,7 @@
                             <div class="rp-field rp-col-3"><label class="rp-label">Chassi</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentChassisNumber" disabled /></div>
                             <div class="rp-field rp-col-3"><label class="rp-label">Placa</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentLicensePlate" disabled /></div>
                             <div class="rp-field rp-col-3"><label class="rp-label">Ano de fabricação</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentManufactureYear" disabled /></div>
+                            <div class="rp-field rp-col-3"><label class="rp-label">Capacidade nominal (t)</label><input class="rp-input rp-input--disabled rp-input--num" value="@Model.EquipmentNominalCapacity" disabled /></div>
                         </div>
                     }
                     else if (IsNewEquipmentSelected)
@@ -119,6 +125,7 @@
                             <div class="rp-field rp-col-3"><label class="rp-label">Chassi</label><InputText class="rp-input" @bind-Value="Model.EquipmentChassisNumber" /><ValidationMessage For="() => Model.EquipmentChassisNumber" /></div>
                             <div class="rp-field rp-col-3"><label class="rp-label">Placa</label><InputText class="rp-input" @bind-Value="Model.EquipmentLicensePlate" /><ValidationMessage For="() => Model.EquipmentLicensePlate" /></div>
                             <div class="rp-field rp-col-3"><label class="rp-label">Ano de fabricação</label><InputNumber class="rp-input rp-input--num" @bind-Value="Model.EquipmentManufactureYear" /></div>
+                            <div class="rp-field rp-col-3"><label class="rp-label">Capacidade nominal (t)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="Model.EquipmentNominalCapacity" /><ValidationMessage For="() => Model.EquipmentNominalCapacity" /></div>
                         </div>
                     }
                 </section>
@@ -153,6 +160,21 @@
                             <div class="rp-field rp-col-3"><label class="rp-label">CREA</label><InputText class="rp-input" @bind-Value="Model.RiggerCreaNumber" /><ValidationMessage For="() => Model.RiggerCreaNumber" /></div>
                         </div>
                     }
+                </section>
+                <section class="rp-client-section rp-col-12" aria-labelledby="document-section-title">
+                    <h3 id="document-section-title" class="rp-section-title">Referências do documento</h3>
+                    <div class="rp-form-grid">
+                        <div class="rp-field rp-col-6">
+                            <label class="rp-label" for="art-number">Número da ART do plano</label>
+                            <InputText id="art-number" class="rp-input" @bind-Value="Model.ArtNumber" />
+                            <span class="rp-help">A ART em PDF será anexada em uma etapa posterior.</span>
+                        </div>
+                        <div class="rp-field rp-col-6">
+                            <label class="rp-label" for="supervisor">Supervisor responsável</label>
+                            <InputText id="supervisor" class="rp-input" @bind-Value="Model.SupervisorName" />
+                            <span class="rp-help">Campo opcional, conforme a folha-resumo.</span>
+                        </div>
+                    </div>
                 </section>
                 <div class="rp-field rp-col-12"><label class="rp-label" for="observations">Observações</label><InputTextArea id="observations" class="rp-textarea" @bind-Value="Model.Observations" /></div>
             </div>

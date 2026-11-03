@@ -434,8 +434,8 @@ Regras:
 |---|---|---|
 | **Planos** (lista + pastas) | `rp-split`: lista de pastas à esquerda (260px) + tabela à direita | `rp-folder-list`, `rp-toolbar`, `rp-table`, `rp-btn`, `rp-menu` |
 | **Novo/Editar plano** (wizard 5 etapas) | Cabeçalho com `rp-stepper` + conteúdo + rodapé fixo glass | `rp-stepper`, `rp-card`, `rp-form-grid`, `rp-field`, `rp-sheet`, `rp-wizard__footer` |
-| 1. Dados de entrada | Cards por assunto (Cliente/Local, Guindaste, Carga, Acessórios, Rigger) em grade de 12 colunas | `rp-form-grid`, `rp-input-group` |
-| 2. Capacidade de carga | Planilha agrupada à esquerda + **painel de resumo glass** à direita (carga bruta, taxas) | `rp-sheet`, `rp-card--glass`, `rp-meter` |
+| 1. Dados de entrada | Seções separadas de identificação, cliente, carga, equipamento, rigger e referências do documento em grade de 12 colunas | `rp-form-grid`, `rp-client-section`, `rp-tag-picker` |
+| 2. Capacidade de carga | Seções separadas para informações/configuração do guindaste, resultados informados e composição da carga, com resumo calculado | `rp-capacity-section`, `rp-summary-grid`, `rp-table` |
 | 3. Anexos | 3 zonas: desenhos (imagens), ART do plano (PDF), laudo (PDF) | `rp-dropzone`, `rp-attachment-list` |
 | 4. Preview | Visualizador de folhas A4 com zoom | `rp-doc-preview`, `rp-doc-page` |
 | 5. Exportação | Lista ordenada das partes do PDF + ação principal | `rp-parts`, `rp-alert`, `rp-progress` |

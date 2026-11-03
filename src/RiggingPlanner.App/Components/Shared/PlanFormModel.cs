@@ -11,6 +11,8 @@ public sealed class PlanFormModel : IValidatableObject
     public string Location { get; set; } = string.Empty;
 
     public DateTime PlanDate { get; set; } = DateTime.Today;
+    public string ArtNumber { get; set; } = string.Empty;
+    public string SupervisorName { get; set; } = string.Empty;
     public Guid? ClientId { get; set; }
     public string? ClientName { get; set; }
     public string ClientCnpj { get; set; } = string.Empty;
@@ -29,12 +31,14 @@ public sealed class PlanFormModel : IValidatableObject
     public string EquipmentChassisNumber { get; set; } = string.Empty;
     public string EquipmentLicensePlate { get; set; } = string.Empty;
     public int? EquipmentManufactureYear { get; set; }
+    public decimal? EquipmentNominalCapacity { get; set; }
     public bool IsNewEquipment { get; set; }
     public Guid? RiggerId { get; set; }
     public string RiggerFullName { get; set; } = string.Empty;
     public string RiggerDisplayName { get; set; } = string.Empty;
     public string RiggerRppNumber { get; set; } = string.Empty;
     public string RiggerCreaNumber { get; set; } = string.Empty;
+    public bool IsNewRigger { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -47,6 +51,11 @@ public sealed class PlanFormModel : IValidatableObject
         {
             yield return new ValidationResult("Selecione ou informe um cliente.", [nameof(ClientName)]);
             yield break;
+        }
+
+        if (EquipmentId is null && !IsNewEquipment)
+        {
+            yield return new ValidationResult("Selecione ou informe um equipamento.", [nameof(EquipmentModel)]);
         }
 
         if (IsNewEquipment)
@@ -67,6 +76,10 @@ public sealed class PlanFormModel : IValidatableObject
             {
                 yield return new ValidationResult("Informe a placa.", [nameof(EquipmentLicensePlate)]);
             }
+            if (EquipmentNominalCapacity is not > 0)
+            {
+                yield return new ValidationResult("Informe a capacidade nominal.", [nameof(EquipmentNominalCapacity)]);
+            }
         }
 
         if (ClientId is null && !IsValidCnpj(ClientCnpj))
@@ -76,14 +89,14 @@ public sealed class PlanFormModel : IValidatableObject
                 [nameof(ClientCnpj)]);
         }
 
-        if (RiggerId is null && string.IsNullOrWhiteSpace(RiggerDisplayName))
+        if (RiggerId is null && !IsNewRigger && string.IsNullOrWhiteSpace(RiggerDisplayName))
         {
             yield return new ValidationResult(
                 "Selecione ou informe um rigger.",
                 [nameof(RiggerDisplayName)]);
         }
 
-        if (RiggerId is null)
+        if (RiggerId is null && IsNewRigger)
         {
             if (string.IsNullOrWhiteSpace(RiggerFullName))
             {
@@ -98,6 +111,7 @@ public sealed class PlanFormModel : IValidatableObject
                 yield return new ValidationResult("Informe o CREA do novo rigger.", [nameof(RiggerCreaNumber)]);
             }
         }
+
     }
 
     private static bool IsValidCnpj(string? value)

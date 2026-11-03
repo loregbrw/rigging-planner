@@ -78,6 +78,12 @@
 - [x] Lista de planos simplificada para a ação única de abrir
 - [x] Seção independente de dados da carga no plano, com descrição, dimensões e peso
 - [x] Equipamento no plano com seletor tipo tag, preenchimento automático e criação rápida de novo cadastro
+- [x] Primeira etapa do plano organizada em seções de identificação, cliente, carga, equipamento, rigger e referências do documento
+- [x] ART do plano e supervisor responsável incluídos no cadastro inicial
+- [x] Segunda etapa reorganizada em blocos visuais separados para guindaste, configuração, resultados e composição da carga
+- [x] Cargas extras editáveis e composição da carga bruta calculada na exibição
+- [x] Reidratação do formulário principal ao salvar alterações feitas diretamente na etapa de capacidade
+- [x] Sincronização dos dados recém-preenchidos na primeira etapa ao abrir a capacidade, sem salvamento intermediário no banco
 
 ## Estado atual
 
