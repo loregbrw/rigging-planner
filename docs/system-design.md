@@ -137,6 +137,8 @@ Regras:
 - **[DECISÃO]** `PlanDraftState`, registrado como serviço scoped, mantém em memória os dados de entrada, os parâmetros de capacidade e os itens da planilha durante a edição.
 - **[DECISÃO]** As ações globais de salvar e descartar ficam no cabeçalho de todas as etapas. Salvar retorna ao fluxo da primeira etapa, executa a validação obrigatória e persiste o plano completo em uma transação; descartar limpa o estado e solicita confirmação.
 - **[RESTRIÇÃO]** Campos obrigatórios não bloqueiam a troca de etapa; são verificados somente no salvamento explícito.
+- **[DECISÃO]** Os dados da carga pertencem exclusivamente ao plano em edição. A seção registra descrição, comprimento, largura, altura e peso, sem entidade ou seletor para reutilização entre planos.
+- **[DECISÃO]** Equipamentos são cadastros reutilizáveis com modelo, caminhão, chassi, placas e ano de fabricação. O formulário inclui um editor específico de ARTs: o usuário monta uma ou várias relações com número obrigatório, datas opcionais e anexo PDF obrigatório, podendo editar ou remover itens antes de salvar o equipamento. Na edição, o anexo existente é preservado quando não houver substituição. ARTs persistidas permanecem no histórico e recebem status visual de válida ou vencida; sem data de término, a ART permanece válida. A exclusão é bloqueada quando uma ART está vinculada a um plano. No plano, o equipamento usa o mesmo seletor interativo de tags/clientes; ao selecionar um cadastro, os demais dados são exibidos automaticamente, e a criação rápida permite informar um novo equipamento sem sair do plano.
 
 ---
 
@@ -432,13 +434,14 @@ Regras:
 |---|---|---|
 | **Planos** (lista + pastas) | `rp-split`: lista de pastas à esquerda (260px) + tabela à direita | `rp-folder-list`, `rp-toolbar`, `rp-table`, `rp-btn`, `rp-menu` |
 | **Novo/Editar plano** (wizard 5 etapas) | Cabeçalho com `rp-stepper` + conteúdo + rodapé fixo glass | `rp-stepper`, `rp-card`, `rp-form-grid`, `rp-field`, `rp-sheet`, `rp-wizard__footer` |
-| 1. Dados de entrada | Cards por assunto (Cliente/Local, Guindaste, Carga, Acessórios, Planejador) em grade de 12 colunas | `rp-form-grid`, `rp-input-group` |
+| 1. Dados de entrada | Cards por assunto (Cliente/Local, Guindaste, Carga, Acessórios, Rigger) em grade de 12 colunas | `rp-form-grid`, `rp-input-group` |
 | 2. Capacidade de carga | Planilha agrupada à esquerda + **painel de resumo glass** à direita (carga bruta, taxas) | `rp-sheet`, `rp-card--glass`, `rp-meter` |
 | 3. Anexos | 3 zonas: desenhos (imagens), ART do plano (PDF), laudo (PDF) | `rp-dropzone`, `rp-attachment-list` |
 | 4. Preview | Visualizador de folhas A4 com zoom | `rp-doc-preview`, `rp-doc-page` |
 | 5. Exportação | Lista ordenada das partes do PDF + ação principal | `rp-parts`, `rp-alert`, `rp-progress` |
 | **Cadastros** (clientes, equipamentos, riggers e acessórios) | Tabelas separadas por ativos/inativos, formulário de cadastro/edição e confirmação de exclusão protegida | `rp-table`, `rp-badge`, `rp-form-grid`, `rp-alert`, `rp-btn` |
 | **Cliente no plano** | Mesmo seletor interativo de tags, com chip, setas, Enter, criação e remoção; cliente existente preenche o CNPJ bloqueado; nome e CNPJ ocupam colunas lado a lado | `rp-tag-picker`, `rp-autocomplete`, `rp-input`, `rp-help` |
+| **Rigger no plano** | Seção própria com seletor interativo de tags, chip, setas, Enter, criação e remoção; rigger existente preenche nome completo, RPP e CREA bloqueados; novo rigger informa esses dados no próprio formulário | `rp-tag-picker`, `rp-autocomplete`, `rp-input`, `rp-help` |
 
 ### 6.2 Estrutura do shell
 ```

@@ -14,12 +14,12 @@
             <DataAnnotationsValidator />
             <div class="rp-form-grid">
                 <div class="rp-field rp-col-8">
-                    <label class="rp-label">Nome / Razão social</label>
+                    <label class="rp-label">Nome / Razão social <span class="rp-required-marker" aria-hidden="true">*</span></label>
                     <InputText class="rp-input" @bind-Value="form.Name" />
                     <ValidationMessage For="() => form.Name" />
                 </div>
                 <div class="rp-field rp-col-4">
-                    <label class="rp-label" for="client-cnpj">CNPJ</label>
+                    <label class="rp-label" for="client-cnpj">CNPJ <span class="rp-required-marker" aria-hidden="true">*</span></label>
                     <input id="client-cnpj" class="rp-input" inputmode="numeric" maxlength="18"
                            value="@form.Cnpj" @oninput="OnCnpjInput" placeholder="00.000.000/0000-00" />
                     <ValidationMessage For="() => form.Cnpj" />

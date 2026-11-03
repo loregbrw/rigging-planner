@@ -17,7 +17,7 @@
 
 O repositório contém uma aplicação desktop Windows em .NET MAUI Blazor Hybrid com SQLite/EF Core. Já estão implementados os fluxos de planos em rascunho, dados de entrada, capacidade de carga, cadastro de acessórios, tags, riggers e equipamentos. A interface também permite finalizar planos, tornando-os somente leitura, e separar, reativar e excluir definitivamente cadastros inativos com confirmação e verificação de vínculos.
 
-O modelo de dados já possui entidades para clientes, pastas, laudos, arquivos, desenhos e exportações. O cadastro de clientes, sua seleção no plano e o cadastro rápido de um novo cliente durante o preenchimento já estão disponíveis. Anexos, preview, geração de PDF, lixeira de planos, pastas e cadastro de laudos devem ser tratados como funcionalidades planejadas, não como recursos já disponíveis.
+O modelo de dados já possui entidades para clientes, pastas, laudos, arquivos, desenhos e exportações. O cadastro de clientes e riggers, sua seleção no plano e o cadastro rápido de um novo registro durante o preenchimento já estão disponíveis. Anexos, preview, geração de PDF, lixeira de planos, pastas e cadastro de laudos devem ser tratados como funcionalidades planejadas, não como recursos já disponíveis.
 
 ## 2. Empresa Parceira
 - **Nome:** Guindastes Ribas Ltda.
@@ -200,7 +200,7 @@ Infrastructure — EF Core + SQLite, armazenamento de anexos, geração/junção
 Dependências: `App → Application, Infrastructure` (raiz de composição); `Infrastructure → Application`; `Application → Domain`. O `Domain` não depende de nada.
 
 ### 11.3 Componentes
-- **App (UI):** Razor Components num WebView nativo (via .NET MAUI). Telas atuais: lista de planos, novo/editar plano, capacidade de carga, acessórios com administração de tags, equipamentos e riggers. Pastas, lixeira de planos, anexos, preview, exportação, laudos e cadastro independente de clientes ainda não têm UI.
+- **App (UI):** Razor Components num WebView nativo (via .NET MAUI). Telas atuais: lista de planos, novo/editar plano, capacidade de carga, acessórios com administração de tags, equipamentos com ART, riggers e clientes. Pastas, lixeira de planos, anexos do plano, preview, exportação e seleção de laudos no plano ainda não têm UI.
 - **Domain:** cadastro único de dados do plano (guindaste, carga, acessórios, cliente, planejador/RT), numeração sequencial de planos (reinicia a cada mês, pela data do plano), cálculos simples de exibição, regras de consistência de dados e estado do plano (rascunho/finalizado).
 - **Application:** a solução ainda não possui uma camada de casos de uso completa; os fluxos atuais são executados pelos componentes Razor usando `IDbContextFactory`. A camada permanece prevista para centralizar regras futuras.
 - **Infrastructure:** SQLite com EF Core (`AppDbContext` e migrations em `Persistence/`; dados de entrada, cadastros, planos, numeração e entidades previstas para pastas, anexos e exportações). Armazenamento de anexos e geração/junção do PDF final ainda são funcionalidades planejadas.
@@ -265,7 +265,7 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 | Relação | Cardinalidade | Ao excluir |
 |---|---|---|
 | Pasta → Planos | 1 : N (plano pode ficar sem pasta) | Regra ainda não implementada; comportamento de exclusão pendente (Seção 16) |
-| Cliente / Rigger / Equipamento → Planos | 1 : N cada | Riggers e equipamentos têm ciclo de vida implementado; cliente ainda não tem tela própria |
+| Cliente / Rigger / Equipamento → Planos | 1 : N cada | Cadastros têm ciclo de vida implementado; os dados selecionados são copiados para o plano |
 | Equipamento → Laudos | 1 : N | Laudo em uso por plano não pode ser excluído |
 | Laudo → Planos | 1 : N | — |
 | Plano → Itens (`plan_accessories`) | 1 : N | Apagados com o plano (exclusão definitiva) |
@@ -285,7 +285,7 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **Riggers:** cadastro (nome completo, nome de exibição, RPP, CREA), escolhido no plano e cadastrável ali mesmo. O "Supervisor Responsável" é texto livre e opcional no plano.
 - **Cadastros em uso:** riggers, equipamentos e acessórios possuem ativos/inativos. A exclusão definitiva é bloqueada por vínculos em planos em andamento; planos finalizados preservam os dados copiados.
 - **Clientes:** há uma tela independente para cadastrar, editar, ativar/inativar e excluir clientes inativos. O CNPJ é obrigatório e usa máscara compatível com os formatos legado `00.000.000/0000-00` e novo alfanumérico `00.000.000/E08G-12`. No plano, o nome/razão social usa o mesmo seletor interativo de tags, com setas, Enter, criação e remoção; ao selecionar um cliente existente, o CNPJ é preenchido e bloqueado.
-- **Equipamentos e laudos:** o cadastro do equipamento está implementado. Laudos, PDFs, validade, ART do laudo e sua seleção no plano estão modelados, mas ainda sem fluxo de interface.
+- **Equipamentos e laudos:** o cadastro do equipamento está implementado com modelo, caminhão, chassi e placas. O próprio formulário possui um editor de ARTs que permite montar uma ou várias ARTs antes de salvar, listar, editar e excluir cada item; os registros persistidos permanecem no histórico com status válida ou vencida. O seletor do equipamento no plano usa autocomplete, preenche os dados automaticamente e permite criação rápida; a seleção de laudos por validade no plano continua planejada.
 - **Capacidade de carga:** interface tipo planilha com os mesmos grupos de campos da folha-resumo (Seção 6.2), com os dados reaproveitados dos demais passos (sem redigitação). Capacidade de carga, taxas dos acessórios, esforço nas sapatas, resistência do terreno e vento são digitados pelo engenheiro; pesos totais, carga bruta, conversão para t e taxa de utilização do guindaste são calculados na exibição.
 - **Cadastro de acessórios:** implementado com nome, peso unitário, uma tag opcional, busca/filtro, edição, ativação/inativação, reativação e exclusão definitiva protegida. Histórico de eventos e alertas de desgaste/descarte permanecem planejados.
 - **Anexos do plano:** imagens das folhas do SolidWorks (PNG ou outros formatos de imagem; quantidade livre, ordem definida pelo usuário) e PDF da ART do plano; o número da ART é digitado uma vez no plano e reaproveitado nas demais páginas (leitura automática do PDF fica como evolução futura).
@@ -300,8 +300,8 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 |---|---|---|
 | **Cliente** | Tela de clientes (nome e CNPJ), com cadastro rápido também disponível na tela do plano | O nome possui autocomplete; clientes existentes preenchem o CNPJ automaticamente e novos clientes exigem nome e CNPJ; ambos são copiados para o plano |
 | **Equipamento (caminhão + guindaste)** | Tela de equipamentos | Equipamentos ativos são escolhidos no plano; os dados são copiados para o plano |
-| **Laudo + ART do laudo** | Modelado nas entidades, mas sem tela implementada | Vínculo previsto; o fluxo de cadastro e seleção ainda não está disponível na UI |
-| **Rigger** | Tela de riggers | Riggers ativos são escolhidos no plano; nome de exibição, RPP e CREA são copiados |
+| **Laudo + ART do laudo** | Cadastro do equipamento, ART opcional, validade e arquivo | O cadastro e o histórico estão disponíveis; a seleção de laudo por validade no plano ainda é prevista |
+| **Rigger** | Tela de riggers, com cadastro rápido também disponível na tela do plano | O nome de exibição possui autocomplete; riggers existentes preenchem nome completo, RPP e CREA; novos riggers exigem esses dados; todos são copiados para o plano |
 | **Acessórios** | Tela de acessórios (nome, peso unitário e uma tag opcional) | Tags são selecionadas por autocomplete, podem ser criadas no próprio campo e administradas separadamente; acessórios ativos são escolhidos na capacidade, com quantidade; nome e peso unitário são copiados |
 | **ART do plano** | Não há cadastro: é anexada ao plano | PDF anexado e número da ART digitado uma vez no plano (reaproveitado nas outras páginas) |
 | **Desenhos (SolidWorks)** | Modelado nas entidades, mas sem tela implementada | Quantidade livre e ordenação são requisitos planejados |
@@ -370,7 +370,7 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **Metodologia:** Scrum, com planejamento acompanhado via GitHub Projects.
 - **Sprints:** ciclos de duas semanas.
 - **Prazo final do projeto:** 20/11/2026.
-- **Status atual:** arquitetura e persistência base concluídas; fluxos de planos em rascunho, dados de entrada, capacidade, acessórios/tags, riggers, equipamentos e finalização de planos implementados. Anexos, laudos, pastas, lixeira de planos, preview e exportação ainda não estão disponíveis na UI. O detalhamento atualizado está em `docs/progress.md`.
+- **Status atual:** arquitetura e persistência base concluídas; fluxos de planos em rascunho, dados de entrada, capacidade, acessórios/tags, riggers, clientes, equipamentos com ART e finalização de planos implementados. Anexos do plano, seleção de laudos, pastas, lixeira de planos, preview e exportação ainda não estão disponíveis na UI. O detalhamento atualizado está em `docs/progress.md`.
 
 ## 18. Notas Gerais / Pontos em Aberto do Time
 - Os detalhes de UX/fluxo de telas seguem em aberto: os protótipos são só inspiração e podem ser alterados.
@@ -384,3 +384,4 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **27/10/2026 (3ª rodada):** incluídas as Seções 11.4 (modelo de dados: tabelas, colunas, chaves, cardinalidades e regras) e 12.1 (fluxo de cadastro e vínculo ao plano, por caso).
 - **02/11/2026:** brief alinhado ao estado real do repositório: implementados planos em rascunho/finalizados, capacidade, acessórios com uma tag, tags administráveis, riggers, equipamentos e ciclo de vida de cadastros; entidades sem UI foram marcadas como modeladas ou planejadas; dúvidas já decididas foram removidas da lista de pendências.
 - **02/11/2026 (cadastro de clientes):** adicionados cadastro independente de clientes, ciclo de vida de ativos/inativos, seleção no plano e cadastro rápido durante o preenchimento; o plano mantém o snapshot do nome e CNPJ.
+- **03/11/2026 (rigger no plano):** a seção de rigger do plano passou a usar seletor interativo, permitindo selecionar um cadastro ativo ou criar nome completo, nome de exibição, RPP e CREA durante o preenchimento; o plano mantém o snapshot desses dados.

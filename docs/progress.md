@@ -51,7 +51,8 @@
 - [x] Estados vazios, tabelas, badges, validações e mensagens de sucesso/erro adicionados à UI
 
 ### Etapas 4 e 6 — Dados de entrada e capacidade de carga
-- [x] Cadastro persistente de equipamentos (caminhão + guindaste), com ativação/inativação
+- [x] Cadastro persistente de equipamentos com modelo, caminhão, chassi, placas, ano e ARTs opcionais com validade e histórico
+- [x] Editor específico de ARTs dentro do formulário do equipamento, com adição múltipla, edição sem reenviar o PDF existente, datas opcionais, exclusão protegida e histórico visual de validade
 - [x] Cadastro persistente de riggers, com nome completo, nome de exibição, RPP e CREA
 - [x] Seleção de equipamento e rigger no plano, copiando os dados para manter o plano autossuficiente
 - [x] Tela de capacidade de carga vinculada ao plano
@@ -66,6 +67,8 @@
 - [x] CNPJ obrigatório com máscara `00.000.000/0000-00` no cadastro e no plano
 - [x] Cliente no plano usa seletor visual semelhante ao seletor de tags
 - [x] Cliente no plano usa o mesmo comportamento de teclado do seletor de tags (setas, Enter, criação e remoção)
+- [x] Rigger no plano usa seção própria com autocomplete, seleção de cadastro existente, criação rápida e remoção
+- [x] Novo rigger no plano exige nome completo, nome de exibição, RPP e CREA; cadastros existentes preenchem esses dados
 - [x] Máscara de CNPJ aceita formatos legado numérico e novo alfanumérico
 - [x] Navegação entre etapas sem salvamento intermediário
 - [x] Estado de edição compartilhado entre dados de entrada e capacidade
@@ -73,6 +76,8 @@
 - [x] Validação obrigatória executada somente ao salvar o plano completo
 - [x] Preview e exportação acessíveis pela navegação das etapas, com título global do plano
 - [x] Lista de planos simplificada para a ação única de abrir
+- [x] Seção independente de dados da carga no plano, com descrição, dimensões e peso
+- [x] Equipamento no plano com seletor tipo tag, preenchimento automático e criação rápida de novo cadastro
 
 ## Estado atual
 
@@ -81,6 +86,7 @@
 - [x] Numeração automática no formato AAMMNNN, reiniciada por mês da data do plano
 - [x] Cadastro e seleção de equipamentos ativos, com cópia dos dados para o plano
 - [x] Cadastro e seleção de riggers ativos, com cópia de nome, RPP e CREA para o plano
+- [x] Cadastro rápido de rigger durante o preenchimento do plano, com snapshot dos dados no plano
 - [x] Cadastro de acessórios com nome, peso unitário e uma tag opcional
 - [x] Tags normalizadas, autocomplete com criação, seleção por teclado, chips coloridos e administração
 - [x] Pesquisa automática de acessórios por nome ou tag e filtro por tag
@@ -93,7 +99,7 @@
 
 ### Modelado, mas ainda sem fluxo completo na interface
 - [ ] Pastas de um nível
-- [ ] Laudos de equipamento e seus arquivos
+- [ ] Seleção de laudo de equipamento por validade no plano
 - [ ] Arquivos armazenados, desenhos anexados e ART do plano
 - [ ] Histórico de exportações
 - [ ] Lixeira e exclusão definitiva de planos
@@ -104,7 +110,7 @@
 |---|---|---|
 | 1 | Cadastro independente de clientes | Implementado: tela de clientes, seleção no plano e cadastro rápido durante o preenchimento |
 | 2 | Pastas e organização | Entidade prevista; sem tela ou operações |
-| 3 | Laudos e anexos | Entidades previstas; sem cadastro, seleção ou armazenamento operacional |
+| 3 | Laudos e anexos | ART do equipamento já possui cadastro e armazenamento; seleção do laudo no plano continua pendente |
 | 4 | Preview | Ainda não implementado |
 | 5 | Exportação em PDF | Ainda não implementada |
 | 6 | Lixeira de planos | Ainda não implementada |

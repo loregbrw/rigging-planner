@@ -19,13 +19,14 @@
             <DataAnnotationsValidator />
             <div class="rp-form-grid">
                 <div class="rp-field rp-col-6">
-                    <label class="rp-label" for="name">Nome</label>
+                    <label class="rp-label" for="name">Nome <span class="rp-required-marker" aria-hidden="true">*</span></label>
                     <InputText id="name" class="rp-input" @bind-Value="form.Name" />
                     <ValidationMessage For="() => form.Name" />
                 </div>
                 <div class="rp-field rp-col-3">
-                    <label class="rp-label rp-label--nowrap" for="unit-weight">Peso unitário (kg)</label>
+                    <label class="rp-label rp-label--nowrap" for="unit-weight">Peso unitário (kg) <span class="rp-required-marker" aria-hidden="true">*</span></label>
                     <RpDecimalInput id="unit-weight" class="rp-input rp-input--num" @bind-Value="form.UnitWeightKg" />
+                    <ValidationMessage For="() => form.UnitWeightKg" />
                 </div>
                 <div class="rp-field rp-col-3">
                     <label class="rp-label" for="tag-input">Tag</label>
@@ -372,7 +373,7 @@
     {
         [Required(ErrorMessage = "Informe o nome.")]
         public string Name { get; set; } = string.Empty;
-        public decimal? UnitWeightKg { get; set; }
+        [Required(ErrorMessage = "Informe o peso unitário.")] public decimal? UnitWeightKg { get; set; }
         public Guid? TagId { get; set; }
     }
 }
