@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using RiggingPlanner.Infrastructure;
+using RiggingPlanner.App.Components.Shared;
 using System.Globalization;
 
 namespace RiggingPlanner.App;
@@ -23,6 +24,7 @@ public static class MauiProgram
 			});
 
 		builder.Services.AddMauiBlazorWebView();
+		builder.Services.AddScoped<PlanDraftState>();
 		builder.Services.AddInfrastructure(GetDatabasePath());
 
 #if DEBUG

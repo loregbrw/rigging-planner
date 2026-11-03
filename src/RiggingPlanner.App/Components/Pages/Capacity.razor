@@ -1,10 +1,14 @@
 @page "/new-plan/{PlanId:guid}/capacity"
+@inject PlanDraftState Draft
 @using System.ComponentModel.DataAnnotations
 @inject IDbContextFactory<AppDbContext> DbFactory
 @inject NavigationManager Navigation
 
-<RpPageHeader Title="Capacidade de carga" Subtitle="Registre os valores do engenheiro e confira os totais calculados">
-    <Actions><a class="rp-btn rp-btn--ghost" href="@($"new-plan/{PlanId}")">Voltar aos dados</a></Actions>
+<RpPageHeader Title="@PageTitle" Subtitle="Capacidade de carga — Registre os valores do engenheiro e confira os totais calculados">
+    <Actions>
+        <RpPlanActions PlanId="@PlanId" IsNew="@IsDraft" IsReadOnly="@isReadOnly"
+                       IsSaving="false" Save="SavePlanAsync" Discard="DiscardChanges" />
+    </Actions>
 </RpPageHeader>
 
 @if (isLoading)
@@ -18,7 +22,9 @@ else if (plan is null)
 else
 {
     <div class="rp-stack">
-        @if (message is not null) { <div class="rp-alert rp-alert--success">@message</div> }
+        <RpStepper Steps="steps" Links="stepLinks" Current="1" />
+        <RpPlanNavigation PreviousUrl="@($"new-plan/{PlanId}")"
+                          NextUrl="@($"new-plan/{PlanId}/attachments")" />
         @if (errorMessage is not null) { <div class="rp-alert rp-alert--danger">@errorMessage</div> }
         @if (isReadOnly) { <div class="rp-alert rp-alert--info">Este plano foi finalizado e está somente para leitura.</div> }
         <fieldset disabled="@isReadOnly" class="rp-readonly-fields">
@@ -37,7 +43,6 @@ else
                 <div class="rp-field rp-col-4"><label class="rp-label">Resistência do terreno (kgf/cm²)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.MinGroundResistanceKgfCm2" /></div>
                 <div class="rp-field rp-col-4"><label class="rp-label">Vento máximo (m/s)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.MaxWindSpeedMs" /></div>
             </div>
-            <div class="rp-form-actions"><button class="rp-btn rp-btn--primary" @onclick="SavePlanAsync" disabled="@isSaving">Salvar capacidade</button></div>
         </RpCard>
 
         <RpCard Title="Adicionar item à planilha">
@@ -75,6 +80,8 @@ else
 
 @code {
     [Parameter] public Guid PlanId { get; set; }
+    private bool IsDraft => Draft.PlanId == PlanId && Draft.Plan is not null && !Draft.IsPersisted;
+    private bool planWasLoadedFromDatabase;
     private RiggingPlan? plan;
     private List<PlanAccessory> items = [];
     private List<Accessory> accessories = [];
@@ -82,37 +89,50 @@ else
     private ItemForm itemForm = new();
     private string accessorySearch = string.Empty;
     private bool isLoading = true;
-    private bool isSaving;
     private bool isReadOnly;
-    private string? message;
     private string? errorMessage;
     private decimal lingadaTotal => items.Where(x => x.Section == "lingada").Sum(x => x.Quantity * x.UnitWeightKg);
     private decimal deviceTotal => items.Where(x => x.Section == "dispositivo").Sum(x => x.Quantity * x.UnitWeightKg);
     private decimal grossWeight => (plan?.WeightKg ?? 0) + lingadaTotal + deviceTotal + (plan?.ExtraLoadKg ?? 0);
     private decimal grossWeightTons => grossWeight / 1000;
     private decimal? utilization => plan?.LoadCapacityT is > 0 ? grossWeightTons / plan.LoadCapacityT.Value * 100 : null;
+    private readonly string[] steps = ["Dados de entrada", "Capacidade", "Anexos", "Preview", "Exportação"];
+    private IReadOnlyList<string> stepLinks => [$"new-plan/{PlanId}", $"new-plan/{PlanId}/capacity", $"new-plan/{PlanId}/attachments", $"new-plan/{PlanId}/preview", $"new-plan/{PlanId}/export"];
+    private string PageTitle => isReadOnly ? "Plano finalizado" : IsDraft ? "Novo plano" : "Editar plano";
 
     protected override async Task OnInitializedAsync()
     {
+        if (Draft.PlanId == PlanId && Draft.Plan is not null && Draft.IsInitialized)
+        {
+            plan = Draft.Plan;
+            items = Draft.Accessories;
+            isReadOnly = plan.Status == "finalized";
+            planWasLoadedFromDatabase = false;
+        }
+
         await using var db = await DbFactory.CreateDbContextAsync();
-        plan = await db.RiggingPlans.SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+        plan ??= await db.RiggingPlans.SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+        planWasLoadedFromDatabase = plan is not null && Draft.Plan != plan;
         isReadOnly = plan?.Status == "finalized";
         accessories = await db.Accessories.AsNoTracking().Include(x => x.Tag).Where(x => x.Status == "active").OrderBy(x => x.Name).ToListAsync();
         filteredAccessories = accessories;
-        if (plan is not null) items = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
+        if (plan is not null && planWasLoadedFromDatabase)
+        {
+            items = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
+            Draft.Plan = plan;
+            Draft.PlanId = PlanId;
+            Draft.Accessories.Clear();
+            Draft.Accessories.AddRange(items);
+            Draft.IsPersisted = true;
+            Draft.IsInitialized = true;
+        }
         isLoading = false;
     }
 
     private async Task SavePlanAsync()
     {
         if (plan is null || isReadOnly) return;
-        isSaving = true;
-        await using var db = await DbFactory.CreateDbContextAsync();
-        db.RiggingPlans.Update(plan);
-        plan.UpdatedAt = DateTime.Now;
-        await db.SaveChangesAsync();
-        message = "Dados de capacidade salvos.";
-        isSaving = false;
+        Navigation.NavigateTo($"/new-plan/{PlanId}?save=true");
     }
 
     private async Task AddItemAsync()
@@ -120,18 +140,22 @@ else
         if (plan is null || isReadOnly || itemForm.Quantity is not > 0) { errorMessage = "Informe uma quantidade maior que zero."; return; }
         var accessory = itemForm.AccessoryId is null ? null : accessories.FirstOrDefault(x => x.Id == itemForm.AccessoryId);
         if (accessory is null && string.IsNullOrWhiteSpace(itemForm.Description)) { errorMessage = "Selecione um acessório ou informe a descrição."; return; }
-        await using var db = await DbFactory.CreateDbContextAsync();
-        db.PlanAccessories.Add(new PlanAccessory
+        var newItem = new PlanAccessory
         {
             Id = Guid.NewGuid(), PlanId = PlanId, Section = itemForm.Section, AccessoryId = accessory?.Id,
             Description = accessory?.Name ?? itemForm.Description.Trim(), DrawingRef = itemForm.DrawingRef,
             Quantity = itemForm.Quantity.Value, UnitWeightKg = accessory?.UnitWeightKg ?? itemForm.UnitWeightKg ?? 0,
             SortOrder = items.Count == 0 ? 1 : items.Max(x => x.SortOrder) + 1
-        });
-        await db.SaveChangesAsync();
+        };
+        items.Add(newItem);
+        if (IsDraft)
+        {
+            itemForm = new();
+            errorMessage = null;
+            return;
+        }
         itemForm = new();
         errorMessage = null;
-        await OnInitializedAsync();
     }
 
     private void ApplyAccessoryFilter()
@@ -167,12 +191,15 @@ else
     private async Task RemoveItemAsync(Guid id)
     {
         if (isReadOnly) return;
-        await using var db = await DbFactory.CreateDbContextAsync();
-        var item = await db.PlanAccessories.FindAsync(id);
+        var item = items.FirstOrDefault(x => x.Id == id);
         if (item is null) return;
-        db.PlanAccessories.Remove(item);
-        await db.SaveChangesAsync();
         items.RemoveAll(x => x.Id == id);
+    }
+
+    private void DiscardChanges()
+    {
+        Draft.Reset();
+        Navigation.NavigateTo("/");
     }
 
     private sealed class ItemForm

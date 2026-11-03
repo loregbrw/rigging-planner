@@ -1,152 +1,68 @@
 @page "/new-plan"
 @page "/new-plan/{PlanId:guid}"
-@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components
 @using Microsoft.JSInterop
 @inject IDbContextFactory<AppDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<RpPageHeader Title="@(PlanId is null ? "Novo plano" : isReadOnly ? "Plano finalizado" : "Editar plano")" Subtitle="Preencha os dados sem perder informações entre as etapas" />
+<RpPageHeader Title="@((PlanId is null || isDraftPlan) ? "Novo plano" : isReadOnly ? "Plano finalizado" : "Editar plano")"
+              Subtitle="Dados de entrada — Preencha os dados sem perder informações entre as etapas">
+    <Actions>
+        <RpPlanActions IsNew="@(PlanId is null || isDraftPlan)" IsReadOnly="@isReadOnly" IsSaving="@isSaving"
+                       Save="SaveFormAsync" Discard="AskDiscard" />
+    </Actions>
+</RpPageHeader>
 
 <div class="rp-stack">
-    <RpStepper Steps="steps" Current="0" />
-
-    <RpCard Title="Dados de entrada">
-        @if (isReadOnly)
-        {
-            <div class="rp-alert rp-alert--info">Este plano foi finalizado e está somente para leitura.</div>
-        }
-        @if (!string.IsNullOrWhiteSpace(errorMessage))
-        {
-            <div class="rp-alert rp-alert--danger">@errorMessage</div>
-        }
-
-        <EditForm Model="form" OnValidSubmit="SaveAsync">
-            <DataAnnotationsValidator />
-            <fieldset disabled="@isReadOnly" class="rp-readonly-fields">
-            <div class="rp-form-grid">
-                <div class="rp-field rp-col-6">
-                    <label class="rp-label" for="operation">Nome da operação</label>
-                    <InputText id="operation" class="rp-input" @bind-Value="form.OperationName" />
-                    <ValidationMessage For="() => form.OperationName" />
-                </div>
-                <div class="rp-field rp-col-6">
-                    <label class="rp-label" for="location">Local</label>
-                    <InputText id="location" class="rp-input" @bind-Value="form.Location" />
-                    <ValidationMessage For="() => form.Location" />
-                </div>
-                <div class="rp-field rp-col-4">
-                    <label class="rp-label" for="plan-date">Data do plano</label>
-                    <InputDate id="plan-date" class="rp-input" @bind-Value="form.PlanDate" />
-                </div>
-                <section class="rp-client-section rp-col-12" aria-labelledby="client-section-title">
-                    <h3 id="client-section-title" class="rp-section-title">Cliente</h3>
-                    <div class="rp-client-fields">
-                        <div class="rp-field">
-                            <label class="rp-label" for="client-name">Nome / Razão social</label>
-                            <RpTagPicker TItem="Client"
-                                         InputId="client-name"
-                                         InputValue="@(form.ClientName ?? string.Empty)"
-                                         Suggestions="ClientSuggestions"
-                                         SelectedItem="@(SelectedClient ?? (isNewClientSelected ? new Client { Name = form.ClientName ?? string.Empty } : null))"
-                                         ItemText="@(client => client.Name)"
-                                         CanCreate="@(!string.IsNullOrWhiteSpace(form.ClientName) && !HasExactClient)"
-                                         CreateLabel="@($"Criar cliente “{form.ClientName?.Trim()}”")"
-                                         OnInput="OnClientNameInput"
-                                         OnSelect="SelectClient"
-                                         OnCreate="CreateClientFromInput"
-                                         OnRemove="RemoveSelectedClient" />
-                            <span class="rp-help">Selecione um cadastro existente ou crie um cliente novo.</span>
-                        </div>
-                        <div class="rp-field">
-                            <label class="rp-label" for="cnpj">CNPJ</label>
-                            <input id="cnpj" class="rp-input @(IsExistingClient ? "rp-input--disabled" : string.Empty)"
-                                   inputmode="text" maxlength="18" placeholder="00.000.000/0000-00"
-                                   disabled="@IsExistingClient" value="@form.ClientCnpj" @oninput="OnClientCnpjInput"
-                                   title="@(IsExistingClient ? "CNPJ preenchido pelo cadastro e não editável" : "Informe o CNPJ do novo cliente")" />
-                            @if (IsExistingClient)
-                            {
-                                <span class="rp-help rp-help--disabled">CNPJ do cadastro selecionado — não editável.</span>
-                            }
-                            else
-                            {
-                                <span class="rp-help">Obrigatório para novo cliente.</span>
-                            }
-                        </div>
-                    </div>
-                </section>
-                <div class="rp-field rp-col-6">
-                    <label class="rp-label" for="load">Descrição da carga</label>
-                    <InputText id="load" class="rp-input" @bind-Value="form.LoadDescription" />
-                    <ValidationMessage For="() => form.LoadDescription" />
-                </div>
-                <div class="rp-field rp-col-6">
-                    <label class="rp-label" for="equipment">Guindaste / equipamento</label>
-                    <InputSelect id="equipment" class="rp-select" @bind-Value="form.EquipmentId">
-                        <option value="">Selecione um equipamento</option>
-                        @foreach (var equipment in equipmentOptions)
-                        {
-                            <option value="@equipment.Id">@equipment.CraneBrand @equipment.CraneModel — @equipment.LicensePlate</option>
-                        }
-                    </InputSelect>
-                    <a class="rp-inline-link" href="equipments">Cadastrar equipamento</a>
-                </div>
-                <div class="rp-field rp-col-6">
-                    <label class="rp-label" for="rigger">Rigger responsável</label>
-                    <InputSelect id="rigger" class="rp-select" @bind-Value="form.RiggerId">
-                        <option value="">Selecione um rigger</option>
-                        @foreach (var rigger in riggerOptions)
-                        {
-                            <option value="@rigger.Id">@rigger.DisplayName — RPP @rigger.RppNumber</option>
-                        }
-                    </InputSelect>
-                    <a class="rp-inline-link" href="riggers">Cadastrar rigger</a>
-                </div>
-                <div class="rp-field rp-col-4">
-                    <label class="rp-label" for="weight">Peso da carga (kg)</label>
-                    <RpDecimalInput id="weight" class="rp-input rp-input--num" @bind-Value="form.WeightKg" />
-                </div>
-                <div class="rp-field rp-col-4">
-                    <label class="rp-label" for="length">Comprimento (m)</label>
-                    <RpDecimalInput id="length" class="rp-input rp-input--num" @bind-Value="form.LengthM" />
-                </div>
-                <div class="rp-field rp-col-4">
-                    <label class="rp-label" for="width">Largura (m)</label>
-                    <RpDecimalInput id="width" class="rp-input rp-input--num" @bind-Value="form.WidthM" />
-                </div>
-                <div class="rp-field rp-col-12">
-                    <label class="rp-label" for="observations">Observações</label>
-                    <InputTextArea id="observations" class="rp-textarea" @bind-Value="form.Observations" />
-                </div>
-            </div>
-            <div class="rp-form-actions">
-                <a class="rp-btn rp-btn--ghost" href="">Cancelar</a>
-                @if (!isReadOnly)
-                {
-                    <button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">Salvar plano</button>
-                }
-            </div>
-            </fieldset>
-        </EditForm>
-    </RpCard>
+    <RpStepper Steps="steps" Links="stepLinks" Current="0" />
+    <RpPlanNavigation PreviousUrl="@null" NextUrl="@($"new-plan/{WorkflowPlanId}/capacity")" />
+    <RpPlanInputForm Model="form" IsReadOnly="isReadOnly" IsSaving="isSaving" ErrorMessage="@errorMessage"
+                     EquipmentOptions="equipmentOptions" RiggerOptions="riggerOptions"
+                     ClientSuggestions="ClientSuggestions" SelectedClient="SelectedClient"
+                     IsNewClientSelected="isNewClientSelected" IsExistingClient="IsExistingClient"
+                     HasExactClient="HasExactClient" OnValidSubmit="SaveAsync"
+                     OnClientNameInput="OnClientNameInput" OnClientSelect="SelectClient"
+                     OnClientCreate="CreateClientFromInput" OnClientRemove="RemoveSelectedClient"
+                     OnClientCnpjInput="OnClientCnpjInput" @ref="inputForm" />
 </div>
 
 @code {
     private readonly string[] steps = ["Dados de entrada", "Capacidade", "Anexos", "Preview", "Exportação"];
     [Parameter] public Guid? PlanId { get; set; }
-    private readonly PlanForm form = new();
+    [SupplyParameterFromQuery(Name = "save")]
+    public bool SaveRequested { get; set; }
+    [Inject] private PlanDraftState Draft { get; set; } = null!;
+    private PlanFormModel form => Draft.Form;
+    private RpPlanInputForm? inputForm;
+    private IReadOnlyList<string> stepLinks =>
+        [$"new-plan{(PlanId is null ? string.Empty : $"/{WorkflowPlanId}")}",
+         $"new-plan/{WorkflowPlanId}/capacity", $"new-plan/{WorkflowPlanId}/attachments",
+         $"new-plan/{WorkflowPlanId}/preview", $"new-plan/{WorkflowPlanId}/export"];
     private List<Equipment> equipmentOptions = [];
     private List<Rigger> riggerOptions = [];
     private List<Client> clientOptions = [];
     private bool isSaving;
     private bool isReadOnly;
+    private bool isDraftPlan;
     private string? errorMessage;
     private Client? SelectedClient => clientOptions.FirstOrDefault(x => x.Id == form.ClientId);
-    private bool HasExactClient => clientOptions.Any(x => string.Equals(x.Name, form.ClientName?.Trim(), StringComparison.CurrentCultureIgnoreCase));
+    private bool HasExactClient => clientOptions.Any(x => string.Equals(x.Name, form.ClientName?.Trim(),
+StringComparison.CurrentCultureIgnoreCase));
     private List<Client> ClientSuggestions => string.IsNullOrWhiteSpace(form.ClientName)
         ? []
-        : clientOptions.Where(x => x.Name.Contains(form.ClientName.Trim(), StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
+        : clientOptions.Where(x => x.Name.Contains(form.ClientName.Trim(),
+StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
     private bool isNewClientSelected;
+
+    private Guid WorkflowPlanId => PlanId ?? Draft.PlanId ?? Guid.Empty;
+    private Task SaveFormAsync() => inputForm?.SubmitAsync() ?? Task.CompletedTask;
+    private void AskDiscard() => DiscardChanges();
+    private void DiscardChanges()
+    {
+        Draft.Reset();
+        Navigation.NavigateTo("/");
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -154,7 +70,24 @@
         equipmentOptions = await db.Equipments.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.CraneModel).ToListAsync();
         riggerOptions = await db.Riggers.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.DisplayName).ToListAsync();
         clientOptions = await db.Clients.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync();
-        if (PlanId is null) return;
+        if (Draft.IsInitialized
+            && ((PlanId is not null && Draft.PlanId == PlanId)
+                || (PlanId is null && !Draft.IsPersisted)))
+        {
+            isDraftPlan = !Draft.IsPersisted;
+            isNewClientSelected = Draft.Plan?.ClientId is null && !string.IsNullOrWhiteSpace(form.ClientName);
+            return;
+        }
+
+        if (PlanId is null)
+        {
+            if (Draft.IsPersisted) Draft.Reset();
+            Draft.PlanId ??= Guid.NewGuid();
+            Draft.Plan ??= new RiggingPlan { Id = Draft.PlanId.Value };
+            Draft.IsPersisted = false;
+            Draft.IsInitialized = true;
+            return;
+        }
 
         var plan = await db.RiggingPlans.AsNoTracking().SingleOrDefaultAsync(x => x.Id == PlanId);
         if (plan is null)
@@ -190,6 +123,18 @@
         form.Observations = plan.Observations;
         form.EquipmentId = plan.EquipmentId;
         form.RiggerId = plan.RiggerId;
+        Draft.Plan = plan;
+        Draft.PlanId = plan.Id;
+        Draft.IsPersisted = true;
+        Draft.IsInitialized = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && SaveRequested && !isReadOnly)
+        {
+            await (inputForm?.SubmitAsync() ?? Task.CompletedTask);
+        }
     }
 
     private async Task SaveAsync()
@@ -202,7 +147,7 @@
             await using var db = await DbFactory.CreateDbContextAsync();
             await using var transaction = await db.Database.BeginTransactionAsync();
 
-            if (PlanId is not null)
+            if (PlanId is not null && !isDraftPlan)
             {
                 var existingPlan = await db.RiggingPlans.SingleOrDefaultAsync(x => x.Id == PlanId);
                 if (existingPlan is null)
@@ -225,9 +170,11 @@
                 existingPlan.Observations = string.IsNullOrWhiteSpace(form.Observations) ? null : form.Observations.Trim();
                 existingPlan.EquipmentId = form.EquipmentId;
                 existingPlan.RiggerId = form.RiggerId;
+                CopyCapacityFields(Draft.Plan, existingPlan);
                 ApplyReferences(existingPlan, equipmentOptions, riggerOptions);
                 existingPlan.UpdatedAt = DateTime.Now;
                 await db.SaveChangesAsync();
+                await SaveAccessoriesAsync(db, existingPlan.Id);
                 await transaction.CommitAsync();
                 Navigation.NavigateTo("/");
                 return;
@@ -246,21 +193,30 @@
 
             var newPlan = new RiggingPlan
             {
-                Id = Guid.NewGuid(), PlanNumber = $"{yearMonth}{counter.LastSequence:000}",
-                PlanDate = form.PlanDate, Location = form.Location.Trim(),
-                OperationName = form.OperationName.Trim(), Client = client,
+                Id = Guid.NewGuid(),
+                PlanNumber = $"{yearMonth}{counter.LastSequence:000}",
+                PlanDate = form.PlanDate,
+                Location = form.Location.Trim(),
+                OperationName = form.OperationName.Trim(),
+                Client = client,
                 ClientName = client?.Name ?? form.ClientName?.Trim(),
                 ClientCnpj = client?.Cnpj ?? form.ClientCnpj?.Trim(),
-                LoadDescription = form.LoadDescription.Trim(), LengthM = form.LengthM,
-                WidthM = form.WidthM, WeightKg = form.WeightKg,
-                EquipmentId = form.EquipmentId, RiggerId = form.RiggerId,
+                LoadDescription = form.LoadDescription.Trim(),
+                LengthM = form.LengthM,
+                WidthM = form.WidthM,
+                WeightKg = form.WeightKg,
+                EquipmentId = form.EquipmentId,
+                RiggerId = form.RiggerId,
                 Observations = string.IsNullOrWhiteSpace(form.Observations) ? null : form.Observations.Trim(),
-                CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
             };
+            CopyCapacityFields(Draft.Plan, newPlan);
             ApplyReferences(newPlan, equipmentOptions, riggerOptions);
             db.RiggingPlans.Add(newPlan);
 
             await db.SaveChangesAsync();
+            await SaveAccessoriesAsync(db, newPlan.Id);
             await transaction.CommitAsync();
             Navigation.NavigateTo("/");
         }
@@ -269,7 +225,10 @@
         {
             errorMessage = $"Não foi possível salvar o plano: {exception.Message}";
         }
-        finally { isSaving = false; }
+        finally
+        {
+            isSaving = false;
+        }
     }
 
     private async Task<Client?> ResolveClientAsync(AppDbContext db)
@@ -290,15 +249,19 @@
             throw new InvalidOperationException("Informe um CNPJ válido no formato 00.000.000/0000-00 ou 00.000.000/E08G-12.");
         }
 
-        if ((await db.Clients.AsNoTracking().Select(x => x.Cnpj).ToListAsync()).Any(value => NormalizeCnpj(value) == NormalizeCnpj(cnpj)))
+        if ((await db.Clients.AsNoTracking().Select(x => x.Cnpj).ToListAsync()).Any(value => NormalizeCnpj(value) ==
+NormalizeCnpj(cnpj)))
         {
             throw new InvalidOperationException("Já existe um cliente cadastrado com este CNPJ. Selecione-o na lista.");
         }
 
         var client = new Client
         {
-            Id = Guid.NewGuid(), Name = form.ClientName.Trim(), Cnpj = cnpj,
-            CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now
+            Id = Guid.NewGuid(),
+            Name = form.ClientName.Trim(),
+            Cnpj = cnpj,
+            CreatedAt = DateTime.Now,
+            UpdatedAt = DateTime.Now
         };
         db.Clients.Add(client);
         return client;
@@ -335,7 +298,8 @@
         isNewClientSelected = false;
     }
 
-    private void OnClientCnpjInput(ChangeEventArgs args) => form.ClientCnpj = FormatCnpj(args.Value?.ToString()) ?? string.Empty;
+    private void OnClientCnpjInput(ChangeEventArgs args) => form.ClientCnpj = FormatCnpj(args.Value?.ToString()) ??
+string.Empty;
 
 
     private static string? FormatCnpj(string? value)
@@ -355,7 +319,8 @@
         return digits.Length == 0 ? null : digits;
     }
 
-    private static void ApplyReferences(RiggingPlan plan, IReadOnlyCollection<Equipment> equipmentOptions, IReadOnlyCollection<Rigger> riggerOptions)
+    private static void ApplyReferences(RiggingPlan plan, IReadOnlyCollection<Equipment> equipmentOptions,
+IReadOnlyCollection<Rigger> riggerOptions)
     {
         var equipment = plan.EquipmentId is null ? null : equipmentOptions.FirstOrDefault(x => x.Id == plan.EquipmentId);
         if (equipment is not null)
@@ -380,23 +345,34 @@
         }
     }
 
-    private sealed class PlanForm
+    private async Task SaveAccessoriesAsync(AppDbContext db, Guid planId)
     {
-        [Required(ErrorMessage = "Informe o nome da operação.")]
-        public string OperationName { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Informe o local.")]
-        public string Location { get; set; } = string.Empty;
-        public DateTime PlanDate { get; set; } = DateTime.Today;
-        public Guid? ClientId { get; set; }
-        public string? ClientName { get; set; }
-        public string ClientCnpj { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Informe a descrição da carga.")]
-        public string LoadDescription { get; set; } = string.Empty;
-        public decimal? WeightKg { get; set; }
-        public decimal? LengthM { get; set; }
-        public decimal? WidthM { get; set; }
-        public string? Observations { get; set; }
-        public Guid? EquipmentId { get; set; }
-        public Guid? RiggerId { get; set; }
+        var storedItems = await db.PlanAccessories.Where(x => x.PlanId == planId).ToListAsync();
+        if (storedItems.Count > 0) db.PlanAccessories.RemoveRange(storedItems);
+        foreach (var item in Draft.Accessories)
+        {
+            item.PlanId = planId;
+            item.Plan = null!;
+            db.PlanAccessories.Add(item);
+        }
+        if (storedItems.Count > 0 || Draft.Accessories.Count > 0) await db.SaveChangesAsync();
     }
+
+    private static void CopyCapacityFields(RiggingPlan? source, RiggingPlan target)
+    {
+        if (source is null) return;
+        target.BoomLengthM = source.BoomLengthM;
+        target.OperatingRadiusM = source.OperatingRadiusM;
+        target.LoadCapacityT = source.LoadCapacityT;
+        target.QuadrantStart = source.QuadrantStart;
+        target.QuadrantEnd = source.QuadrantEnd;
+        target.FlatStrapUtilizationPct = source.FlatStrapUtilizationPct;
+        target.TubularStrapUtilizationPct = source.TubularStrapUtilizationPct;
+        target.WireRopeSlingUtilizationPct = source.WireRopeSlingUtilizationPct;
+        target.ShackleUtilizationPct = source.ShackleUtilizationPct;
+        target.FootingForceKgf = source.FootingForceKgf;
+        target.MinGroundResistanceKgfCm2 = source.MinGroundResistanceKgfCm2;
+        target.MaxWindSpeedMs = source.MaxWindSpeedMs;
+    }
+
 }

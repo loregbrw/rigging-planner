@@ -1,0 +1,72 @@
+@page "/new-plan/{PlanId:guid}/{Stage}"
+@inject NavigationManager Navigation
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject PlanDraftState Draft
+@using RiggingPlanner.App.Components.Shared
+
+<RpPageHeader Title="@PlanTitle" Subtitle="@($"{PageTitle} — etapa do plano de rigging")">
+    <Actions>
+        <RpPlanActions PlanId="@PlanId" IsReadOnly="@isReadOnly" IsSaving="false"
+                       IsNew="@(!isPersisted)" Save="SavePlan" Discard="DiscardChanges" />
+    </Actions>
+</RpPageHeader>
+
+<div class="rp-stack">
+    <RpStepper Steps="steps" Links="stepLinks" Current="CurrentStep" />
+    <RpPlanNavigation PreviousUrl="@PreviousUrl" NextUrl="@NextUrl" />
+    <RpCard Title="@PageTitle">
+        <div class="rp-empty">
+            <p class="rp-empty__title">Esta etapa ainda está em preparação</p>
+            <p class="rp-muted">A navegação já está disponível para organizar o fluxo do plano.</p>
+        </div>
+    </RpCard>
+</div>
+
+@code {
+    [Parameter] public Guid PlanId { get; set; }
+
+    private readonly string[] steps = ["Dados de entrada", "Capacidade", "Anexos", "Preview", "Exportação"];
+    private IReadOnlyList<string> stepLinks => [$"new-plan/{PlanId}", $"new-plan/{PlanId}/capacity", $"new-plan/{PlanId}/attachments", $"new-plan/{PlanId}/preview", $"new-plan/{PlanId}/export"];
+    [Parameter] public string Stage { get; set; } = "attachments";
+    private string CurrentSegment => Stage.ToLowerInvariant();
+    private int CurrentStep => CurrentSegment switch
+    {
+        "attachments" => 2,
+        "preview" => 3,
+        "export" => 4,
+        _ => 2
+    };
+    private string PageTitle => CurrentSegment switch
+    {
+        "attachments" => "Anexos",
+        "preview" => "Preview",
+        "export" => "Exportação",
+        _ => "Etapa do plano"
+    };
+    private string? PreviousUrl => CurrentStep == 2 ? $"new-plan/{PlanId}/capacity" : CurrentStep == 3 ? $"new-plan/{PlanId}/attachments" : $"new-plan/{PlanId}/preview";
+    private string? NextUrl => CurrentStep == 2 ? $"new-plan/{PlanId}/preview" : CurrentStep == 3 ? $"new-plan/{PlanId}/export" : null;
+    private string PlanTitle => isReadOnly ? "Plano finalizado" : isPersisted ? "Editar plano" : "Novo plano";
+    private bool isPersisted;
+    private bool isReadOnly;
+    private void SavePlan() => Navigation.NavigateTo($"/new-plan/{PlanId}?save=true");
+    private void DiscardChanges()
+    {
+        Draft.Reset();
+        Navigation.NavigateTo("/");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Draft.PlanId == PlanId && Draft.IsInitialized)
+        {
+            isPersisted = Draft.IsPersisted;
+            isReadOnly = Draft.Plan?.Status == "finalized";
+            return;
+        }
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var plan = await db.RiggingPlans.AsNoTracking().SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+        isPersisted = plan is not null;
+        isReadOnly = plan?.Status == "finalized";
+    }
+}

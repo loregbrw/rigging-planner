@@ -67,6 +67,12 @@
 - [x] Cliente no plano usa seletor visual semelhante ao seletor de tags
 - [x] Cliente no plano usa o mesmo comportamento de teclado do seletor de tags (setas, Enter, criação e remoção)
 - [x] Máscara de CNPJ aceita formatos legado numérico e novo alfanumérico
+- [x] Navegação entre etapas sem salvamento intermediário
+- [x] Estado de edição compartilhado entre dados de entrada e capacidade
+- [x] Ações de salvar e descartar disponíveis no cabeçalho de todas as etapas
+- [x] Validação obrigatória executada somente ao salvar o plano completo
+- [x] Preview e exportação acessíveis pela navegação das etapas, com título global do plano
+- [x] Lista de planos simplificada para a ação única de abrir
 
 ## Estado atual
 
