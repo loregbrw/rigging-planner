@@ -130,7 +130,7 @@
                     }
                 </section>
                 <section class="rp-client-section rp-col-12" aria-labelledby="rigger-section-title">
-                    <h3 id="rigger-section-title" class="rp-section-title">Rigger responsável</h3>
+                    <h3 id="rigger-section-title" class="rp-section-title">Responsável</h3>
                     <div class="rp-field">
                         <label class="rp-label" for="rigger-name">Nome de exibição</label>
                         <RpTagPicker TItem="Rigger" InputId="rigger-name"
@@ -138,11 +138,11 @@
                                      SelectedItem="@(SelectedRigger ?? (IsNewRiggerSelected ? new Rigger { DisplayName = Model.RiggerDisplayName } : null))"
                                      ItemText="@(rigger => $"{rigger.DisplayName} — RPP {rigger.RppNumber}")"
                                      CanCreate="@(!string.IsNullOrWhiteSpace(Model.RiggerDisplayName) && !HasExactRigger)"
-                                     CreateLabel="@($"Criar rigger “{Model.RiggerDisplayName?.Trim()}”")"
+                                     CreateLabel="@($"Criar responsável “{Model.RiggerDisplayName?.Trim()}”")"
                                      OnInput="OnRiggerNameInput" OnSelect="OnRiggerSelect"
                                      OnCreate="OnRiggerCreate" OnRemove="OnRiggerRemove" />
                         <ValidationMessage For="() => Model.RiggerDisplayName" />
-                        <span class="rp-help">Selecione um cadastro existente ou crie um rigger novo.</span>
+                        <span class="rp-help">Selecione um cadastro existente ou crie um responsável novo.</span>
                     </div>
                     @if (IsExistingRigger)
                     {

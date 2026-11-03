@@ -2,10 +2,10 @@
 @using System.ComponentModel.DataAnnotations
 @inject IDbContextFactory<AppDbContext> DbFactory
 
-<RpPageHeader Title="Riggers" Subtitle="Cadastre os responsáveis e seus registros para reutilizar nos planos" />
+<RpPageHeader Title="Responsáveis" Subtitle="Cadastre os responsáveis e seus registros para reutilizar nos planos" />
 
 <div class="rp-stack">
-    <RpCard Title="@(editingId is null ? "Novo rigger" : "Editar rigger")">
+    <RpCard Title="@(editingId is null ? "Novo responsável  " : "Editar responsável   ")">
         @if (message is not null)
         {
             <div class="rp-alert rp-alert--success">@message</div>
@@ -19,7 +19,7 @@
                 <div class="rp-field rp-col-6"><label class="rp-label">CREA <span class="rp-required-marker" aria-hidden="true">*</span></label><InputText class="rp-input" @bind-Value="form.CreaNumber" /><ValidationMessage For="() => form.CreaNumber" /></div>
             </div>
             <div class="rp-form-actions">
-                <button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">@(editingId is null ? "Cadastrar rigger" : "Salvar alterações")</button>
+                <button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">@(editingId is null ? "Cadastrar responsável" : "Salvar alterações")</button>
                 @if (editingId is not null)
                 {
                     <button class="rp-btn rp-btn--ghost" type="button" @onclick="CancelEdit">Cancelar</button>
@@ -27,7 +27,7 @@
             </div>
         </EditForm>
     </RpCard>
-    <RpCard Title="Riggers ativos">
+    <RpCard Title="Responsáveis ativos">
         <div class="rp-table-wrap"><table class="rp-table"><thead><tr><th>Nome</th><th>RPP</th><th>CREA</th><th></th></tr></thead><tbody>
             @foreach (var rigger in activeRiggers)
             {
@@ -36,8 +36,8 @@
         </tbody></table></div>
     </RpCard>
     <RpInactiveSection TItem="Rigger"
-                       Title="Riggers inativos"
-                       Description="Riggers inativos não podem ser editados nem selecionados em novos planos."
+                       Title="Responsáveis inativos"
+                       Description="Responsáveis inativos não podem ser editados nem selecionados em novos planos."
                        EmptyText="Nenhum rigger inativo."
                        Items="inactiveRiggers">
         <HeaderTemplate><th>Nome</th><th>RPP</th><th>CREA</th><th></th></HeaderTemplate>
@@ -103,7 +103,7 @@
         await db.SaveChangesAsync();
         form = new();
         editingId = null;
-        message = stored is null ? "Rigger cadastrado com sucesso." : "Rigger atualizado com sucesso.";
+        message = stored is null ? "Responsável cadastrado com sucesso." : "Responsável atualizado com sucesso.";
         isSaving = false;
         await LoadAsync();
     }
@@ -147,7 +147,7 @@
         var inProgressUse = await db.RiggingPlans.AnyAsync(x => x.RiggerId == rigger.Id && x.DeletedAt == null && x.Status != "finalized");
         if (inProgressUse)
         {
-            deleteMessage = "Não é possível excluir: o rigger está ligado a um plano em andamento.";
+            deleteMessage = "Não é possível excluir: o responsável está ligado a um plano em andamento.";
             return;
         }
         db.Riggers.Remove(rigger);
