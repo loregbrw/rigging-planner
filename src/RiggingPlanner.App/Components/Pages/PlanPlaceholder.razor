@@ -25,7 +25,7 @@
 @code {
     [Parameter] public Guid PlanId { get; set; }
 
-    private readonly string[] steps = ["Dados de entrada", "Capacidade", "Anexos", "Preview", "Exportação"];
+    private readonly string[] steps = ["Dados de entrada", "Capacidade de Carga", "Anexos", "Preview", "Exportação"];
     private IReadOnlyList<string> stepLinks => [$"new-plan/{PlanId}", $"new-plan/{PlanId}/capacity", $"new-plan/{PlanId}/attachments", $"new-plan/{PlanId}/preview", $"new-plan/{PlanId}/export"];
     [Parameter] public string Stage { get; set; } = "attachments";
     private string CurrentSegment => Stage.ToLowerInvariant();

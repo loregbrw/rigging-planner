@@ -6,8 +6,9 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<RpPageHeader Title="@((PlanId is null || isDraftPlan) ? "Novo plano" : isReadOnly ? "Plano finalizado" : "Editar plano")"
-              Subtitle="Dados de entrada — Preencha os dados sem perder informações entre as etapas">
+<RpPageHeader
+    Title="@((PlanId is null || isDraftPlan) ? "Novo plano" : isReadOnly ? "Plano finalizado" : "Editar plano")"
+    Subtitle="Dados de entrada — Preencha os dados sem perder informações entre as etapas">
     <Actions>
         <RpPlanActions IsNew="@(PlanId is null || isDraftPlan)" IsReadOnly="@isReadOnly" IsSaving="@isSaving"
                        Save="SaveFormAsync" Discard="AskDiscard" />
@@ -18,23 +19,18 @@
     <RpStepper Steps="steps" Links="stepLinks" Current="0" />
     <RpPlanNavigation PreviousUrl="@null" NextUrl="@($"new-plan/{WorkflowPlanId}/capacity")" />
     <RpPlanInputForm Model="form" IsReadOnly="isReadOnly" IsSaving="isSaving" ErrorMessage="@errorMessage"
-                     RiggerOptions="riggerOptions"
-                     ClientSuggestions="ClientSuggestions" SelectedClient="SelectedClient"
-                     IsNewClientSelected="isNewClientSelected" IsExistingClient="IsExistingClient"
-                     HasExactClient="HasExactClient" OnValidSubmit="SaveAsync"
-                     OnClientNameInput="OnClientNameInput" OnClientSelect="SelectClient"
+                     RiggerOptions="riggerOptions" ClientSuggestions="ClientSuggestions" SelectedClient="SelectedClient"
+                     IsNewClientSelected="isNewClientSelected" IsExistingClient="IsExistingClient" HasExactClient="HasExactClient"
+                     OnValidSubmit="SaveAsync" OnClientNameInput="OnClientNameInput" OnClientSelect="SelectClient"
                      OnClientCreate="CreateClientFromInput" OnClientRemove="RemoveSelectedClient"
-                     OnClientCnpjInput="OnClientCnpjInput"
-                     RiggerSuggestions="RiggerSuggestions" SelectedRigger="SelectedRigger"
-                     IsNewRiggerSelected="isNewRiggerSelected" IsExistingRigger="IsExistingRigger"
-                     HasExactRigger="HasExactRigger"
-                     OnRiggerNameInput="OnRiggerNameInput" OnRiggerSelect="SelectRigger"
-                     OnRiggerCreate="CreateRiggerFromInput" OnRiggerRemove="RemoveSelectedRigger"
-                     @ref="inputForm" />
+                     OnClientCnpjInput="OnClientCnpjInput" RiggerSuggestions="RiggerSuggestions" SelectedRigger="SelectedRigger"
+                     IsNewRiggerSelected="isNewRiggerSelected" IsExistingRigger="IsExistingRigger" HasExactRigger="HasExactRigger"
+                     OnRiggerNameInput="OnRiggerNameInput" OnRiggerSelect="SelectRigger" OnRiggerCreate="CreateRiggerFromInput"
+                     OnRiggerRemove="RemoveSelectedRigger" @ref="inputForm" />
 </div>
 
 @code {
-    private readonly string[] steps = ["Dados de entrada", "Capacidade", "Anexos", "Preview", "Exportação"];
+    private readonly string[] steps = ["Dados de entrada", "Capacidade de Carga", "Anexos", "Preview", "Exportação"];
     [Parameter] public Guid? PlanId { get; set; }
     [SupplyParameterFromQuery(Name = "save")]
     public bool SaveRequested { get; set; }
@@ -329,8 +325,7 @@
             throw new InvalidOperationException("Informe um CNPJ válido no formato 00.000.000/0000-00 ou 00.000.000/E08G-12.");
         }
 
-        if ((await db.Clients.AsNoTracking().Select(x => x.Cnpj).ToListAsync()).Any(value => NormalizeCnpj(value) ==
-NormalizeCnpj(cnpj)))
+        if ((await db.Clients.AsNoTracking().Select(x => x.Cnpj).ToListAsync()).Any(value => NormalizeCnpj(value) == NormalizeCnpj(cnpj)))
         {
             throw new InvalidOperationException("Já existe um cliente cadastrado com este CNPJ. Selecione-o na lista.");
         }

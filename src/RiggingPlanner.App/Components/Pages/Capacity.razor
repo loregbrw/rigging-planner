@@ -28,7 +28,7 @@ else
         @if (errorMessage is not null) { <div class="rp-alert rp-alert--danger">@errorMessage</div> }
         @if (isReadOnly) { <div class="rp-alert rp-alert--info">Este plano foi finalizado e está somente para leitura.</div> }
         <fieldset disabled="@isReadOnly" class="rp-readonly-fields">
-        <RpCard Title="@($"Plano {plan.PlanNumber} — {plan.LoadDescription}")">
+        <RpCard Title="Capacidade de Carga">
             <div class="rp-capacity-sections">
                 <section class="rp-capacity-section" aria-labelledby="crane-info-title">
                     <h3 id="crane-info-title" class="rp-section-title">Informações do guindaste</h3>
@@ -156,7 +156,7 @@ else
     private decimal grossWeight => (plan?.WeightKg ?? 0) + lingadaTotal + deviceTotal + (plan?.ExtraLoadKg ?? 0);
     private decimal grossWeightTons => grossWeight / 1000;
     private decimal? utilization => plan?.LoadCapacityT is > 0 ? grossWeightTons / plan.LoadCapacityT.Value * 100 : null;
-    private readonly string[] steps = ["Dados de entrada", "Capacidade", "Anexos", "Preview", "Exportação"];
+    private readonly string[] steps = ["Dados de entrada", "Capacidade de Carga", "Anexos", "Preview", "Exportação"];
     private IReadOnlyList<string> stepLinks => [$"new-plan/{PlanId}", $"new-plan/{PlanId}/capacity", $"new-plan/{PlanId}/attachments", $"new-plan/{PlanId}/preview", $"new-plan/{PlanId}/export"];
     private string PageTitle => isReadOnly ? "Plano finalizado" : IsDraft ? "Novo plano" : "Editar plano";
 
