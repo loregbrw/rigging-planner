@@ -1,0 +1,31 @@
+<div class="rp-plan-navigation">
+    @if (PreviousUrl is null)
+    {
+        <span class="rp-plan-navigation__placeholder"></span>
+    }
+    else
+    {
+        <a class="rp-btn rp-btn--ghost" href="@NormalizeUrl(PreviousUrl)">← Anterior</a>
+    }
+    @if (NextUrl is not null)
+    {
+        <a class="rp-btn rp-btn--ghost" href="@NormalizeUrl(NextUrl)">Próximo →</a>
+    }
+    else if (OnNext.HasDelegate)
+    {
+        <button class="rp-btn rp-btn--ghost" type="button" disabled="@NextDisabled" @onclick="OnNext">Próximo →</button>
+    }
+    else
+    {
+        <span class="rp-plan-navigation__placeholder"></span>
+    }
+</div>
+
+@code {
+    [Parameter] public string? PreviousUrl { get; set; }
+    [Parameter] public string? NextUrl { get; set; }
+    [Parameter] public EventCallback OnNext { get; set; }
+    [Parameter] public bool NextDisabled { get; set; }
+
+    private static string NormalizeUrl(string url) => url.StartsWith('/') ? url : $"/{url}";
+}

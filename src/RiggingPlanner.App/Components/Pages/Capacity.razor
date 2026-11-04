@@ -1,10 +1,14 @@
 @page "/new-plan/{PlanId:guid}/capacity"
+@inject PlanDraftState Draft
 @using System.ComponentModel.DataAnnotations
 @inject IDbContextFactory<AppDbContext> DbFactory
 @inject NavigationManager Navigation
 
-<RpPageHeader Title="Capacidade de carga" Subtitle="Registre os valores do engenheiro e confira os totais calculados">
-    <Actions><a class="rp-btn rp-btn--ghost" href="@($"new-plan/{PlanId}")">Voltar aos dados</a></Actions>
+<RpPageHeader Title="@PageTitle" Subtitle="Capacidade de carga — Registre os valores do engenheiro e confira os totais calculados">
+    <Actions>
+        <RpPlanActions PlanId="@PlanId" IsNew="@IsDraft" IsReadOnly="@isReadOnly"
+                       IsSaving="false" Save="SavePlanAsync" Discard="DiscardChanges" />
+    </Actions>
 </RpPageHeader>
 
 @if (isLoading)
@@ -18,55 +22,115 @@ else if (plan is null)
 else
 {
     <div class="rp-stack">
-        @if (message is not null) { <div class="rp-alert rp-alert--success">@message</div> }
+        <RpStepper Steps="steps" Links="stepLinks" Current="1" />
+        <RpPlanNavigation PreviousUrl="@($"new-plan/{PlanId}")"
+                          NextUrl="@($"new-plan/{PlanId}/attachments")" />
         @if (errorMessage is not null) { <div class="rp-alert rp-alert--danger">@errorMessage</div> }
         @if (isReadOnly) { <div class="rp-alert rp-alert--info">Este plano foi finalizado e está somente para leitura.</div> }
         <fieldset disabled="@isReadOnly" class="rp-readonly-fields">
         <RpCard Title="@($"Plano {plan.PlanNumber} — {plan.LoadDescription}")">
-            <div class="rp-form-grid">
-                <div class="rp-field rp-col-4"><label class="rp-label">Comprimento da lança (m)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.BoomLengthM" /></div>
-                <div class="rp-field rp-col-4"><label class="rp-label">Raio de operação (m)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.OperatingRadiusM" /></div>
-                <div class="rp-field rp-col-4"><label class="rp-label">Capacidade de carga (t)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.LoadCapacityT" /></div>
-                <div class="rp-field rp-col-6"><label class="rp-label">Quadrante inicial</label><InputText class="rp-input" @bind-Value="plan.QuadrantStart" /></div>
-                <div class="rp-field rp-col-6"><label class="rp-label">Quadrante final</label><InputText class="rp-input" @bind-Value="plan.QuadrantEnd" /></div>
-                <div class="rp-field rp-col-3"><label class="rp-label">Taxa cinta plana (%)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.FlatStrapUtilizationPct" /></div>
-                <div class="rp-field rp-col-3"><label class="rp-label">Taxa cinta tubular (%)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.TubularStrapUtilizationPct" /></div>
-                <div class="rp-field rp-col-3"><label class="rp-label">Taxa laço de cabo (%)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.WireRopeSlingUtilizationPct" /></div>
-                <div class="rp-field rp-col-3"><label class="rp-label">Taxa manilha (%)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.ShackleUtilizationPct" /></div>
-                <div class="rp-field rp-col-4"><label class="rp-label">Esforço nas sapatas (kgf)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.FootingForceKgf" /></div>
-                <div class="rp-field rp-col-4"><label class="rp-label">Resistência do terreno (kgf/cm²)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.MinGroundResistanceKgfCm2" /></div>
-                <div class="rp-field rp-col-4"><label class="rp-label">Vento máximo (m/s)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.MaxWindSpeedMs" /></div>
+            <div class="rp-capacity-sections">
+                <section class="rp-capacity-section" aria-labelledby="crane-info-title">
+                    <h3 id="crane-info-title" class="rp-section-title">Informações do guindaste</h3>
+                    <div class="rp-field">
+                        <label class="rp-label" for="crane-model">Modelo</label>
+                        <RpTagPicker TItem="Equipment" InputId="crane-model"
+                                     InputValue="@Draft.Form.EquipmentModel" Suggestions="EquipmentSuggestions"
+                                     SelectedItem="@(SelectedEquipment ?? (Draft.Form.IsNewEquipment ? new Equipment { CraneModel = Draft.Form.EquipmentModel } : null))"
+                                     ItemText="@(equipment => equipment.CraneModel)"
+                                     CanCreate="@(!string.IsNullOrWhiteSpace(Draft.Form.EquipmentModel) && !HasExactEquipment)"
+                                     CreateLabel="@($"Criar equipamento “{Draft.Form.EquipmentModel?.Trim()}”")"
+                                     OnInput="OnEquipmentModelInput" OnSelect="SelectEquipment"
+                                     OnCreate="CreateEquipmentFromInput" OnRemove="RemoveSelectedEquipment" />
+                        <span class="rp-help">Selecione um equipamento existente ou crie um novo.</span>
+                    </div>
+                    @if (IsExistingEquipment)
+                    {
+                        <div class="rp-form-grid rp-mt-3">
+                            <div class="rp-field rp-col-4"><label class="rp-label">Caminhão</label><input class="rp-input rp-input--disabled" value="@Draft.Form.EquipmentTruckModel" disabled /></div>
+                            <div class="rp-field rp-col-4"><label class="rp-label">Chassi</label><input class="rp-input rp-input--disabled" value="@Draft.Form.EquipmentChassisNumber" disabled /></div>
+                            <div class="rp-field rp-col-4"><label class="rp-label">Placa</label><input class="rp-input rp-input--disabled" value="@Draft.Form.EquipmentLicensePlate" disabled /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Ano de fabricação</label><input class="rp-input rp-input--disabled" value="@Draft.Form.EquipmentManufactureYear" disabled /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Capacidade nominal (t)</label><input class="rp-input rp-input--disabled rp-input--num" value="@Draft.Form.EquipmentNominalCapacity" disabled /></div>
+                        </div>
+                    }
+                    else if (Draft.Form.IsNewEquipment)
+                    {
+                        <span class="rp-help">O equipamento será criado ao salvar o plano. Para anexar a ART agora, use o cadastro de equipamentos.</span>
+                        <div class="rp-form-grid rp-mt-3">
+                            <div class="rp-field rp-col-4"><label class="rp-label">Caminhão</label><InputText class="rp-input" @bind-Value="Draft.Form.EquipmentTruckModel" @bind-Value:after="SyncEquipmentToPlan" /></div>
+                            <div class="rp-field rp-col-4"><label class="rp-label">Chassi</label><InputText class="rp-input" @bind-Value="Draft.Form.EquipmentChassisNumber" @bind-Value:after="SyncEquipmentToPlan" /></div>
+                            <div class="rp-field rp-col-4"><label class="rp-label">Placa</label><InputText class="rp-input" @bind-Value="Draft.Form.EquipmentLicensePlate" @bind-Value:after="SyncEquipmentToPlan" /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Ano de fabricação</label><InputNumber class="rp-input rp-input--num" @bind-Value="Draft.Form.EquipmentManufactureYear" @bind-Value:after="SyncEquipmentToPlan" /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Capacidade nominal (t)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="Draft.Form.EquipmentNominalCapacity" @bind-Value:after="SyncEquipmentToPlan" /></div>
+                        </div>
+                    }
+                </section>
+                <section class="rp-capacity-section" aria-labelledby="crane-config-title">
+                    <h3 id="crane-config-title" class="rp-section-title">Configuração do guindaste</h3>
+                    <div class="rp-form-grid">
+                        <div class="rp-field rp-col-4"><label class="rp-label">Comprimento da lança (m)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.BoomLengthM" /></div>
+                        <div class="rp-field rp-col-4"><label class="rp-label">Raio de operação (m)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.OperatingRadiusM" /></div>
+                        <div class="rp-field rp-col-4"><label class="rp-label">Capacidade nominal (t)</label><input class="rp-input rp-input--disabled rp-input--num" value="@plan.CraneNominalCapacity" disabled /></div>
+                        <div class="rp-field rp-col-4"><label class="rp-label">Capacidade de carga (t)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.LoadCapacityT" /></div>
+                        <div class="rp-field rp-col-4"><label class="rp-label">Quadrante inicial</label><InputText class="rp-input" @bind-Value="plan.QuadrantStart" /></div>
+                        <div class="rp-field rp-col-4"><label class="rp-label">Quadrante final</label><InputText class="rp-input" @bind-Value="plan.QuadrantEnd" /></div>
+                    </div>
+                </section>
+                <section class="rp-capacity-section" aria-labelledby="calculation-title">
+                    <h3 id="calculation-title" class="rp-section-title">Resultados informados pelo engenheiro</h3>
+                    <div class="rp-form-grid">
+                        <div class="rp-field rp-col-3"><label class="rp-label">Taxa cinta plana (%)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.FlatStrapUtilizationPct" /></div>
+                        <div class="rp-field rp-col-3"><label class="rp-label">Taxa cinta tubular (%)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.TubularStrapUtilizationPct" /></div>
+                        <div class="rp-field rp-col-3"><label class="rp-label">Taxa laço de cabo (%)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.WireRopeSlingUtilizationPct" /></div>
+                        <div class="rp-field rp-col-3"><label class="rp-label">Taxa manilha (%)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.ShackleUtilizationPct" /></div>
+                        <div class="rp-field rp-col-4"><label class="rp-label">Esforço nas sapatas (kgf)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.FootingForceKgf" /></div>
+                        <div class="rp-field rp-col-4"><label class="rp-label">Resistência do terreno (kgf/cm²)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.MinGroundResistanceKgfCm2" /></div>
+                        <div class="rp-field rp-col-4"><label class="rp-label">Vento máximo (m/s)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.MaxWindSpeedMs" /></div>
+                    </div>
+                </section>
             </div>
-            <div class="rp-form-actions"><button class="rp-btn rp-btn--primary" @onclick="SavePlanAsync" disabled="@isSaving">Salvar capacidade</button></div>
-        </RpCard>
-
-        <RpCard Title="Adicionar item à planilha">
-            <div class="rp-form-grid">
-                <div class="rp-field rp-col-3"><label class="rp-label">Seção</label><InputSelect class="rp-select" @bind-Value="itemForm.Section"><option value="lingada">Lingada / amarras</option><option value="dispositivo">Dispositivo / balancim</option></InputSelect></div>
-                <div class="rp-field rp-col-5"><label class="rp-label">Acessório cadastrado</label><InputSelect class="rp-select" @bind-Value="itemForm.AccessoryId" @bind-Value:after="ApplySelectedAccessory"><option value="">Item avulso</option>@foreach (var accessory in filteredAccessories) { <option value="@accessory.Id">@accessory.Name@(AccessoryTagText(accessory))</option> }</InputSelect></div>
-                <div class="rp-field rp-col-2"><label class="rp-label">Quantidade</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="itemForm.Quantity" /></div>
-                <div class="rp-field rp-col-2"><label class="rp-label">Peso unit. (kg)</label><RpDecimalInput class="rp-input rp-input--num" disabled="@(itemForm.AccessoryId is not null)" @bind-Value="itemForm.UnitWeightKg" /></div>
-                <div class="rp-field rp-col-8"><label class="rp-label">Pesquisar acessório</label><input class="rp-input" placeholder="Nome ou tag" value="@accessorySearch" @oninput="OnAccessorySearchInput" /></div>
-                <div class="rp-field rp-col-8"><label class="rp-label">Descrição avulsa</label><InputText class="rp-input" @bind-Value="itemForm.Description" /></div>
-                <div class="rp-field rp-col-4"><label class="rp-label">Referência / desenho</label><InputText class="rp-input" @bind-Value="itemForm.DrawingRef" /></div>
-            </div>
-            <div class="rp-form-actions"><button class="rp-btn rp-btn--primary" @onclick="AddItemAsync">Adicionar item</button></div>
         </RpCard>
 
         <RpCard Title="Composição da carga">
-            <div class="rp-table-wrap"><table class="rp-table"><thead><tr><th>Seção</th><th>Descrição</th><th class="rp-num">Qtd.</th><th class="rp-num">Peso unit.</th><th class="rp-num">Peso total</th><th></th></tr></thead><tbody>
-                @foreach (var item in items)
-                {
-                    <tr><td>@(item.Section == "lingada" ? "Lingada" : "Dispositivo")</td><td>@item.Description</td><td class="rp-num">@item.Quantity.ToString("N2")</td><td class="rp-num">@item.UnitWeightKg.ToString("N2") kg</td><td class="rp-num">@((item.Quantity * item.UnitWeightKg).ToString("N2")) kg</td><td class="rp-row-actions"><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => RemoveItemAsync(item.Id)">Remover</button></td></tr>
-                }
-            </tbody></table></div>
-            <div class="rp-summary-grid">
-                <div><span class="rp-muted">Carga líquida</span><strong>@(plan.WeightKg?.ToString("N2") ?? "0,00") kg</strong></div>
-                <div><span class="rp-muted">Lingada / amarras</span><strong>@lingadaTotal.ToString("N2") kg</strong></div>
-                <div><span class="rp-muted">Dispositivos</span><strong>@deviceTotal.ToString("N2") kg</strong></div>
-                <div><span class="rp-muted">Carga extra</span><strong>@(plan.ExtraLoadKg?.ToString("N2") ?? "0,00") kg</strong></div>
-                <div class="rp-summary-grid__total"><span>Carga bruta</span><strong>@grossWeight.ToString("N0") kg / @grossWeightTons.ToString("N2") t</strong></div>
-                <div class="rp-summary-grid__total"><span>Utilização do guindaste</span><strong>@(utilization?.ToString("N1") ?? "-")%</strong></div>
+            <div class="rp-capacity-sections">
+                <section class="rp-capacity-section" aria-labelledby="item-form-title">
+                    <h3 id="item-form-title" class="rp-section-title">Adicionar lingada, amarra ou dispositivo</h3>
+                    <p class="rp-help">Use um acessório cadastrado para reaproveitar o peso unitário ou informe um item avulso.</p>
+                    <div class="rp-form-grid">
+                        <div class="rp-field rp-col-3"><label class="rp-label">Seção</label><InputSelect class="rp-select" @bind-Value="itemForm.Section"><option value="lingada">Lingada / amarras</option><option value="dispositivo">Dispositivo / balancim</option></InputSelect></div>
+                        <div class="rp-field rp-col-5"><label class="rp-label">Acessório cadastrado</label><InputSelect class="rp-select" @bind-Value="itemForm.AccessoryId" @bind-Value:after="ApplySelectedAccessory"><option value="">Item avulso</option>@foreach (var accessory in filteredAccessories) { <option value="@accessory.Id">@accessory.Name@(AccessoryTagText(accessory))</option> }</InputSelect></div>
+                        <div class="rp-field rp-col-2"><label class="rp-label">Quantidade</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="itemForm.Quantity" /></div>
+                        <div class="rp-field rp-col-2"><label class="rp-label">Peso unit. (kg)</label><RpDecimalInput class="rp-input rp-input--num" disabled="@(itemForm.AccessoryId is not null)" @bind-Value="itemForm.UnitWeightKg" /></div>
+                        <div class="rp-field rp-col-8"><label class="rp-label">Pesquisar acessório</label><input class="rp-input" placeholder="Nome ou tag" value="@accessorySearch" @oninput="OnAccessorySearchInput" /></div>
+                        <div class="rp-field rp-col-8"><label class="rp-label">Descrição avulsa</label><InputText class="rp-input" @bind-Value="itemForm.Description" /></div>
+                        <div class="rp-field rp-col-4"><label class="rp-label">Referência / desenho</label><InputText class="rp-input" @bind-Value="itemForm.DrawingRef" /></div>
+                    </div>
+                    <div class="rp-form-actions"><button class="rp-btn rp-btn--primary" type="button" @onclick="AddItemAsync">Adicionar item</button></div>
+                </section>
+                <section class="rp-capacity-section" aria-labelledby="items-title">
+                    <h3 id="items-title" class="rp-section-title">Itens cadastrados no plano</h3>
+                    <div class="rp-table-wrap"><table class="rp-table"><thead><tr><th>Seção</th><th>Descrição</th><th class="rp-num">Qtd.</th><th class="rp-num">Peso unit.</th><th class="rp-num">Peso total</th><th></th></tr></thead><tbody>
+                        @foreach (var item in items)
+                        {
+                            <tr><td>@(item.Section == "lingada" ? "Lingada" : "Dispositivo")</td><td>@item.Description</td><td class="rp-num">@item.Quantity.ToString("N2")</td><td class="rp-num">@item.UnitWeightKg.ToString("N2") kg</td><td class="rp-num">@((item.Quantity * item.UnitWeightKg).ToString("N2")) kg</td><td class="rp-row-actions"><button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="() => RemoveItemAsync(item.Id)">Remover</button></td></tr>
+                        }
+                    </tbody></table></div>
+                </section>
+                <section class="rp-capacity-section" aria-labelledby="gross-load-title">
+                    <h3 id="gross-load-title" class="rp-section-title">Composição da carga bruta</h3>
+                    <div class="rp-form-grid">
+                        <div class="rp-field rp-col-4"><label class="rp-label">Cargas extras (kg)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.ExtraLoadKg" /></div>
+                    </div>
+                    <div class="rp-summary-grid">
+                        <div><span class="rp-muted">Carga líquida</span><strong>@(plan.WeightKg?.ToString("N2") ?? "0,00") kg</strong></div>
+                        <div><span class="rp-muted">Lingada / amarras</span><strong>@lingadaTotal.ToString("N2") kg</strong></div>
+                        <div><span class="rp-muted">Dispositivos</span><strong>@deviceTotal.ToString("N2") kg</strong></div>
+                        <div><span class="rp-muted">Cargas extras</span><strong>@(plan.ExtraLoadKg?.ToString("N2") ?? "0,00") kg</strong></div>
+                        <div class="rp-summary-grid__total"><span>Carga bruta</span><strong>@grossWeight.ToString("N0") kg / @grossWeightTons.ToString("N2") t</strong></div>
+                        <div class="rp-summary-grid__total"><span>Utilização do guindaste</span><strong>@(utilization?.ToString("N1") ?? "-")%</strong></div>
+                    </div>
+                </section>
             </div>
         </RpCard>
         </fieldset>
@@ -75,44 +139,176 @@ else
 
 @code {
     [Parameter] public Guid PlanId { get; set; }
+    private bool IsDraft => Draft.PlanId == PlanId && Draft.Plan is not null && !Draft.IsPersisted;
+    private bool planWasLoadedFromDatabase;
     private RiggingPlan? plan;
+    private List<Equipment> equipmentOptions = [];
     private List<PlanAccessory> items = [];
     private List<Accessory> accessories = [];
     private List<Accessory> filteredAccessories = [];
     private ItemForm itemForm = new();
     private string accessorySearch = string.Empty;
     private bool isLoading = true;
-    private bool isSaving;
     private bool isReadOnly;
-    private string? message;
     private string? errorMessage;
     private decimal lingadaTotal => items.Where(x => x.Section == "lingada").Sum(x => x.Quantity * x.UnitWeightKg);
     private decimal deviceTotal => items.Where(x => x.Section == "dispositivo").Sum(x => x.Quantity * x.UnitWeightKg);
     private decimal grossWeight => (plan?.WeightKg ?? 0) + lingadaTotal + deviceTotal + (plan?.ExtraLoadKg ?? 0);
     private decimal grossWeightTons => grossWeight / 1000;
     private decimal? utilization => plan?.LoadCapacityT is > 0 ? grossWeightTons / plan.LoadCapacityT.Value * 100 : null;
+    private readonly string[] steps = ["Dados de entrada", "Capacidade", "Anexos", "Preview", "Exportação"];
+    private IReadOnlyList<string> stepLinks => [$"new-plan/{PlanId}", $"new-plan/{PlanId}/capacity", $"new-plan/{PlanId}/attachments", $"new-plan/{PlanId}/preview", $"new-plan/{PlanId}/export"];
+    private string PageTitle => isReadOnly ? "Plano finalizado" : IsDraft ? "Novo plano" : "Editar plano";
+
+    private Equipment? SelectedEquipment => equipmentOptions.FirstOrDefault(x => x.Id == Draft.Form.EquipmentId);
+    private bool IsExistingEquipment => Draft.Form.EquipmentId is not null;
+    private bool HasExactEquipment => equipmentOptions.Any(x => string.Equals(x.CraneModel, Draft.Form.EquipmentModel?.Trim(), StringComparison.CurrentCultureIgnoreCase));
+    private List<Equipment> EquipmentSuggestions => string.IsNullOrWhiteSpace(Draft.Form.EquipmentModel)
+        ? []
+        : equipmentOptions.Where(x => x.CraneModel.Contains(Draft.Form.EquipmentModel.Trim(), StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
 
     protected override async Task OnInitializedAsync()
     {
+        if (Draft.PlanId == PlanId && Draft.Plan is not null && Draft.IsInitialized)
+        {
+            plan = Draft.Plan;
+            SyncEntryFormIntoDraftPlan();
+            items = Draft.Accessories;
+            isReadOnly = plan.Status == "finalized";
+            planWasLoadedFromDatabase = false;
+        }
+
         await using var db = await DbFactory.CreateDbContextAsync();
-        plan = await db.RiggingPlans.SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+        plan ??= await db.RiggingPlans.SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+        planWasLoadedFromDatabase = plan is not null && Draft.Plan != plan;
         isReadOnly = plan?.Status == "finalized";
         accessories = await db.Accessories.AsNoTracking().Include(x => x.Tag).Where(x => x.Status == "active").OrderBy(x => x.Name).ToListAsync();
         filteredAccessories = accessories;
-        if (plan is not null) items = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
+        equipmentOptions = await db.Equipments.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.CraneModel).ToListAsync();
+
+        if (plan is not null)
+        {
+            if (plan.EquipmentId is not null && equipmentOptions.All(x => x.Id != plan.EquipmentId))
+            {
+                var linked = await db.Equipments.AsNoTracking().SingleOrDefaultAsync(x => x.Id == plan.EquipmentId);
+                if (linked is not null) equipmentOptions.Add(linked);
+            }
+
+            if (Draft.Form.EquipmentId is null && !Draft.Form.IsNewEquipment && string.IsNullOrWhiteSpace(Draft.Form.EquipmentModel))
+            {
+                Draft.Form.EquipmentId = plan.EquipmentId;
+                Draft.Form.EquipmentModel = plan.CraneModel ?? string.Empty;
+                Draft.Form.EquipmentTruckModel = plan.TruckModel ?? string.Empty;
+                Draft.Form.EquipmentChassisNumber = plan.ChassisNumber ?? string.Empty;
+                Draft.Form.EquipmentLicensePlate = plan.LicensePlate ?? string.Empty;
+                Draft.Form.EquipmentManufactureYear = plan.ManufactureYear;
+                Draft.Form.EquipmentNominalCapacity = plan.CraneNominalCapacity;
+            }
+            else
+            {
+                SyncEquipmentToPlan();
+            }
+        }
+
+        if (plan is not null && planWasLoadedFromDatabase)
+        {
+            items = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
+            Draft.Plan = plan;
+            Draft.PlanId = PlanId;
+            Draft.Accessories.Clear();
+            Draft.Accessories.AddRange(items);
+            Draft.IsPersisted = true;
+            Draft.IsInitialized = true;
+        }
         isLoading = false;
+    }
+
+    private void OnEquipmentModelInput(ChangeEventArgs args)
+    {
+        Draft.Form.EquipmentModel = args.Value?.ToString()?.Trim() ?? string.Empty;
+        Draft.Form.EquipmentId = null;
+        Draft.Form.IsNewEquipment = false;
+        Draft.Form.EquipmentTruckModel = string.Empty;
+        Draft.Form.EquipmentChassisNumber = string.Empty;
+        Draft.Form.EquipmentLicensePlate = string.Empty;
+        Draft.Form.EquipmentManufactureYear = null;
+        Draft.Form.EquipmentNominalCapacity = null;
+        SyncEquipmentToPlan();
+    }
+
+    private void SelectEquipment(Equipment equipment)
+    {
+        Draft.Form.EquipmentId = equipment.Id;
+        Draft.Form.EquipmentModel = equipment.CraneModel;
+        Draft.Form.EquipmentTruckModel = equipment.TruckModel;
+        Draft.Form.EquipmentChassisNumber = equipment.ChassisNumber;
+        Draft.Form.EquipmentLicensePlate = equipment.LicensePlate;
+        Draft.Form.EquipmentManufactureYear = equipment.ManufactureYear;
+        Draft.Form.EquipmentNominalCapacity = equipment.NominalCapacity;
+        Draft.Form.IsNewEquipment = false;
+        SyncEquipmentToPlan();
+    }
+
+    private void CreateEquipmentFromInput()
+    {
+        if (string.IsNullOrWhiteSpace(Draft.Form.EquipmentModel)) return;
+        Draft.Form.EquipmentId = null;
+        Draft.Form.IsNewEquipment = true;
+        SyncEquipmentToPlan();
+    }
+
+    private void RemoveSelectedEquipment()
+    {
+        Draft.Form.EquipmentId = null;
+        Draft.Form.EquipmentModel = string.Empty;
+        Draft.Form.EquipmentTruckModel = string.Empty;
+        Draft.Form.EquipmentChassisNumber = string.Empty;
+        Draft.Form.EquipmentLicensePlate = string.Empty;
+        Draft.Form.EquipmentManufactureYear = null;
+        Draft.Form.EquipmentNominalCapacity = null;
+        Draft.Form.IsNewEquipment = false;
+        SyncEquipmentToPlan();
+    }
+
+    private void SyncEquipmentToPlan()
+    {
+        if (plan is null) return;
+        plan.EquipmentId = Draft.Form.EquipmentId;
+        plan.CraneModel = Draft.Form.EquipmentModel;
+        plan.TruckModel = Draft.Form.EquipmentTruckModel;
+        plan.ChassisNumber = Draft.Form.EquipmentChassisNumber;
+        plan.LicensePlate = Draft.Form.EquipmentLicensePlate;
+        plan.ManufactureYear = Draft.Form.EquipmentManufactureYear;
+        plan.CraneNominalCapacity = Draft.Form.EquipmentNominalCapacity;
+    }
+
+    private void SyncEntryFormIntoDraftPlan()
+    {
+        if (plan is null || string.IsNullOrWhiteSpace(Draft.Form.OperationName)) return;
+
+        var form = Draft.Form;
+        plan.OperationName = form.OperationName.Trim();
+        plan.Location = form.Location.Trim();
+        plan.PlanDate = form.PlanDate;
+        plan.ClientId = form.ClientId;
+        plan.ClientName = form.ClientName?.Trim();
+        plan.ClientCnpj = form.ClientCnpj;
+        plan.LoadDescription = form.LoadDescription.Trim();
+        plan.LengthM = form.LengthM;
+        plan.WidthM = form.WidthM;
+        plan.HeightM = form.HeightM;
+        plan.WeightKg = form.WeightKg;
+        plan.RiggerId = form.RiggerId;
+        plan.RiggerName = form.RiggerDisplayName.Trim();
+        plan.RiggerRpp = form.RiggerRppNumber.Trim();
+        plan.RiggerCrea = string.IsNullOrWhiteSpace(form.RiggerCreaNumber) ? null : form.RiggerCreaNumber.Trim();
+        plan.Observations = string.IsNullOrWhiteSpace(form.Observations) ? null : form.Observations.Trim();
     }
 
     private async Task SavePlanAsync()
     {
         if (plan is null || isReadOnly) return;
-        isSaving = true;
-        await using var db = await DbFactory.CreateDbContextAsync();
-        db.RiggingPlans.Update(plan);
-        plan.UpdatedAt = DateTime.Now;
-        await db.SaveChangesAsync();
-        message = "Dados de capacidade salvos.";
-        isSaving = false;
+        Navigation.NavigateTo($"/new-plan/{PlanId}?save=true");
     }
 
     private async Task AddItemAsync()
@@ -120,18 +316,22 @@ else
         if (plan is null || isReadOnly || itemForm.Quantity is not > 0) { errorMessage = "Informe uma quantidade maior que zero."; return; }
         var accessory = itemForm.AccessoryId is null ? null : accessories.FirstOrDefault(x => x.Id == itemForm.AccessoryId);
         if (accessory is null && string.IsNullOrWhiteSpace(itemForm.Description)) { errorMessage = "Selecione um acessório ou informe a descrição."; return; }
-        await using var db = await DbFactory.CreateDbContextAsync();
-        db.PlanAccessories.Add(new PlanAccessory
+        var newItem = new PlanAccessory
         {
             Id = Guid.NewGuid(), PlanId = PlanId, Section = itemForm.Section, AccessoryId = accessory?.Id,
             Description = accessory?.Name ?? itemForm.Description.Trim(), DrawingRef = itemForm.DrawingRef,
             Quantity = itemForm.Quantity.Value, UnitWeightKg = accessory?.UnitWeightKg ?? itemForm.UnitWeightKg ?? 0,
             SortOrder = items.Count == 0 ? 1 : items.Max(x => x.SortOrder) + 1
-        });
-        await db.SaveChangesAsync();
+        };
+        items.Add(newItem);
+        if (IsDraft)
+        {
+            itemForm = new();
+            errorMessage = null;
+            return;
+        }
         itemForm = new();
         errorMessage = null;
-        await OnInitializedAsync();
     }
 
     private void ApplyAccessoryFilter()
@@ -167,12 +367,15 @@ else
     private async Task RemoveItemAsync(Guid id)
     {
         if (isReadOnly) return;
-        await using var db = await DbFactory.CreateDbContextAsync();
-        var item = await db.PlanAccessories.FindAsync(id);
+        var item = items.FirstOrDefault(x => x.Id == id);
         if (item is null) return;
-        db.PlanAccessories.Remove(item);
-        await db.SaveChangesAsync();
         items.RemoveAll(x => x.Id == id);
+    }
+
+    private void DiscardChanges()
+    {
+        Draft.Reset();
+        Navigation.NavigateTo("/");
     }
 
     private sealed class ItemForm

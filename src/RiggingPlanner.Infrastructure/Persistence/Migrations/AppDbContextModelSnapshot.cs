@@ -199,10 +199,10 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("FileId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("ValidFrom")
+                    b.Property<DateTime?>("ValidFrom")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("ValidTo")
+                    b.Property<DateTime?>("ValidTo")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

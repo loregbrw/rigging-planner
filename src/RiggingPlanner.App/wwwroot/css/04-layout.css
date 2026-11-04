@@ -18,7 +18,7 @@
         box-shadow: var(--rp-shadow-md);
     }
 
-    .rp-content { min-width: 0; overflow: auto; }
+    .rp-content { min-width: 0; overflow: auto; scrollbar-gutter: stable; }
     .rp-topbar {
         position: sticky;
         top: 0;

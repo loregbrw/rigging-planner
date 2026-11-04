@@ -1,0 +1,42 @@
+@inject NavigationManager Navigation
+
+@if (!IsReadOnly)
+{
+    <button class="rp-btn rp-btn--ghost rp-btn--discard" type="button" disabled="@IsSaving" @onclick="AskDiscard">
+        <span aria-hidden="true">↶ Descartar alterações</span>
+    </button>
+    <button class="rp-btn rp-btn--primary" type="button" disabled="@IsSaving" @onclick="Save">
+        <span aria-hidden="true">💾 @(IsNew ? "Salvar plano" : "Salvar alterações")</span>
+    </button>
+}
+
+@if (showDiscardConfirmation)
+{
+    <div class="rp-modal-backdrop" @onclick="() => showDiscardConfirmation = false">
+        <section class="rp-modal" role="dialog" aria-modal="true" @onclick:stopPropagation>
+            <div class="rp-modal__header"><h2>Descartar alterações?</h2></div>
+            <p class="rp-muted">As alterações feitas no plano serão perdidas.</p>
+            <div class="rp-form-actions">
+                <button class="rp-btn rp-btn--danger" @onclick="ConfirmDiscard">Descartar</button>
+                <button class="rp-btn rp-btn--ghost" @onclick="() => showDiscardConfirmation = false">Continuar editando</button>
+            </div>
+        </section>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid? PlanId { get; set; }
+    [Parameter] public bool IsNew { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public bool IsSaving { get; set; }
+    [Parameter] public EventCallback Save { get; set; }
+    [Parameter] public EventCallback Discard { get; set; }
+    private bool showDiscardConfirmation;
+
+    private void AskDiscard() => showDiscardConfirmation = true;
+    private async Task ConfirmDiscard()
+    {
+        showDiscardConfirmation = false;
+        await Discard.InvokeAsync();
+    }
+}
