@@ -21,8 +21,6 @@ public sealed class PlanDraftState
         Form.OperationName = string.Empty;
         Form.Location = string.Empty;
         Form.PlanDate = DateTime.Today;
-        Form.ArtNumber = string.Empty;
-        Form.SupervisorName = string.Empty;
         Form.ClientId = null;
         Form.ClientName = null;
         Form.ClientCnpj = string.Empty;

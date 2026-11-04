@@ -11,8 +11,6 @@ public sealed class PlanFormModel : IValidatableObject
     public string Location { get; set; } = string.Empty;
 
     public DateTime PlanDate { get; set; } = DateTime.Today;
-    public string ArtNumber { get; set; } = string.Empty;
-    public string SupervisorName { get; set; } = string.Empty;
     public Guid? ClientId { get; set; }
     public string? ClientName { get; set; }
     public string ClientCnpj { get; set; } = string.Empty;
@@ -55,7 +53,7 @@ public sealed class PlanFormModel : IValidatableObject
 
         if (EquipmentId is null && !IsNewEquipment)
         {
-            yield return new ValidationResult("Selecione ou informe um equipamento.", [nameof(EquipmentModel)]);
+            yield return new ValidationResult("Selecione ou informe um equipamento na etapa de capacidade.", [nameof(EquipmentModel)]);
         }
 
         if (IsNewEquipment)
@@ -92,7 +90,7 @@ public sealed class PlanFormModel : IValidatableObject
         if (RiggerId is null && !IsNewRigger && string.IsNullOrWhiteSpace(RiggerDisplayName))
         {
             yield return new ValidationResult(
-                "Selecione ou informe um rigger.",
+                "Selecione ou informe um responsável.",
                 [nameof(RiggerDisplayName)]);
         }
 
@@ -100,15 +98,15 @@ public sealed class PlanFormModel : IValidatableObject
         {
             if (string.IsNullOrWhiteSpace(RiggerFullName))
             {
-                yield return new ValidationResult("Informe o nome completo do novo rigger.", [nameof(RiggerFullName)]);
+                yield return new ValidationResult("Informe o nome completo do novo responsável.", [nameof(RiggerFullName)]);
             }
             if (string.IsNullOrWhiteSpace(RiggerRppNumber))
             {
-                yield return new ValidationResult("Informe o RPP do novo rigger.", [nameof(RiggerRppNumber)]);
+                yield return new ValidationResult("Informe o RPP do novo responsável.", [nameof(RiggerRppNumber)]);
             }
             if (string.IsNullOrWhiteSpace(RiggerCreaNumber))
             {
-                yield return new ValidationResult("Informe o CREA do novo rigger.", [nameof(RiggerCreaNumber)]);
+                yield return new ValidationResult("Informe o CREA do novo responsável.", [nameof(RiggerCreaNumber)]);
             }
         }
 

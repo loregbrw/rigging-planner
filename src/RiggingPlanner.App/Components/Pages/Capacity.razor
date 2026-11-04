@@ -32,13 +32,39 @@ else
             <div class="rp-capacity-sections">
                 <section class="rp-capacity-section" aria-labelledby="crane-info-title">
                     <h3 id="crane-info-title" class="rp-section-title">Informações do guindaste</h3>
-                    <div class="rp-form-grid">
-                        <div class="rp-field rp-col-4"><label class="rp-label">Modelo</label><input class="rp-input rp-input--disabled" value="@plan.CraneModel" disabled /></div>
-                        <div class="rp-field rp-col-4"><label class="rp-label">Caminhão</label><input class="rp-input rp-input--disabled" value="@plan.TruckModel" disabled /></div>
-                        <div class="rp-field rp-col-4"><label class="rp-label">Placa</label><input class="rp-input rp-input--disabled" value="@plan.LicensePlate" disabled /></div>
-                        <div class="rp-field rp-col-6"><label class="rp-label">Chassi</label><input class="rp-input rp-input--disabled" value="@plan.ChassisNumber" disabled /></div>
-                        <div class="rp-field rp-col-6"><label class="rp-label">Ano de fabricação</label><input class="rp-input rp-input--disabled" value="@plan.ManufactureYear" disabled /></div>
+                    <div class="rp-field">
+                        <label class="rp-label" for="crane-model">Modelo</label>
+                        <RpTagPicker TItem="Equipment" InputId="crane-model"
+                                     InputValue="@Draft.Form.EquipmentModel" Suggestions="EquipmentSuggestions"
+                                     SelectedItem="@(SelectedEquipment ?? (Draft.Form.IsNewEquipment ? new Equipment { CraneModel = Draft.Form.EquipmentModel } : null))"
+                                     ItemText="@(equipment => equipment.CraneModel)"
+                                     CanCreate="@(!string.IsNullOrWhiteSpace(Draft.Form.EquipmentModel) && !HasExactEquipment)"
+                                     CreateLabel="@($"Criar equipamento “{Draft.Form.EquipmentModel?.Trim()}”")"
+                                     OnInput="OnEquipmentModelInput" OnSelect="SelectEquipment"
+                                     OnCreate="CreateEquipmentFromInput" OnRemove="RemoveSelectedEquipment" />
+                        <span class="rp-help">Selecione um equipamento existente ou crie um novo.</span>
                     </div>
+                    @if (IsExistingEquipment)
+                    {
+                        <div class="rp-form-grid rp-mt-3">
+                            <div class="rp-field rp-col-4"><label class="rp-label">Caminhão</label><input class="rp-input rp-input--disabled" value="@Draft.Form.EquipmentTruckModel" disabled /></div>
+                            <div class="rp-field rp-col-4"><label class="rp-label">Chassi</label><input class="rp-input rp-input--disabled" value="@Draft.Form.EquipmentChassisNumber" disabled /></div>
+                            <div class="rp-field rp-col-4"><label class="rp-label">Placa</label><input class="rp-input rp-input--disabled" value="@Draft.Form.EquipmentLicensePlate" disabled /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Ano de fabricação</label><input class="rp-input rp-input--disabled" value="@Draft.Form.EquipmentManufactureYear" disabled /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Capacidade nominal (t)</label><input class="rp-input rp-input--disabled rp-input--num" value="@Draft.Form.EquipmentNominalCapacity" disabled /></div>
+                        </div>
+                    }
+                    else if (Draft.Form.IsNewEquipment)
+                    {
+                        <span class="rp-help">O equipamento será criado ao salvar o plano. Para anexar a ART agora, use o cadastro de equipamentos.</span>
+                        <div class="rp-form-grid rp-mt-3">
+                            <div class="rp-field rp-col-4"><label class="rp-label">Caminhão</label><InputText class="rp-input" @bind-Value="Draft.Form.EquipmentTruckModel" @bind-Value:after="SyncEquipmentToPlan" /></div>
+                            <div class="rp-field rp-col-4"><label class="rp-label">Chassi</label><InputText class="rp-input" @bind-Value="Draft.Form.EquipmentChassisNumber" @bind-Value:after="SyncEquipmentToPlan" /></div>
+                            <div class="rp-field rp-col-4"><label class="rp-label">Placa</label><InputText class="rp-input" @bind-Value="Draft.Form.EquipmentLicensePlate" @bind-Value:after="SyncEquipmentToPlan" /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Ano de fabricação</label><InputNumber class="rp-input rp-input--num" @bind-Value="Draft.Form.EquipmentManufactureYear" @bind-Value:after="SyncEquipmentToPlan" /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Capacidade nominal (t)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="Draft.Form.EquipmentNominalCapacity" @bind-Value:after="SyncEquipmentToPlan" /></div>
+                        </div>
+                    }
                 </section>
                 <section class="rp-capacity-section" aria-labelledby="crane-config-title">
                     <h3 id="crane-config-title" class="rp-section-title">Configuração do guindaste</h3>
@@ -116,6 +142,7 @@ else
     private bool IsDraft => Draft.PlanId == PlanId && Draft.Plan is not null && !Draft.IsPersisted;
     private bool planWasLoadedFromDatabase;
     private RiggingPlan? plan;
+    private List<Equipment> equipmentOptions = [];
     private List<PlanAccessory> items = [];
     private List<Accessory> accessories = [];
     private List<Accessory> filteredAccessories = [];
@@ -132,6 +159,13 @@ else
     private readonly string[] steps = ["Dados de entrada", "Capacidade", "Anexos", "Preview", "Exportação"];
     private IReadOnlyList<string> stepLinks => [$"new-plan/{PlanId}", $"new-plan/{PlanId}/capacity", $"new-plan/{PlanId}/attachments", $"new-plan/{PlanId}/preview", $"new-plan/{PlanId}/export"];
     private string PageTitle => isReadOnly ? "Plano finalizado" : IsDraft ? "Novo plano" : "Editar plano";
+
+    private Equipment? SelectedEquipment => equipmentOptions.FirstOrDefault(x => x.Id == Draft.Form.EquipmentId);
+    private bool IsExistingEquipment => Draft.Form.EquipmentId is not null;
+    private bool HasExactEquipment => equipmentOptions.Any(x => string.Equals(x.CraneModel, Draft.Form.EquipmentModel?.Trim(), StringComparison.CurrentCultureIgnoreCase));
+    private List<Equipment> EquipmentSuggestions => string.IsNullOrWhiteSpace(Draft.Form.EquipmentModel)
+        ? []
+        : equipmentOptions.Where(x => x.CraneModel.Contains(Draft.Form.EquipmentModel.Trim(), StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
 
     protected override async Task OnInitializedAsync()
     {
@@ -150,6 +184,32 @@ else
         isReadOnly = plan?.Status == "finalized";
         accessories = await db.Accessories.AsNoTracking().Include(x => x.Tag).Where(x => x.Status == "active").OrderBy(x => x.Name).ToListAsync();
         filteredAccessories = accessories;
+        equipmentOptions = await db.Equipments.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.CraneModel).ToListAsync();
+
+        if (plan is not null)
+        {
+            if (plan.EquipmentId is not null && equipmentOptions.All(x => x.Id != plan.EquipmentId))
+            {
+                var linked = await db.Equipments.AsNoTracking().SingleOrDefaultAsync(x => x.Id == plan.EquipmentId);
+                if (linked is not null) equipmentOptions.Add(linked);
+            }
+
+            if (Draft.Form.EquipmentId is null && !Draft.Form.IsNewEquipment && string.IsNullOrWhiteSpace(Draft.Form.EquipmentModel))
+            {
+                Draft.Form.EquipmentId = plan.EquipmentId;
+                Draft.Form.EquipmentModel = plan.CraneModel ?? string.Empty;
+                Draft.Form.EquipmentTruckModel = plan.TruckModel ?? string.Empty;
+                Draft.Form.EquipmentChassisNumber = plan.ChassisNumber ?? string.Empty;
+                Draft.Form.EquipmentLicensePlate = plan.LicensePlate ?? string.Empty;
+                Draft.Form.EquipmentManufactureYear = plan.ManufactureYear;
+                Draft.Form.EquipmentNominalCapacity = plan.CraneNominalCapacity;
+            }
+            else
+            {
+                SyncEquipmentToPlan();
+            }
+        }
+
         if (plan is not null && planWasLoadedFromDatabase)
         {
             items = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
@@ -161,6 +221,65 @@ else
             Draft.IsInitialized = true;
         }
         isLoading = false;
+    }
+
+    private void OnEquipmentModelInput(ChangeEventArgs args)
+    {
+        Draft.Form.EquipmentModel = args.Value?.ToString()?.Trim() ?? string.Empty;
+        Draft.Form.EquipmentId = null;
+        Draft.Form.IsNewEquipment = false;
+        Draft.Form.EquipmentTruckModel = string.Empty;
+        Draft.Form.EquipmentChassisNumber = string.Empty;
+        Draft.Form.EquipmentLicensePlate = string.Empty;
+        Draft.Form.EquipmentManufactureYear = null;
+        Draft.Form.EquipmentNominalCapacity = null;
+        SyncEquipmentToPlan();
+    }
+
+    private void SelectEquipment(Equipment equipment)
+    {
+        Draft.Form.EquipmentId = equipment.Id;
+        Draft.Form.EquipmentModel = equipment.CraneModel;
+        Draft.Form.EquipmentTruckModel = equipment.TruckModel;
+        Draft.Form.EquipmentChassisNumber = equipment.ChassisNumber;
+        Draft.Form.EquipmentLicensePlate = equipment.LicensePlate;
+        Draft.Form.EquipmentManufactureYear = equipment.ManufactureYear;
+        Draft.Form.EquipmentNominalCapacity = equipment.NominalCapacity;
+        Draft.Form.IsNewEquipment = false;
+        SyncEquipmentToPlan();
+    }
+
+    private void CreateEquipmentFromInput()
+    {
+        if (string.IsNullOrWhiteSpace(Draft.Form.EquipmentModel)) return;
+        Draft.Form.EquipmentId = null;
+        Draft.Form.IsNewEquipment = true;
+        SyncEquipmentToPlan();
+    }
+
+    private void RemoveSelectedEquipment()
+    {
+        Draft.Form.EquipmentId = null;
+        Draft.Form.EquipmentModel = string.Empty;
+        Draft.Form.EquipmentTruckModel = string.Empty;
+        Draft.Form.EquipmentChassisNumber = string.Empty;
+        Draft.Form.EquipmentLicensePlate = string.Empty;
+        Draft.Form.EquipmentManufactureYear = null;
+        Draft.Form.EquipmentNominalCapacity = null;
+        Draft.Form.IsNewEquipment = false;
+        SyncEquipmentToPlan();
+    }
+
+    private void SyncEquipmentToPlan()
+    {
+        if (plan is null) return;
+        plan.EquipmentId = Draft.Form.EquipmentId;
+        plan.CraneModel = Draft.Form.EquipmentModel;
+        plan.TruckModel = Draft.Form.EquipmentTruckModel;
+        plan.ChassisNumber = Draft.Form.EquipmentChassisNumber;
+        plan.LicensePlate = Draft.Form.EquipmentLicensePlate;
+        plan.ManufactureYear = Draft.Form.EquipmentManufactureYear;
+        plan.CraneNominalCapacity = Draft.Form.EquipmentNominalCapacity;
     }
 
     private void SyncEntryFormIntoDraftPlan()
@@ -179,19 +298,10 @@ else
         plan.WidthM = form.WidthM;
         plan.HeightM = form.HeightM;
         plan.WeightKg = form.WeightKg;
-        plan.EquipmentId = form.EquipmentId;
-        plan.TruckModel = form.EquipmentTruckModel.Trim();
-        plan.ChassisNumber = form.EquipmentChassisNumber.Trim();
-        plan.LicensePlate = form.EquipmentLicensePlate.Trim().ToUpperInvariant();
-        plan.ManufactureYear = form.EquipmentManufactureYear;
-        plan.CraneModel = form.EquipmentModel.Trim();
-        plan.CraneNominalCapacity = form.EquipmentNominalCapacity;
         plan.RiggerId = form.RiggerId;
         plan.RiggerName = form.RiggerDisplayName.Trim();
         plan.RiggerRpp = form.RiggerRppNumber.Trim();
         plan.RiggerCrea = string.IsNullOrWhiteSpace(form.RiggerCreaNumber) ? null : form.RiggerCreaNumber.Trim();
-        plan.ArtNumber = string.IsNullOrWhiteSpace(form.ArtNumber) ? null : form.ArtNumber.Trim();
-        plan.SupervisorName = string.IsNullOrWhiteSpace(form.SupervisorName) ? null : form.SupervisorName.Trim();
         plan.Observations = string.IsNullOrWhiteSpace(form.Observations) ? null : form.Observations.Trim();
     }
 

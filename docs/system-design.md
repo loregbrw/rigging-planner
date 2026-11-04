@@ -434,14 +434,14 @@ Regras:
 |---|---|---|
 | **Planos** (lista + pastas) | `rp-split`: lista de pastas à esquerda (260px) + tabela à direita | `rp-folder-list`, `rp-toolbar`, `rp-table`, `rp-btn`, `rp-menu` |
 | **Novo/Editar plano** (wizard 5 etapas) | Cabeçalho com `rp-stepper` + conteúdo + rodapé fixo glass | `rp-stepper`, `rp-card`, `rp-form-grid`, `rp-field`, `rp-sheet`, `rp-wizard__footer` |
-| 1. Dados de entrada | Seções separadas de identificação, cliente, carga, equipamento, rigger e referências do documento em grade de 12 colunas | `rp-form-grid`, `rp-client-section`, `rp-tag-picker` |
-| 2. Capacidade de carga | Seções separadas para informações/configuração do guindaste, resultados informados e composição da carga, com resumo calculado | `rp-capacity-section`, `rp-summary-grid`, `rp-table` |
+| 1. Dados de entrada | Seções separadas de identificação, cliente, carga, responsável e observações em grade de 12 colunas | `rp-form-grid`, `rp-client-section`, `rp-tag-picker` |
+| 2. Capacidade de carga | Seções separadas para informações do guindaste (seletor tipo tag e criação rápida), configuração operacional, resultados informados e composição da carga, com resumo calculado | `rp-capacity-section`, `rp-summary-grid`, `rp-table` |
 | 3. Anexos | 3 zonas: desenhos (imagens), ART do plano (PDF), laudo (PDF) | `rp-dropzone`, `rp-attachment-list` |
 | 4. Preview | Visualizador de folhas A4 com zoom | `rp-doc-preview`, `rp-doc-page` |
 | 5. Exportação | Lista ordenada das partes do PDF + ação principal | `rp-parts`, `rp-alert`, `rp-progress` |
 | **Cadastros** (clientes, equipamentos, riggers e acessórios) | Tabelas separadas por ativos/inativos, formulário de cadastro/edição e confirmação de exclusão protegida | `rp-table`, `rp-badge`, `rp-form-grid`, `rp-alert`, `rp-btn` |
 | **Cliente no plano** | Mesmo seletor interativo de tags, com chip, setas, Enter, criação e remoção; cliente existente preenche o CNPJ bloqueado; nome e CNPJ ocupam colunas lado a lado | `rp-tag-picker`, `rp-autocomplete`, `rp-input`, `rp-help` |
-| **Rigger no plano** | Seção própria com seletor interativo de tags, chip, setas, Enter, criação e remoção; rigger existente preenche nome completo, RPP e CREA bloqueados; novo rigger informa esses dados no próprio formulário | `rp-tag-picker`, `rp-autocomplete`, `rp-input`, `rp-help` |
+| **Responsável no plano** | Seção própria com seletor interativo de tags, chip, setas, Enter, criação e remoção; responsável existente preenche nome completo, RPP e CREA bloqueados; novo responsável informa esses dados no próprio formulário | `rp-tag-picker`, `rp-autocomplete`, `rp-input`, `rp-help` |
 
 ### 6.2 Estrutura do shell
 ```

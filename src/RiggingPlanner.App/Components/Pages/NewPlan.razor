@@ -18,10 +18,7 @@
     <RpStepper Steps="steps" Links="stepLinks" Current="0" />
     <RpPlanNavigation PreviousUrl="@null" NextUrl="@($"new-plan/{WorkflowPlanId}/capacity")" />
     <RpPlanInputForm Model="form" IsReadOnly="isReadOnly" IsSaving="isSaving" ErrorMessage="@errorMessage"
-                     EquipmentOptions="equipmentOptions" RiggerOptions="riggerOptions"
-                     EquipmentSuggestions="EquipmentSuggestions" SelectedEquipment="SelectedEquipment"
-                     IsNewEquipmentSelected="isNewEquipmentSelected" IsExistingEquipment="IsExistingEquipment"
-                     HasExactEquipment="HasExactEquipment"
+                     RiggerOptions="riggerOptions"
                      ClientSuggestions="ClientSuggestions" SelectedClient="SelectedClient"
                      IsNewClientSelected="isNewClientSelected" IsExistingClient="IsExistingClient"
                      HasExactClient="HasExactClient" OnValidSubmit="SaveAsync"
@@ -33,8 +30,6 @@
                      HasExactRigger="HasExactRigger"
                      OnRiggerNameInput="OnRiggerNameInput" OnRiggerSelect="SelectRigger"
                      OnRiggerCreate="CreateRiggerFromInput" OnRiggerRemove="RemoveSelectedRigger"
-                     OnEquipmentModelInput="OnEquipmentModelInput" OnEquipmentSelect="SelectEquipment"
-                     OnEquipmentCreate="CreateEquipmentFromInput" OnEquipmentRemove="RemoveSelectedEquipment"
                      @ref="inputForm" />
 </div>
 
@@ -59,19 +54,14 @@
     private string? errorMessage;
     private Client? SelectedClient => clientOptions.FirstOrDefault(x => x.Id == form.ClientId);
     private Rigger? SelectedRigger => riggerOptions.FirstOrDefault(x => x.Id == form.RiggerId);
-    private Equipment? SelectedEquipment => equipmentOptions.FirstOrDefault(x => x.Id == form.EquipmentId);
     private bool IsExistingRigger => form.RiggerId is not null;
     private bool HasExactRigger => riggerOptions.Any(x => string.Equals(x.DisplayName, form.RiggerDisplayName?.Trim(),
         StringComparison.CurrentCultureIgnoreCase));
     private bool HasExactClient => clientOptions.Any(x => string.Equals(x.Name, form.ClientName?.Trim(),
-StringComparison.CurrentCultureIgnoreCase));
+        StringComparison.CurrentCultureIgnoreCase));
     private List<Client> ClientSuggestions => string.IsNullOrWhiteSpace(form.ClientName)
         ? []
         : clientOptions.Where(x => x.Name.Contains(form.ClientName.Trim(),
-StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
-    private List<Equipment> EquipmentSuggestions => string.IsNullOrWhiteSpace(form.EquipmentModel)
-        ? []
-        : equipmentOptions.Where(x => x.CraneModel.Contains(form.EquipmentModel.Trim(),
             StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
     private List<Rigger> RiggerSuggestions => string.IsNullOrWhiteSpace(form.RiggerDisplayName)
         ? []
@@ -79,7 +69,6 @@ StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
             StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
     private bool isNewClientSelected;
     private bool isNewRiggerSelected;
-    private bool isNewEquipmentSelected;
 
     private Guid WorkflowPlanId => PlanId ?? Draft.PlanId ?? Guid.Empty;
     private Task SaveFormAsync() => inputForm?.SubmitAsync() ?? Task.CompletedTask;
@@ -97,7 +86,7 @@ StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
             return await db.Equipments.SingleOrDefaultAsync(x => x.Id == form.EquipmentId);
         }
 
-        if (!isNewEquipmentSelected || string.IsNullOrWhiteSpace(form.EquipmentModel))
+        if (!form.IsNewEquipment || string.IsNullOrWhiteSpace(form.EquipmentModel))
         {
             return null;
         }
@@ -164,7 +153,6 @@ StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
             isNewClientSelected = Draft.Plan?.ClientId is null && !string.IsNullOrWhiteSpace(form.ClientName);
             isNewRiggerSelected = Draft.Plan?.RiggerId is null && !string.IsNullOrWhiteSpace(form.RiggerDisplayName);
             form.IsNewRigger = isNewRiggerSelected;
-            isNewEquipmentSelected = form.IsNewEquipment;
             if (Draft.IsPersisted && Draft.Plan is not null && string.IsNullOrWhiteSpace(form.OperationName))
             {
                 LoadFormFromPlan(Draft.Plan);
@@ -244,8 +232,6 @@ StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
                 existingPlan.PlanDate = form.PlanDate;
                 existingPlan.Location = form.Location.Trim();
                 existingPlan.OperationName = form.OperationName.Trim();
-                existingPlan.ArtNumber = string.IsNullOrWhiteSpace(form.ArtNumber) ? null : form.ArtNumber.Trim();
-                existingPlan.SupervisorName = string.IsNullOrWhiteSpace(form.SupervisorName) ? null : form.SupervisorName.Trim();
                 var existingClient = await ResolveClientAsync(db);
                 existingPlan.ClientId = existingClient?.Id;
                 existingPlan.ClientName = existingClient?.Name ?? form.ClientName?.Trim();
@@ -291,8 +277,6 @@ StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
                 PlanDate = form.PlanDate,
                 Location = form.Location.Trim(),
                 OperationName = form.OperationName.Trim(),
-                ArtNumber = string.IsNullOrWhiteSpace(form.ArtNumber) ? null : form.ArtNumber.Trim(),
-                SupervisorName = string.IsNullOrWhiteSpace(form.SupervisorName) ? null : form.SupervisorName.Trim(),
                 Client = client,
                 ClientName = client?.Name ?? form.ClientName?.Trim(),
                 ClientCnpj = client?.Cnpj ?? form.ClientCnpj?.Trim(),
@@ -317,7 +301,6 @@ StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
             await transaction.CommitAsync();
             Navigation.NavigateTo("/");
         }
-
         catch (Exception exception)
         {
             errorMessage = $"Não foi possível salvar o plano: {exception.Message}";
@@ -365,9 +348,6 @@ NormalizeCnpj(cnpj)))
     }
 
     private bool IsExistingClient => form.ClientId is not null;
-    private bool IsExistingEquipment => form.EquipmentId is not null;
-    private bool HasExactEquipment => equipmentOptions.Any(x => string.Equals(x.CraneModel,
-        form.EquipmentModel?.Trim(), StringComparison.CurrentCultureIgnoreCase));
 
     private void OnClientNameInput(ChangeEventArgs args)
     {
@@ -441,53 +421,6 @@ string.Empty;
         isNewRiggerSelected = false;
         form.IsNewRigger = false;
     }
-
-    private void OnEquipmentModelInput(ChangeEventArgs args)
-    {
-        form.EquipmentModel = args.Value?.ToString()?.Trim() ?? string.Empty;
-        form.EquipmentId = null;
-        isNewEquipmentSelected = false;
-        form.EquipmentTruckModel = string.Empty;
-        form.EquipmentChassisNumber = string.Empty;
-        form.EquipmentLicensePlate = string.Empty;
-        form.EquipmentManufactureYear = null;
-        form.EquipmentNominalCapacity = null;
-        form.IsNewEquipment = false;
-    }
-
-    private void SelectEquipment(Equipment equipment)
-    {
-        form.EquipmentId = equipment.Id;
-        form.EquipmentModel = equipment.CraneModel;
-        form.EquipmentTruckModel = equipment.TruckModel;
-        form.EquipmentChassisNumber = equipment.ChassisNumber;
-        form.EquipmentLicensePlate = equipment.LicensePlate;
-        form.EquipmentManufactureYear = equipment.ManufactureYear;
-        form.EquipmentNominalCapacity = equipment.NominalCapacity;
-        isNewEquipmentSelected = false;
-        form.IsNewEquipment = false;
-    }
-
-    private void CreateEquipmentFromInput()
-    {
-        if (string.IsNullOrWhiteSpace(form.EquipmentModel)) return;
-        form.EquipmentId = null;
-        isNewEquipmentSelected = true;
-        form.IsNewEquipment = true;
-    }
-
-    private void RemoveSelectedEquipment()
-    {
-        form.EquipmentId = null;
-        form.EquipmentModel = string.Empty;
-        form.EquipmentTruckModel = string.Empty;
-        form.EquipmentChassisNumber = string.Empty;
-        form.EquipmentLicensePlate = string.Empty;
-        form.EquipmentManufactureYear = null;
-        isNewEquipmentSelected = false;
-        form.IsNewEquipment = false;
-    }
-
 
     private static string? FormatCnpj(string? value)
     {
@@ -568,8 +501,6 @@ IReadOnlyCollection<Rigger> riggerOptions)
         form.OperationName = plan.OperationName;
         form.Location = plan.Location;
         form.PlanDate = plan.PlanDate;
-        form.ArtNumber = plan.ArtNumber ?? string.Empty;
-        form.SupervisorName = plan.SupervisorName ?? string.Empty;
         form.ClientId = plan.ClientId;
         form.ClientName = plan.ClientName;
         form.ClientCnpj = FormatCnpj(plan.ClientCnpj) ?? string.Empty;
@@ -588,8 +519,7 @@ IReadOnlyCollection<Rigger> riggerOptions)
         form.EquipmentLicensePlate = linkedEquipment?.LicensePlate ?? plan.LicensePlate ?? string.Empty;
         form.EquipmentManufactureYear = linkedEquipment?.ManufactureYear ?? plan.ManufactureYear;
         form.EquipmentNominalCapacity = linkedEquipment?.NominalCapacity ?? plan.CraneNominalCapacity;
-        isNewEquipmentSelected = plan.EquipmentId is null && !string.IsNullOrWhiteSpace(form.EquipmentModel);
-        form.IsNewEquipment = isNewEquipmentSelected;
+        form.IsNewEquipment = plan.EquipmentId is null && !string.IsNullOrWhiteSpace(form.EquipmentModel);
         form.RiggerId = plan.RiggerId;
         var linkedRigger = riggerOptions.FirstOrDefault(x => x.Id == plan.RiggerId);
         form.RiggerDisplayName = linkedRigger?.DisplayName ?? plan.RiggerName ?? string.Empty;

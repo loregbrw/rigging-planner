@@ -1,4 +1,4 @@
-# Rigging Planner — Jornada de Aprendizagem: Sistemas Inteligentes Conectados
+﻿# Rigging Planner — Jornada de Aprendizagem: Sistemas Inteligentes Conectados
 
 > **Fonte oficial da verdade do projeto.** Em qualquer divergência entre este documento e os protótipos de tela, vale este documento. Os protótipos servem apenas como inspiração visual.
 > Progresso do desenvolvimento: ver `docs/progress.md`.
@@ -17,7 +17,7 @@
 
 O repositório contém uma aplicação desktop Windows em .NET MAUI Blazor Hybrid com SQLite/EF Core. Já estão implementados os fluxos de planos em rascunho, dados de entrada, capacidade de carga, cadastro de acessórios, tags, riggers e equipamentos. A interface também permite finalizar planos, tornando-os somente leitura, e separar, reativar e excluir definitivamente cadastros inativos com confirmação e verificação de vínculos.
 
-O modelo de dados já possui entidades para clientes, pastas, laudos, arquivos, desenhos e exportações. O cadastro de clientes e riggers, sua seleção no plano e o cadastro rápido de um novo registro durante o preenchimento já estão disponíveis. As duas primeiras etapas do plano também mantêm ART, supervisor, informações do guindaste, composição da carga e resultados digitados pelo engenheiro. Anexos, preview, geração de PDF, lixeira de planos, pastas e cadastro de laudos devem ser tratados como funcionalidades planejadas, não como recursos já disponíveis.
+O modelo de dados já possui entidades para clientes, pastas, laudos, arquivos, desenhos e exportações. O cadastro de clientes e riggers, sua seleção no plano e o cadastro rápido de um novo registro durante o preenchimento já estão disponíveis. A primeira etapa do plano organiza identificação, cliente, carga, responsável e observações. A seção "Referências do documento" (número da ART e supervisor no cadastro inicial) foi retirada do formulário. A etapa de capacidade centraliza as informações do guindaste (com seletor e opção de criação rápida), configuração operacional, resultados digitados pelo engenheiro e composição da carga. Anexos, preview, geração de PDF, lixeira de planos, pastas e cadastro de laudos devem ser tratados como funcionalidades planejadas, não como recursos já disponíveis.
 
 ## 2. Empresa Parceira
 - **Nome:** Guindastes Ribas Ltda.
@@ -281,12 +281,12 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **Planos e pastas:** atualmente há uma lista única de planos, com criação, abertura e edição de rascunhos. Pastas de um nível ainda não possuem tela ou operações. Não há função de duplicar plano.
 - **Finalizar plano:** enquanto não finalizado, o plano pode ser editado. A finalização com confirmação está implementada e torna o plano somente leitura; não existe reabertura pela UI atual.
 - **Lixeira:** planejada para planos excluídos; ainda não há ação de exclusão, restauração ou exclusão definitiva de planos.
-- **Dados de entrada:** cliente, local, data, guindaste (placa, chassi, capacidade), carga (descrição, dimensões, peso), acessórios, planejador/rigger (nome, RPP, CREA).
-- **Riggers:** cadastro (nome completo, nome de exibição, RPP, CREA), escolhido no plano e cadastrável ali mesmo. O "Supervisor Responsável" é texto livre e opcional no plano.
+- **Dados de entrada:** identificação da operação, local, data do plano, cliente (com autocomplete e CNPJ), carga (descrição, dimensões e peso), responsável (nome, RPP e CREA) e observações.
+- **Responsáveis (riggers):** cadastro (nome completo, nome de exibição, RPP, CREA), apresentado na interface como Responsável, escolhido no plano e cadastrável ali mesmo.
 - **Cadastros em uso:** riggers, equipamentos e acessórios possuem ativos/inativos. A exclusão definitiva é bloqueada por vínculos em planos em andamento; planos finalizados preservam os dados copiados.
 - **Clientes:** há uma tela independente para cadastrar, editar, ativar/inativar e excluir clientes inativos. O CNPJ é obrigatório e usa máscara compatível com os formatos legado `00.000.000/0000-00` e novo alfanumérico `00.000.000/E08G-12`. No plano, o nome/razão social usa o mesmo seletor interativo de tags, com setas, Enter, criação e remoção; ao selecionar um cliente existente, o CNPJ é preenchido e bloqueado.
 - **Equipamentos e laudos:** o cadastro do equipamento está implementado com modelo, caminhão, chassi e placas. O próprio formulário possui um editor de ARTs que permite montar uma ou várias ARTs antes de salvar, listar, editar e excluir cada item; os registros persistidos permanecem no histórico com status válida ou vencida. O seletor do equipamento no plano usa autocomplete, preenche os dados automaticamente e permite criação rápida; a seleção de laudos por validade no plano continua planejada.
-- **Capacidade de carga:** interface tipo planilha com os mesmos grupos de campos da folha-resumo (Seção 6.2), com os dados reaproveitados dos demais passos (sem redigitação). A tela separa informações do guindaste, configuração, resultados informados, composição da carga e itens adicionados. Capacidade de carga, taxas dos acessórios, esforço nas sapatas, resistência do terreno, vento e cargas extras são digitados pelo engenheiro; pesos totais, carga bruta, conversão para t e taxa de utilização do guindaste são calculados na exibição.
+- **Capacidade de carga:** interface tipo planilha que centraliza a seleção e dados das Informações do Guindaste (seletor tipo tag, caminhão, chassi, placa, ano e capacidade nominal, com criação rápida), configuração operacional, resultados informados pelo engenheiro, composição da carga e itens adicionados. Capacidade de carga, taxas dos acessórios, esforço nas sapatas, resistência do terreno, vento e cargas extras são digitados pelo engenheiro; pesos totais, carga bruta, conversão para t e taxa de utilização do guindaste são calculados na exibição.
 - **Cadastro de acessórios:** implementado com nome, peso unitário, uma tag opcional, busca/filtro, edição, ativação/inativação, reativação e exclusão definitiva protegida. Histórico de eventos e alertas de desgaste/descarte permanecem planejados.
 - **Anexos do plano:** imagens das folhas do SolidWorks (PNG ou outros formatos de imagem; quantidade livre, ordem definida pelo usuário) e PDF da ART do plano; o número da ART é digitado uma vez no plano e reaproveitado nas demais páginas (leitura automática do PDF fica como evolução futura).
 - **Dados congelados no plano:** ao escolher cliente, equipamento, acessórios etc., os valores são copiados para o plano. Alterar um cadastro depois **não altera planos já criados**; no máximo o sistema informa ou avisa que o cadastro mudou.
@@ -299,13 +299,13 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 | Caso | Onde é cadastrado | Como entra no plano |
 |---|---|---|
 | **Cliente** | Tela de clientes (nome e CNPJ), com cadastro rápido também disponível na tela do plano | O nome possui autocomplete; clientes existentes preenchem o CNPJ automaticamente e novos clientes exigem nome e CNPJ; ambos são copiados para o plano |
-| **Equipamento (caminhão + guindaste)** | Tela de equipamentos | Equipamentos ativos são escolhidos no plano; os dados são copiados para o plano |
+| **Equipamento (caminhão + guindaste)** | Tela de equipamentos | Equipamentos ativos são escolhidos na etapa de Capacidade do plano (com opção de criação rápida); os dados são copiados para o plano |
 | **Laudo + ART do laudo** | Cadastro do equipamento, ART opcional, validade e arquivo | O cadastro e o histórico estão disponíveis; a seleção de laudo por validade no plano ainda é prevista |
-| **Rigger** | Tela de riggers, com cadastro rápido também disponível na tela do plano | O nome de exibição possui autocomplete; riggers existentes preenchem nome completo, RPP e CREA; novos riggers exigem esses dados; todos são copiados para o plano |
+| **Responsável (Rigger)** | Tela de responsáveis, com cadastro rápido também disponível na tela do plano | O nome de exibição possui autocomplete; responsáveis existentes preenchem nome completo, RPP e CREA; novos responsáveis exigem esses dados; todos são copiados para o plano |
 | **Acessórios** | Tela de acessórios (nome, peso unitário e uma tag opcional) | Tags são selecionadas por autocomplete, podem ser criadas no próprio campo e administradas separadamente; acessórios ativos são escolhidos na capacidade, com quantidade; nome e peso unitário são copiados |
 | **ART do plano** | Não há cadastro: é anexada ao plano | PDF anexado e número da ART digitado uma vez no plano (reaproveitado nas outras páginas) |
 | **Desenhos (SolidWorks)** | Modelado nas entidades, mas sem tela implementada | Quantidade livre e ordenação são requisitos planejados |
-| **Carga, local, data, ART, supervisor, configuração do guindaste, resultados** | Digitados no plano a cada trabalho | Gravados no plano; totais e taxa do guindaste calculados na exibição |
+| **Carga, local, data, configuração do guindaste, resultados** | Digitados no plano a cada trabalho | Gravados no plano; totais e taxa do guindaste calculados na exibição |
 | **Número do plano** | Gerado pelo sistema ao criar o plano | Mês e ano vêm da data do plano; muda se a data passar para outro mês (só em rascunho, com aviso se já exportado) |
 | **Finalização** | Ação na lista de planos, com confirmação | Implementado: plano finalizado fica somente para leitura e recebe `FinalizedAt`; não existe reabertura |
 | **Exclusão** | Ainda não existe ação de exclusão de planos na UI | Lixeira e exclusão definitiva de planos são funcionalidades planejadas |
