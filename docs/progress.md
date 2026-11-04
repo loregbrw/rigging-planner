@@ -42,18 +42,87 @@
 - [x] Migration `InitialCreate` regenerada com as tabelas e índices do modelo inicial
 - [x] Teste de schema, migration e persistência de plano com cliente relacionado
 
-## Próximas etapas (previstas — ordem a confirmar)
+### Etapa 3 — Planos, cadastro de acessórios e navegação
+- [x] Tela de planos conectada ao SQLite via `IDbContextFactory`
+- [x] Criação de planos com validação, numeração automática AAMMNNN e cliente reutilizável
+- [x] Abertura e edição dos dados principais de um plano existente
+- [x] Tela de acessórios com cadastro, listagem e ativação/inativação persistidas
+- [x] Menu lateral organizado por seções de operação e cadastros
+- [x] Estados vazios, tabelas, badges, validações e mensagens de sucesso/erro adicionados à UI
 
-| # | Etapa | Observação |
+### Etapas 4 e 6 — Dados de entrada e capacidade de carga
+- [x] Cadastro persistente de equipamentos com modelo, caminhão, chassi, placas, ano e ARTs opcionais com validade e histórico
+- [x] Editor específico de ARTs dentro do formulário do equipamento, com adição múltipla, edição sem reenviar o PDF existente, datas opcionais, exclusão protegida e histórico visual de validade
+- [x] Cadastro persistente de riggers, com nome completo, nome de exibição, RPP e CREA
+- [x] Seleção de equipamento e rigger no plano, copiando os dados para manter o plano autossuficiente
+- [x] Tela de capacidade de carga vinculada ao plano
+- [x] Inclusão e remoção de itens de lingada e dispositivos, usando acessórios cadastrados ou descrição avulsa
+- [x] Persistência dos itens em `plan_accessories` e dos parâmetros digitados da configuração do guindaste
+- [x] Exibição dos totais de lingada, dispositivos, carga bruta em kg/t e taxa de utilização do guindaste
+- [x] Tags de acessórios normalizadas em tabela própria, com autocomplete, chips coloridos, uma tag por acessório e administração
+- [x] Ciclo de vida de cadastros: ativos separados de inativos, reativação e exclusão definitiva protegida por vínculos
+- [x] Finalização de planos com bloqueio de edição e snapshot histórico do rigger, incluindo CREA
+- [x] Cadastro independente de clientes, com nome, CNPJ, ativação/inativação e exclusão protegida
+- [x] Cliente no plano por autocomplete: cadastro existente preenche e bloqueia o CNPJ; cliente novo exige nome e CNPJ no próprio formulário
+- [x] CNPJ obrigatório com máscara `00.000.000/0000-00` no cadastro e no plano
+- [x] Cliente no plano usa seletor visual semelhante ao seletor de tags
+- [x] Cliente no plano usa o mesmo comportamento de teclado do seletor de tags (setas, Enter, criação e remoção)
+- [x] Rigger no plano usa seção própria com autocomplete, seleção de cadastro existente, criação rápida e remoção
+- [x] Novo rigger no plano exige nome completo, nome de exibição, RPP e CREA; cadastros existentes preenchem esses dados
+- [x] Máscara de CNPJ aceita formatos legado numérico e novo alfanumérico
+- [x] Navegação entre etapas sem salvamento intermediário
+- [x] Estado de edição compartilhado entre dados de entrada e capacidade
+- [x] Ações de salvar e descartar disponíveis no cabeçalho de todas as etapas
+- [x] Validação obrigatória executada somente ao salvar o plano completo
+- [x] Preview e exportação acessíveis pela navegação das etapas, com título global do plano
+- [x] Lista de planos simplificada para a ação única de abrir
+- [x] Seção independente de dados da carga no plano, com descrição, dimensões e peso
+- [x] Equipamento no plano com seletor tipo tag, preenchimento automático e criação rápida de novo cadastro
+- [x] Primeira etapa do plano organizada em seções de identificação, cliente, carga, equipamento, rigger e referências do documento
+- [x] ART do plano e supervisor responsável incluídos no cadastro inicial
+- [x] Segunda etapa reorganizada em blocos visuais separados para guindaste, configuração, resultados e composição da carga
+- [x] Cargas extras editáveis e composição da carga bruta calculada na exibição
+- [x] Reidratação do formulário principal ao salvar alterações feitas diretamente na etapa de capacidade
+- [x] Sincronização dos dados recém-preenchidos na primeira etapa ao abrir a capacidade, sem salvamento intermediário no banco
+
+## Estado atual
+
+### Implementado na aplicação
+- [x] Lista de planos não excluídos, criação e edição de planos em rascunho
+- [x] Numeração automática no formato AAMMNNN, reiniciada por mês da data do plano
+- [x] Cadastro e seleção de equipamentos ativos, com cópia dos dados para o plano
+- [x] Cadastro e seleção de riggers ativos, com cópia de nome, RPP e CREA para o plano
+- [x] Cadastro rápido de rigger durante o preenchimento do plano, com snapshot dos dados no plano
+- [x] Cadastro de acessórios com nome, peso unitário e uma tag opcional
+- [x] Tags normalizadas, autocomplete com criação, seleção por teclado, chips coloridos e administração
+- [x] Pesquisa automática de acessórios por nome ou tag e filtro por tag
+- [x] Tela de capacidade com acessórios cadastrados ou itens avulsos, quantidade, peso unitário e seções de lingada/dispositivo
+- [x] Totais de itens, carga bruta, conversão kg/t e taxa de utilização calculados na exibição
+- [x] Campos decimais com entrada pt-BR por meio de `RpDecimalInput`
+- [x] Finalização de plano com confirmação e bloqueio de edição
+- [x] Separação visual de ativos/inativos, reativação e exclusão definitiva protegida para riggers, equipamentos e acessórios
+- [x] Confirmações de exclusão posicionadas junto ao registro selecionado, inclusive no administrador de tags
+
+### Modelado, mas ainda sem fluxo completo na interface
+- [ ] Pastas de um nível
+- [ ] Seleção de laudo de equipamento por validade no plano
+- [ ] Arquivos armazenados, desenhos anexados e ART do plano
+- [ ] Histórico de exportações
+- [ ] Lixeira e exclusão definitiva de planos
+
+### Próximas etapas
+
+| # | Etapa | Situação atual |
 |---|---|---|
-| 3 | Planos e pastas | Lista de planos, pastas de um nível, criar/abrir/duplicar |
-| 4 | Dados de entrada | Cliente, guindaste, carga, planejador |
-| 5 | Cadastro de acessórios | Histórico, alertas de desgaste/descarte |
-| 6 | Capacidade de carga | Interface tipo planilha, reaproveitando os dados |
-| 7 | Anexos | Imagens do SolidWorks, PDF da ART, PDF do laudo |
-| 8 | Preview | Visualização do plano antes de finalizar |
-| 9 | Exportação em PDF | Gerar páginas + juntar desenhos, ART e laudo |
-| 10 | Instalador | App instalável, pronto para abrir |
+| 1 | Cadastro independente de clientes | Implementado: tela de clientes, seleção no plano e cadastro rápido durante o preenchimento |
+| 2 | Pastas e organização | Entidade prevista; sem tela ou operações |
+| 3 | Laudos e anexos | ART do equipamento já possui cadastro e armazenamento; seleção do laudo no plano continua pendente |
+| 4 | Preview | Ainda não implementado |
+| 5 | Exportação em PDF | Ainda não implementada |
+| 6 | Lixeira de planos | Ainda não implementada |
+| 7 | Instalador | Ainda não validado/entregue |
+
+O histórico de eventos, alertas de desgaste de acessórios e interpolação de capacidade permanecem fora da implementação atual; interpolação e backup local continuam fora do escopo definido.
 
 ## Fora do escopo por enquanto
 Interpolação de capacidade, backup do banco, exportação em DOCX.

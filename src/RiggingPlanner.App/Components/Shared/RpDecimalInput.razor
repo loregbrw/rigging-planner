@@ -1,0 +1,45 @@
+@inherits InputBase<decimal?>
+
+<input @attributes="AdditionalAttributes"
+       class="@CssClass"
+       type="number"
+       step="any"
+       inputmode="decimal"
+       value="@CurrentValueAsString"
+       @oninput="OnInput" />
+
+@code {
+    private void OnInput(ChangeEventArgs args)
+    {
+        var value = args.Value?.ToString() ?? string.Empty;
+        CurrentValueAsString = value.Replace(',', '.');
+    }
+
+    protected override string FormatValueAsString(decimal? value) =>
+        value?.ToString("G", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+
+    protected override bool TryParseValueFromString(
+        string? value,
+        out decimal? result,
+        out string validationErrorMessage)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            result = null;
+            validationErrorMessage = string.Empty;
+            return true;
+        }
+
+        if (decimal.TryParse(value?.Replace(',', '.'), System.Globalization.NumberStyles.Number,
+                System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+        {
+            result = parsed;
+            validationErrorMessage = string.Empty;
+            return true;
+        }
+
+        result = null;
+        validationErrorMessage = "Informe um número válido usando vírgula para casas decimais.";
+        return false;
+    }
+}

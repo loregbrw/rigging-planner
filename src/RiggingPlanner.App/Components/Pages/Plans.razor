@@ -1,19 +1,65 @@
 @page "/"
+@inject IDbContextFactory<AppDbContext> DbFactory
 
-<RpPageHeader Title="Planos" Subtitle="Organize e acompanhe seus planos de rigging">
-    <Actions>
-        <RpButton Variant="primary">Novo plano</RpButton>
-    </Actions>
-</RpPageHeader>
+@if (isLoading)
+{
+    <p class="rp-muted">Carregando planos...</p>
+}
+else
+{
+    <RpPageHeader Title="Planos" Subtitle="Organize e acompanhe seus planos de rigging">
+        <Actions>
+            <a class="rp-btn rp-btn--primary" href="new-plan">Novo plano</a>
+        </Actions>
+    </RpPageHeader>
 
-<div class="rp-stack">
     <RpCard Title="Planos de rigging">
-        <div class="rp-empty">
-            <p class="rp-empty__title">Nenhum plano criado ainda</p>
-            <p class="rp-muted">Comece criando um plano para centralizar os dados da operação.</p>
-            <div>
-                <RpButton Variant="primary">Criar primeiro plano</RpButton>
+        @if (plans.Count == 0)
+        {
+            <div class="rp-empty">
+                <p class="rp-empty__title">Nenhum plano criado ainda</p>
+                <p class="rp-muted">Comece criando um plano para centralizar os dados da operação.</p>
+                <div><a class="rp-btn rp-btn--primary" href="new-plan">Criar primeiro plano</a></div>
             </div>
-        </div>
+        }
+        else
+        {
+            <div class="rp-table-wrap">
+                <table class="rp-table">
+                    <thead>
+                        <tr><th>Número</th><th>Operação</th><th>Cliente</th><th>Data</th><th>Status</th><th aria-label="Ações"></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var plan in plans)
+                        {
+                            <tr>
+                                <td class="rp-code">@plan.PlanNumber</td>
+                                <td>@plan.OperationName</td>
+                                <td>@(plan.ClientName ?? "Sem cliente")</td>
+                                <td class="rp-data">@plan.PlanDate.ToString("dd/MM/yyyy")</td>
+                                <td><span class="rp-badge @(plan.Status == "finalized" ? "rp-badge--success" : "rp-badge--primary")">@(plan.Status == "finalized" ? "Finalizado" : "Rascunho")</span></td>
+                                <td class="rp-row-actions"><a class="rp-btn rp-btn--ghost rp-btn--sm" href="@($"new-plan/{plan.Id}")">Abrir</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </RpCard>
-</div>
+}
+
+@code {
+    private List<RiggingPlan> plans = [];
+    private bool isLoading = true;
+    protected override async Task OnInitializedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        plans = await db.RiggingPlans.AsNoTracking()
+            .Where(plan => plan.DeletedAt == null)
+            .OrderByDescending(plan => plan.PlanDate)
+            .ThenByDescending(plan => plan.PlanNumber)
+            .ToListAsync();
+        isLoading = false;
+    }
+
+}

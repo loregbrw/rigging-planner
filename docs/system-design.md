@@ -132,6 +132,14 @@ Regras:
 2. Conferir `*.razor.css` herdados (ex.: `MainLayout.razor.css`, `NavMenu.razor.css`) e substituir.
 3. Só então adicionar os arquivos da seção 9. Se algo do template ficar sem `@layer`, ele **vencerá** o design system.
 
+### 3.5 Estado de edição do plano
+- **[DECISÃO]** A navegação entre as cinco etapas não persiste alterações intermediárias.
+- **[DECISÃO]** `PlanDraftState`, registrado como serviço scoped, mantém em memória os dados de entrada, os parâmetros de capacidade e os itens da planilha durante a edição.
+- **[DECISÃO]** As ações globais de salvar e descartar ficam no cabeçalho de todas as etapas. Salvar retorna ao fluxo da primeira etapa, executa a validação obrigatória e persiste o plano completo em uma transação; descartar limpa o estado e solicita confirmação.
+- **[RESTRIÇÃO]** Campos obrigatórios não bloqueiam a troca de etapa; são verificados somente no salvamento explícito.
+- **[DECISÃO]** Os dados da carga pertencem exclusivamente ao plano em edição. A seção registra descrição, comprimento, largura, altura e peso, sem entidade ou seletor para reutilização entre planos.
+- **[DECISÃO]** Equipamentos são cadastros reutilizáveis com modelo, caminhão, chassi, placas e ano de fabricação. O formulário inclui um editor específico de ARTs: o usuário monta uma ou várias relações com número obrigatório, datas opcionais e anexo PDF obrigatório, podendo editar ou remover itens antes de salvar o equipamento. Na edição, o anexo existente é preservado quando não houver substituição. ARTs persistidas permanecem no histórico e recebem status visual de válida ou vencida; sem data de término, a ART permanece válida. A exclusão é bloqueada quando uma ART está vinculada a um plano. No plano, o equipamento usa o mesmo seletor interativo de tags/clientes; ao selecionar um cadastro, os demais dados são exibidos automaticamente, e a criação rápida permite informar um novo equipamento sem sair do plano.
+
 ---
 
 ## 4. Tokens CSS
@@ -426,12 +434,14 @@ Regras:
 |---|---|---|
 | **Planos** (lista + pastas) | `rp-split`: lista de pastas à esquerda (260px) + tabela à direita | `rp-folder-list`, `rp-toolbar`, `rp-table`, `rp-btn`, `rp-menu` |
 | **Novo/Editar plano** (wizard 5 etapas) | Cabeçalho com `rp-stepper` + conteúdo + rodapé fixo glass | `rp-stepper`, `rp-card`, `rp-form-grid`, `rp-field`, `rp-sheet`, `rp-wizard__footer` |
-| 1. Dados de entrada | Cards por assunto (Cliente/Local, Guindaste, Carga, Acessórios, Planejador) em grade de 12 colunas | `rp-form-grid`, `rp-input-group` |
-| 2. Capacidade de carga | Planilha agrupada à esquerda + **painel de resumo glass** à direita (carga bruta, taxas) | `rp-sheet`, `rp-card--glass`, `rp-meter` |
+| 1. Dados de entrada | Seções separadas de identificação, cliente, carga, equipamento, rigger e referências do documento em grade de 12 colunas | `rp-form-grid`, `rp-client-section`, `rp-tag-picker` |
+| 2. Capacidade de carga | Seções separadas para informações/configuração do guindaste, resultados informados e composição da carga, com resumo calculado | `rp-capacity-section`, `rp-summary-grid`, `rp-table` |
 | 3. Anexos | 3 zonas: desenhos (imagens), ART do plano (PDF), laudo (PDF) | `rp-dropzone`, `rp-attachment-list` |
 | 4. Preview | Visualizador de folhas A4 com zoom | `rp-doc-preview`, `rp-doc-page` |
 | 5. Exportação | Lista ordenada das partes do PDF + ação principal | `rp-parts`, `rp-alert`, `rp-progress` |
-| **Acessórios** | Tabela + filtros; edição em **drawer** (ou modal) | `rp-table`, `rp-badge`, `rp-drawer`/`rp-modal` |
+| **Cadastros** (clientes, equipamentos, riggers e acessórios) | Tabelas separadas por ativos/inativos, formulário de cadastro/edição e confirmação de exclusão protegida | `rp-table`, `rp-badge`, `rp-form-grid`, `rp-alert`, `rp-btn` |
+| **Cliente no plano** | Mesmo seletor interativo de tags, com chip, setas, Enter, criação e remoção; cliente existente preenche o CNPJ bloqueado; nome e CNPJ ocupam colunas lado a lado | `rp-tag-picker`, `rp-autocomplete`, `rp-input`, `rp-help` |
+| **Rigger no plano** | Seção própria com seletor interativo de tags, chip, setas, Enter, criação e remoção; rigger existente preenche nome completo, RPP e CREA bloqueados; novo rigger informa esses dados no próprio formulário | `rp-tag-picker`, `rp-autocomplete`, `rp-input`, `rp-help` |
 
 ### 6.2 Estrutura do shell
 ```
@@ -444,7 +454,7 @@ Regras:
 └───────────┴───────────────────────────────────────────┘
 ```
 - **A topbar e o rodapé do wizard rolam "por cima" do conteúdo** (por isso o glass tem o que desfocar).
-- Navegação principal (apenas o que o brief documenta): **Planos**, **Novo plano**, **Acessórios**. Itens como "Configurações" **não** estão no brief **[PENDENTE]**.
+- Navegação principal: **Planos**, **Novo plano** e os cadastros de **clientes, acessórios, equipamentos e riggers**. Itens como "Configurações" **não** estão no brief **[PENDENTE]**.
 - **Breadcrumb** na topbar: `Planos / <Pasta> / Plano 2607036`.
 - Tela de planos: ação primária **"Novo plano"** sempre no canto superior direito do `rp-page-header`.
 - **Pastas de um único nível** (F5): lista simples, sem árvore recursiva.

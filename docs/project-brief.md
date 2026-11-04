@@ -13,6 +13,12 @@
   - Artigo acadêmico
   - Vídeo/pitch de apresentação
 
+### 1.1 Estado atual da implementação
+
+O repositório contém uma aplicação desktop Windows em .NET MAUI Blazor Hybrid com SQLite/EF Core. Já estão implementados os fluxos de planos em rascunho, dados de entrada, capacidade de carga, cadastro de acessórios, tags, riggers e equipamentos. A interface também permite finalizar planos, tornando-os somente leitura, e separar, reativar e excluir definitivamente cadastros inativos com confirmação e verificação de vínculos.
+
+O modelo de dados já possui entidades para clientes, pastas, laudos, arquivos, desenhos e exportações. O cadastro de clientes e riggers, sua seleção no plano e o cadastro rápido de um novo registro durante o preenchimento já estão disponíveis. As duas primeiras etapas do plano também mantêm ART, supervisor, informações do guindaste, composição da carga e resultados digitados pelo engenheiro. Anexos, preview, geração de PDF, lixeira de planos, pastas e cadastro de laudos devem ser tratados como funcionalidades planejadas, não como recursos já disponíveis.
+
 ## 2. Empresa Parceira
 - **Nome:** Guindastes Ribas Ltda.
 - **Contato focal/padrinho:** Giuliano Breda (engenheiro responsável pela parte de engenharia da Guindastes Ribas; planejador de rigging)
@@ -108,7 +114,7 @@ Documento em Word com o desenho da carga içada, os ângulos, os pontos de fixa�
 
 Uma solução ideal deveria:
 
-- Ter um **cadastro único de dados de entrada**: nome/identificação do guindaste (placa, chassi, capacidade), dimensões e peso da carga, dados dos acessórios de içamento (cinta, manilha, balancim — comprimento, capacidade, peso), dados do planejador/rigger (nome, RPP, CREA) e da empresa cliente/CNPJ.
+- Ter um **cadastro único de dados de entrada**: nome/identificação do guindaste (placa, chassi, capacidade), dimensões e peso da carga, dados dos acessórios de içamento (nome, peso unitário e tags), dados do planejador/rigger (nome, RPP, CREA) e da empresa cliente/CNPJ.
 - **Reaproveitar automaticamente** esses dados no documento final, preenchendo as seções que hoje são copiadas manualmente entre Excel, SolidWorks e Word (ex.: primeira página do plano, com a maior parte das informações).
 - Permitir **anexar imagens/desenhos técnicos** (as folhas geradas no SolidWorks) e os **PDFs de ART e laudo** emitidos fora do sistema, integrando tudo num único PDF final.
 - **Manter o texto padrão** das seções que quase não mudam entre planos (procedimento de içamento, isolamento de área, NRs aplicáveis, patolamento do guindaste), alterando apenas o que é específico de cada operação (ex.: modelo do guindaste — MD45.007, MD55, DM130, MD300L etc.).
@@ -125,6 +131,18 @@ Referência mental citada pelo engenheiro: o conceito de uma "macro" que, a part
 - Um aplicativo interativo de cálculo de capacidade em tempo real — projeto de **outra equipe de Jornada de Aprendizagem** (aparentemente liderada por alguém chamado Elton).
 - **Backup do banco de dados** — será feito eventualmente (backup local), mas não é prioridade agora.
 - **Exportação em `.docx`** — a saída é apenas PDF.
+
+### 8.1 Ciclo de vida dos cadastros e histórico
+
+Cadastros reutilizáveis, como riggers e acessórios, não devem ser apagados imediatamente quando deixam de ser usados. O fluxo padrão é:
+
+- **Ativo:** aparece nos cadastros e pode ser selecionado em novos planos; pode ser editado.
+- **Inativo:** fica separado dos ativos, com aparência esmaecida; não pode ser editado nem selecionado em novos planos. Pode ser reativado ou excluído definitivamente.
+- **Exclusão definitiva:** exige confirmação explícita. É bloqueada quando o cadastro está sendo usado por um plano em andamento. Se estiver ligado somente a planos finalizados, o cadastro pode ser removido, pois o plano mantém os dados copiados no momento da operação.
+
+Planos finalizados são somente leitura e preservam seu histórico mesmo que cadastros reutilizáveis sejam posteriormente excluídos. O plano mantém os valores necessários para reconstrução do documento, incluindo descrição e peso dos itens de acessórios e nome, RPP e CREA do rigger. A finalização registra `FinalizedAt`; planos em rascunho continuam editáveis.
+
+Esse fluxo diferencia **inativar** (remoção lógica e reversível) de **excluir definitivamente** (remoção física protegida por verificação de vínculos). Tags podem ser excluídas com desvinculação dos acessórios, sem alterar o histórico dos planos.
 - Usuários, perfis de acesso, autenticação, fluxo de aprovação e compartilhamento em rede/internet — o sistema é local e de uso individual (Seção 11).
 
 ## 9. Respostas da Empresa — Levantamento de Requisitos
@@ -182,14 +200,14 @@ Infrastructure — EF Core + SQLite, armazenamento de anexos, geração/junção
 Dependências: `App → Application, Infrastructure` (raiz de composição); `Infrastructure → Application`; `Application → Domain`. O `Domain` não depende de nada.
 
 ### 11.3 Componentes
-- **App (UI):** Razor Components num WebView nativo (via .NET MAUI). Telas: lista de planos (com pastas; clicar em um plano abre a edição), lixeira de planos, novo/editar plano em 5 etapas (dados de entrada, capacidade de carga, anexos, preview, exportação), e cadastros de acessórios, equipamentos e laudos, clientes e riggers.
-- **Domain:** cadastro único de dados do plano (guindaste, carga, acessórios, cliente, planejador/RT), numeração sequencial de planos (reinicia a cada mês, pela data do plano), cálculos simples de exibição, regras de consistência de dados e estado do plano (rascunho/finalizado/na lixeira).
-- **Application:** casos de uso (criar/editar/finalizar plano, gerenciar pastas, gerenciar acessórios, equipamentos, laudos e clientes, anexar arquivos, gerar PDF) e as interfaces que a infraestrutura implementa.
-- **Infrastructure:** SQLite com EF Core (`AppDbContext` e migrations em `Persistence/`; dados de entrada, cadastros, planos, numeração, pastas, histórico de exportações), armazenamento dos anexos em disco (inclusive a remoção dos arquivos na exclusão definitiva) e geração/junção do PDF final.
+- **App (UI):** Razor Components num WebView nativo (via .NET MAUI). Telas atuais: lista de planos, novo/editar plano, capacidade de carga, acessórios com administração de tags, equipamentos com ART, riggers e clientes. Pastas, lixeira de planos, anexos do plano, preview, exportação e seleção de laudos no plano ainda não têm UI.
+- **Domain:** cadastro único de dados do plano (guindaste, carga, acessórios, cliente, planejador/RT), numeração sequencial de planos (reinicia a cada mês, pela data do plano), cálculos simples de exibição, regras de consistência de dados e estado do plano (rascunho/finalizado).
+- **Application:** a solução ainda não possui uma camada de casos de uso completa; os fluxos atuais são executados pelos componentes Razor usando `IDbContextFactory`. A camada permanece prevista para centralizar regras futuras.
+- **Infrastructure:** SQLite com EF Core (`AppDbContext` e migrations em `Persistence/`; dados de entrada, cadastros, planos, numeração e entidades previstas para pastas, anexos e exportações). Armazenamento de anexos e geração/junção do PDF final ainda são funcionalidades planejadas.
 - **Backup:** previsto para o futuro (cópia local do banco); fora do escopo agora.
 
 ### 11.4 Modelo de Dados (decisões de 27/10/2026)
-> Estrutura lógica; os tipos reais seguem o mapeamento do EF Core para SQLite (datas e decimais ficam como texto, por isso as somas são feitas no código, nunca no SQL). Itens marcados com *(premissa)* foram adotados por padrão e estão na Seção 16.
+> Estrutura lógica; os tipos reais seguem o mapeamento do EF Core para SQLite. Entidades que ainda não possuem fluxo na UI representam funcionalidades planejadas, não necessariamente recursos disponíveis.
 
 **Princípios**
 - **Plano autossuficiente:** ao escolher cliente, equipamento, rigger ou acessório, os valores são **copiados** para o plano; a ligação com o cadastro original é mantida só como referência. Alterar ou inativar um cadastro não muda planos existentes.
@@ -203,11 +221,13 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 | Tabela | Colunas |
 |---|---|
 | `clients` | `id` PK; `name`; `cnpj` (único quando preenchido); `is_active`; `created_at`; `updated_at` |
-| `riggers` *(premissa)* | `id` PK; `full_name`; `display_name`; `rpp_number`; `crea_number`; `is_active` |
+| `riggers` | `id` PK; `full_name`; `display_name`; `rpp_number`; `crea_number`; `is_active` |
 | `equipments` (conjunto caminhão + guindaste) | `id` PK; `equipment_type`; `truck_model`; `license_plate`; `chassis_number` (único); `manufacture_year`; `crane_brand`; `crane_model`; `nominal_capacity`; `is_active`; `created_at`; `updated_at` |
 | `equipment_reports` (laudo + ART do laudo, um PDF) | `id` PK; `equipment_id` FK; `file_id` FK; `art_number`; `valid_from`; `valid_to`; `created_at` |
-| `accessories` *(premissa)* | `id` PK; `category` (cinta plana, cinta tubular, laço de cabo de aço, manilha, balancim, outro); `description`; `length_m` (nulo); `capacity_t` (nulo); `unit_weight_kg`; `drawing_ref` (nulo); `status`; `review_due_date` (nulo); `created_at`; `updated_at` |
-| `accessory_events` *(premissa)* | `id` PK; `accessory_id` FK; `event_date`; `event_type` (texto livre); `notes` |
+| `accessories` | `id` PK; `name`; `unit_weight_kg`; `tag_id` (nulo); `status`; `review_due_date` (nulo); `created_at`; `updated_at` |
+| `tags` | `id` PK; `name` (único); `created_at` |
+| `accessories` → `tags` | `tag_id` FK opcional; cada acessório possui no máximo uma tag |
+| `accessory_events` (histórico planejado) | `id` PK; `accessory_id` FK; `event_date`; `event_type` (texto livre); `notes` |
 
 **Arquivos, pastas e numeração**
 
@@ -244,8 +264,8 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 
 | Relação | Cardinalidade | Ao excluir |
 |---|---|---|
-| Pasta → Planos | 1 : N (plano pode ficar sem pasta) | Pendente (Seção 16) |
-| Cliente / Rigger / Equipamento → Planos | 1 : N cada | Cadastro em uso não é excluído, só inativado |
+| Pasta → Planos | 1 : N (plano pode ficar sem pasta) | Regra ainda não implementada; comportamento de exclusão pendente (Seção 16) |
+| Cliente / Rigger / Equipamento → Planos | 1 : N cada | Cadastros têm ciclo de vida implementado; os dados selecionados são copiados para o plano |
 | Equipamento → Laudos | 1 : N | Laudo em uso por plano não pode ser excluído |
 | Laudo → Planos | 1 : N | — |
 | Plano → Itens (`plan_accessories`) | 1 : N | Apagados com o plano (exclusão definitiva) |
@@ -258,44 +278,44 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 ## 12. Funcionalidades
 > Pensadas como um **editor de documentos estruturado com limitações de edição**, específico para planos de rigging — não um editor genérico de Word/Excel.
 
-- **Planos e pastas:** criar planos soltos ou dentro de pastas (um nível); abrir (clicando na lista) e editar. Não há função de duplicar plano. O sistema **guarda todos os parâmetros** do plano para que o engenheiro possa voltar e alterar qualquer informação depois de exportar.
-- **Finalizar plano:** enquanto não finalizado, o plano pode ser editado sempre. O usuário pode **finalizar** o plano (com confirmação), o que o **trava** — usado quando o plano foi entregue definitivamente. Como alterar um plano finalizado: ver Seção 16.
-- **Lixeira:** ao excluir, o plano vai para a lixeira e pode ser restaurado. Na lixeira, a **exclusão definitiva** (com confirmação) apaga tudo do plano: dados, itens, desenhos, ART do plano e histórico de exportações. O laudo não é apagado, pois pertence ao equipamento. O número de um plano excluído nunca é reutilizado.
+- **Planos e pastas:** atualmente há uma lista única de planos, com criação, abertura e edição de rascunhos. Pastas de um nível ainda não possuem tela ou operações. Não há função de duplicar plano.
+- **Finalizar plano:** enquanto não finalizado, o plano pode ser editado. A finalização com confirmação está implementada e torna o plano somente leitura; não existe reabertura pela UI atual.
+- **Lixeira:** planejada para planos excluídos; ainda não há ação de exclusão, restauração ou exclusão definitiva de planos.
 - **Dados de entrada:** cliente, local, data, guindaste (placa, chassi, capacidade), carga (descrição, dimensões, peso), acessórios, planejador/rigger (nome, RPP, CREA).
 - **Riggers:** cadastro (nome completo, nome de exibição, RPP, CREA), escolhido no plano e cadastrável ali mesmo. O "Supervisor Responsável" é texto livre e opcional no plano.
-- **Cadastros em uso:** clientes, equipamentos, riggers e acessórios usados em algum plano não podem ser excluídos, apenas **inativados** (deixam de aparecer para escolha; os planos mantêm seus dados).
-- **Clientes:** cadastro de clientes com CNPJ; na tela do plano o cliente é selecionado e, se não existir, pode ser cadastrado direto ali.
-- **Equipamentos e laudos:** cadastro do **equipamento (caminhão + guindaste)**. Para cada equipamento, o usuário cadastra o **laudo técnico de segurança** (PDF único com a ART do laudo), informando a **data de validade** (início e fim) e o **número da ART do laudo**. A tela separa laudos **válidos** e **vencidos**. Na tela de criação/edição do plano, o laudo é escolhido entre os cadastrados e, se não houver, pode ser cadastrado direto ali.
-- **Capacidade de carga:** interface tipo planilha com os mesmos grupos de campos da folha-resumo (Seção 6.2), com os dados reaproveitados dos demais passos (sem redigitação). Capacidade de carga, taxas dos acessórios, esforço nas sapatas, resistência do terreno e vento são digitados pelo engenheiro; pesos totais, carga bruta, conversão para t e taxa de utilização do guindaste são calculados na exibição.
-- **Cadastro de acessórios:** banco com histórico, alertas de desgaste/descarte e controle de situação (regras detalhadas na feature).
+- **Cadastros em uso:** riggers, equipamentos e acessórios possuem ativos/inativos. A exclusão definitiva é bloqueada por vínculos em planos em andamento; planos finalizados preservam os dados copiados.
+- **Clientes:** há uma tela independente para cadastrar, editar, ativar/inativar e excluir clientes inativos. O CNPJ é obrigatório e usa máscara compatível com os formatos legado `00.000.000/0000-00` e novo alfanumérico `00.000.000/E08G-12`. No plano, o nome/razão social usa o mesmo seletor interativo de tags, com setas, Enter, criação e remoção; ao selecionar um cliente existente, o CNPJ é preenchido e bloqueado.
+- **Equipamentos e laudos:** o cadastro do equipamento está implementado com modelo, caminhão, chassi e placas. O próprio formulário possui um editor de ARTs que permite montar uma ou várias ARTs antes de salvar, listar, editar e excluir cada item; os registros persistidos permanecem no histórico com status válida ou vencida. O seletor do equipamento no plano usa autocomplete, preenche os dados automaticamente e permite criação rápida; a seleção de laudos por validade no plano continua planejada.
+- **Capacidade de carga:** interface tipo planilha com os mesmos grupos de campos da folha-resumo (Seção 6.2), com os dados reaproveitados dos demais passos (sem redigitação). A tela separa informações do guindaste, configuração, resultados informados, composição da carga e itens adicionados. Capacidade de carga, taxas dos acessórios, esforço nas sapatas, resistência do terreno, vento e cargas extras são digitados pelo engenheiro; pesos totais, carga bruta, conversão para t e taxa de utilização do guindaste são calculados na exibição.
+- **Cadastro de acessórios:** implementado com nome, peso unitário, uma tag opcional, busca/filtro, edição, ativação/inativação, reativação e exclusão definitiva protegida. Histórico de eventos e alertas de desgaste/descarte permanecem planejados.
 - **Anexos do plano:** imagens das folhas do SolidWorks (PNG ou outros formatos de imagem; quantidade livre, ordem definida pelo usuário) e PDF da ART do plano; o número da ART é digitado uma vez no plano e reaproveitado nas demais páginas (leitura automática do PDF fica como evolução futura).
 - **Dados congelados no plano:** ao escolher cliente, equipamento, acessórios etc., os valores são copiados para o plano. Alterar um cadastro depois **não altera planos já criados**; no máximo o sistema informa ou avisa que o cadastro mudou.
-- **Preview** do plano completo antes de finalizar.
-- **Exportação em PDF:** página-resumo e procedimento gerados pelo sistema, com os desenhos, a ART e o laudo inseridos **no meio** do documento, na ordem da Seção 6.1. O PDF fica gravado no disco, o sistema pergunta a pasta a cada exportação (sugerindo a última usada) e mantém um **histórico de exportações** de cada plano.
+- **Preview** do plano completo antes de finalizar — planejado, ainda não implementado.
+- **Exportação em PDF:** requisito planejado. Geração, escolha da pasta, junção dos documentos e histórico de exportações ainda não estão disponíveis.
 - **Numeração sequencial automática** dos planos (AAMMNNN), reiniciando a cada mês pela data do plano. Enquanto o plano for rascunho, mudar a data para outro mês gera um novo número (com aviso se o plano já foi exportado).
 
 ### 12.1 Fluxo de cadastro e vínculo ao plano (decisões de 27/10/2026)
 
 | Caso | Onde é cadastrado | Como entra no plano |
 |---|---|---|
-| **Cliente** | Tela de clientes (nome e CNPJ) **ou** direto na tela do plano, se não existir | Escolhido na lista; nome e CNPJ são copiados para o plano |
-| **Equipamento (caminhão + guindaste)** | Tela de equipamentos | Escolhido na lista; dados do caminhão e do guindaste copiados para o plano |
-| **Laudo + ART do laudo** | Tela de laudos do equipamento (PDF único, início e fim de validade, nº da ART) **ou** direto na tela do plano, se o equipamento não tiver laudo | Escolhido entre os laudos do equipamento do plano; a tela separa **válidos** e **vencidos** |
-| **Rigger** *(premissa)* | Tela de riggers **ou** direto na tela do plano | Escolhido na lista; nome de exibição e RPP copiados; "Supervisor Responsável" é texto livre |
-| **Acessórios** *(premissa)* | Tela de acessórios (categoria, descrição, comprimento, capacidade, peso, situação, histórico) | Escolhidos na lista, com quantidade; descrição e peso unitário copiados; o item fica em "lingada" ou "dispositivo" |
+| **Cliente** | Tela de clientes (nome e CNPJ), com cadastro rápido também disponível na tela do plano | O nome possui autocomplete; clientes existentes preenchem o CNPJ automaticamente e novos clientes exigem nome e CNPJ; ambos são copiados para o plano |
+| **Equipamento (caminhão + guindaste)** | Tela de equipamentos | Equipamentos ativos são escolhidos no plano; os dados são copiados para o plano |
+| **Laudo + ART do laudo** | Cadastro do equipamento, ART opcional, validade e arquivo | O cadastro e o histórico estão disponíveis; a seleção de laudo por validade no plano ainda é prevista |
+| **Rigger** | Tela de riggers, com cadastro rápido também disponível na tela do plano | O nome de exibição possui autocomplete; riggers existentes preenchem nome completo, RPP e CREA; novos riggers exigem esses dados; todos são copiados para o plano |
+| **Acessórios** | Tela de acessórios (nome, peso unitário e uma tag opcional) | Tags são selecionadas por autocomplete, podem ser criadas no próprio campo e administradas separadamente; acessórios ativos são escolhidos na capacidade, com quantidade; nome e peso unitário são copiados |
 | **ART do plano** | Não há cadastro: é anexada ao plano | PDF anexado e número da ART digitado uma vez no plano (reaproveitado nas outras páginas) |
-| **Desenhos (SolidWorks)** | Não há cadastro: são anexados ao plano | Quantidade livre; o usuário define a ordem |
-| **Carga, local, data, configuração do guindaste, resultados** | Digitados no plano a cada trabalho | Gravados no plano; totais e taxa do guindaste calculados na exibição |
+| **Desenhos (SolidWorks)** | Modelado nas entidades, mas sem tela implementada | Quantidade livre e ordenação são requisitos planejados |
+| **Carga, local, data, ART, supervisor, configuração do guindaste, resultados** | Digitados no plano a cada trabalho | Gravados no plano; totais e taxa do guindaste calculados na exibição |
 | **Número do plano** | Gerado pelo sistema ao criar o plano | Mês e ano vêm da data do plano; muda se a data passar para outro mês (só em rascunho, com aviso se já exportado) |
-| **Finalização** | Ação no plano, com confirmação | Plano finalizado fica travado; antes disso é sempre editável (como alterar depois: Seção 16) |
-| **Exclusão** | Ação no plano | Vai para a lixeira; a exclusão definitiva (com confirmação) apaga o plano e seus arquivos |
-| **Exportação** | Ação no plano | Pergunta a pasta *(premissa)*, grava o PDF e registra no histórico de exportações |
-| **Cadastros em uso** *(premissa)* | Telas de cadastro | Só podem ser inativados; deixam de aparecer na escolha, mas os planos já criados não mudam |
+| **Finalização** | Ação na lista de planos, com confirmação | Implementado: plano finalizado fica somente para leitura e recebe `FinalizedAt`; não existe reabertura |
+| **Exclusão** | Ainda não existe ação de exclusão de planos na UI | Lixeira e exclusão definitiva de planos são funcionalidades planejadas |
+| **Exportação** | Ainda não existe tela de exportação | Geração do PDF, escolha da pasta e histórico são funcionalidades planejadas |
+| **Cadastros em uso** | Telas de clientes, riggers, equipamentos e acessórios | Implementado: ativos/inativos, reativação e exclusão definitiva protegida contra vínculos em planos em andamento |
 
 ## 13. Organização dos Planos
-- Os planos ficam **soltos** ou dentro de **pastas**, com **no máximo um nível** de pastas (sem categorias).
-- Planos excluídos ficam na lixeira até a exclusão definitiva (Seção 12).
-- Onde o PDF exportado é gravado: o sistema pergunta a cada exportação, sugerindo a última pasta usada (premissa adotada — Seção 16).
+- Atualmente os planos são exibidos em uma única lista, sem tela de pastas e sem filtro por pasta.
+- A organização por pastas de no máximo um nível continua sendo requisito planejado.
+- Lixeira de planos e escolha do destino do PDF ainda não estão implementadas.
 
 ## 14. Restrições Críticas
 - Em hipótese alguma podem ocorrer alterações de dados ou inversão de valores/informações, pois isso pode gerar acidentes graves em campo.
@@ -323,34 +343,34 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **SQLite / EF Core:** banco local em arquivo único / biblioteca de acesso a dados com migrations.
 - **Claymorphism:** estilo visual de elementos "de argila": cantos muito arredondados, sombras suaves e volume.
 
-## 16. Dúvidas Pendentes
-*(Não devem ser respondidas por suposição.)*
+## 16. Decisões e pendências atuais
 
-1. **Plano finalizado:** como alterar um plano já finalizado — reabrir (destravar com confirmação) ou criar uma nova revisão (o carimbo dos desenhos traz "Revisão 1 de 1")? Como não há função de duplicar, uma nova revisão seria uma funcionalidade à parte.
-2. **Exclusão de pasta:** o que acontece com os planos de uma pasta excluída (ficam soltos? a pasta só pode ser excluída vazia?).
-3. **Exclusão definitiva:** além dos dados e dos anexos guardados pelo app, os PDFs já exportados para o disco também devem ser apagados?
-4. **Rótulo repetido** no total de dispositivos/balancim (Seção 6.3): manter fiel ao original ou corrigir?
-5. **Carimbo dos desenhos:** o sistema deve mostrar os dados "assados" da imagem ao lado dela para conferência visual?
-6. **Capacidade nominal "45,0 t":** o laudo traz 10,45 ton na placa e o 45 pode ser o momento de carga do modelo (MD 45.007). Sem confirmação do engenheiro, o rótulo e a unidade seguem o exemplo.
-7. **Validar com o engenheiro quando possível:** formato AAMMNNN do número do plano; regra do código do modelo no procedimento; fórmula da taxa de utilização do guindaste (conferida em um único exemplo); divergência do carimbo do exemplo (3,17 t como "esforço nas sapatas").
-8. **Templates originais** (Excel, Word) continuam indisponíveis; margens e formatação exatas do PDF seguem o plano de exemplo.
-9. **Interpolação de capacidade** (reavaliar depois) e **backup local** (definir destino quando for implementado).
-10. **Cadastro de acessórios:** como controlar desgaste (por unidade ou por tipo), o que entra no histórico e o que dispara os alertas (regras detalhadas na feature).
+### Decisões já definidas e refletidas no código
 
-### Premissas adotadas por padrão (27/10/2026) — a validar
-- O número da ART do plano é digitado, não lido do PDF.
-- O modelo do guindaste é guardado em marca e modelo ("Palfinger" / "MD 45.007"); o título do procedimento usa o modelo sem espaços e pontos ("MD45007").
-- "Supervisor Responsável" é texto livre e opcional; o nome da operação é texto livre, com sugestão "Içamento" + descrição da carga.
-- Acessórios são cadastrados por tipo/especificação (não por unidade física), com situação, data de revisão opcional e histórico de eventos em texto livre.
-- Cadastros usados em planos só podem ser inativados, não excluídos.
-- Dados da empresa e texto do procedimento ficam embutidos no aplicativo.
-- A pasta do PDF exportado é perguntada a cada exportação.
+- Plano finalizado fica somente para leitura e não pode ser reaberto pela UI atual.
+- Um plano representa um único guindaste.
+- Acessórios guardam apenas nome, peso unitário, situação e no máximo uma tag opcional; a tag é uma entidade própria, com autocomplete e administração.
+- Pesquisas de acessórios são filtradas automaticamente durante a digitação.
+- Campos decimais usam o componente `RpDecimalInput`, com suporte à entrada decimal no padrão pt-BR e persistência numérica.
+- Riggers, equipamentos e acessórios têm ativos e inativos separados; inativos não podem ser editados nem usados em novos planos.
+- A exclusão definitiva de rigger, equipamento ou acessório exige confirmação e é bloqueada quando há vínculo com plano não finalizado. Planos finalizados preservam os valores copiados.
+- O número do plano usa o formato AAMMNNN e é gerado por mês da data do plano.
+
+### Pendências que ainda dependem de decisão ou implementação
+
+1. Regras de pastas e comportamento ao excluir uma pasta.
+2. Se PDFs exportados para fora da pasta do aplicativo devem ser apagados em uma futura exclusão definitiva do plano.
+3. Rótulo do total de dispositivos/balancim e conferência visual dos dados “assados” nos desenhos.
+4. Confirmação da capacidade nominal do equipamento e da divergência do carimbo do exemplo.
+5. Templates originais, margens e formatação exata do PDF final.
+6. Regras futuras de desgaste, revisão e alertas de acessórios; a UI atual não implementa histórico de eventos nem alertas.
+7. Interpolação de capacidade e backup local continuam fora do escopo atual.
 
 ## 17. Cronograma / Sprints
 - **Metodologia:** Scrum, com planejamento acompanhado via GitHub Projects.
 - **Sprints:** ciclos de duas semanas.
 - **Prazo final do projeto:** 20/11/2026.
-- **Status atual:** arquitetura definida (Seção 11); protótipos de tela feitos como inspiração; desenvolvimento iniciado — esqueleto do repositório (commit 1) e banco de dados com EF Core + SQLite (commit 2). Modelagem das tabelas em definição (27/10/2026). Etapas realizadas e próximas: `docs/progress.md`.
+- **Status atual:** arquitetura e persistência base concluídas; fluxos de planos em rascunho, dados de entrada, capacidade, acessórios/tags, riggers, clientes, equipamentos com ART e finalização de planos implementados. Anexos do plano, seleção de laudos, pastas, lixeira de planos, preview e exportação ainda não estão disponíveis na UI. O detalhamento atualizado está em `docs/progress.md`.
 
 ## 18. Notas Gerais / Pontos em Aberto do Time
 - Os detalhes de UX/fluxo de telas seguem em aberto: os protótipos são só inspiração e podem ser alterados.
@@ -362,3 +382,6 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **27/10/2026:** um plano = um guindaste; laudo (com a ART do laudo, em um PDF) cadastrado uma vez por equipamento (caminhão + guindaste) com validade e nº da ART, separando válidos e vencidos, e cadastrável também na tela do plano; uma ART por plano; imagens em quantidade e ordem livres; anexos gravados em disco; procedimento com texto padrão único; numeração do plano reinicia a cada mês; padrão de arredondamento da carga bruta; unidades kgf (sapatas) e kgf/cm² (terreno); quadrante e observações em texto livre; cadastro de clientes com CNPJ (também criável na tela do plano); planos editáveis pela lista até serem finalizados (com confirmação, trava); planos mantêm os valores da época se um cadastro mudar; histórico de exportações; sistema não faz cálculos de engenharia.
 - **27/10/2026 (2ª rodada):** conversões kg → t e contas simples (somas, taxa de utilização do guindaste) feitas só na exibição, sem gravar valores derivados; mês do número do plano vem da data do plano; removida a função de duplicar plano; adicionada lixeira com exclusão definitiva; dados da empresa e texto do procedimento embutidos no app; cadastro de riggers; cadastros em uso só são inativados; corrigida a grafia "Keffer" para "Kaefer" e a menção a vários guindastes por plano.
 - **27/10/2026 (3ª rodada):** incluídas as Seções 11.4 (modelo de dados: tabelas, colunas, chaves, cardinalidades e regras) e 12.1 (fluxo de cadastro e vínculo ao plano, por caso).
+- **02/11/2026:** brief alinhado ao estado real do repositório: implementados planos em rascunho/finalizados, capacidade, acessórios com uma tag, tags administráveis, riggers, equipamentos e ciclo de vida de cadastros; entidades sem UI foram marcadas como modeladas ou planejadas; dúvidas já decididas foram removidas da lista de pendências.
+- **02/11/2026 (cadastro de clientes):** adicionados cadastro independente de clientes, ciclo de vida de ativos/inativos, seleção no plano e cadastro rápido durante o preenchimento; o plano mantém o snapshot do nome e CNPJ.
+- **03/11/2026 (rigger no plano):** a seção de rigger do plano passou a usar seletor interativo, permitindo selecionar um cadastro ativo ou criar nome completo, nome de exibição, RPP e CREA durante o preenchimento; o plano mantém o snapshot desses dados.

@@ -1,0 +1,207 @@
+@using Microsoft.AspNetCore.Components.Forms
+
+<section class="rp-client-section rp-col-12 rp-equipment-art-editor" aria-labelledby="@($"{Id}-title")">
+    <div class="rp-section-heading">
+        <div>
+            <h3 id="@($"{Id}-title")" class="rp-section-title">ARTs do equipamento</h3>
+            <p class="rp-help">Adicione uma ou mais ARTs. O histórico permanece salvo mesmo quando uma ART vence.</p>
+        </div>
+        <span class="rp-badge rp-badge--primary">@Items.Count ART@(Items.Count == 1 ? string.Empty : "s")</span>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="rp-alert rp-alert--danger">@errorMessage</div>
+    }
+
+    @if (editingItem is not null)
+    {
+        <div class="rp-alert rp-alert--info rp-equipment-art-editor__editing">
+            <strong>Editando ART @draft.ArtNumber.</strong>
+            <span>Altere os dados abaixo ou cancele para adicionar uma nova ART.</span>
+        </div>
+    }
+
+    <div class="rp-form-grid rp-equipment-art-editor__form">
+        <div class="rp-field rp-col-3">
+            <label class="rp-label" for="@($"{Id}-number")">Número da ART <span class="rp-required-marker" aria-hidden="true">*</span></label>
+            <InputText id="@($"{Id}-number")" class="rp-input" @bind-Value="draft.ArtNumber" />
+        </div>
+        <div class="rp-field rp-col-3">
+            <label class="rp-label" for="@($"{Id}-from")">Data de início</label>
+            <InputDate id="@($"{Id}-from")" class="rp-input" @bind-Value="draft.ValidFrom" />
+        </div>
+        <div class="rp-field rp-col-3">
+            <label class="rp-label" for="@($"{Id}-to")">Previsão de término</label>
+            <InputDate id="@($"{Id}-to")" class="rp-input" @bind-Value="draft.ValidTo" />
+        </div>
+        <div class="rp-field rp-col-3">
+            <label class="rp-label" for="@($"{Id}-file")">Anexo <span class="rp-required-marker" aria-hidden="true">*</span></label>
+            <InputFile id="@($"{Id}-file")" class="rp-file-input" OnChange="OnFileChange" accept=".pdf,application/pdf" />
+            <label class="rp-btn rp-btn--ghost rp-file-button" for="@($"{Id}-file")">
+                <svg class="rp-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+                </svg>
+                @(draft.ExistingFileName is not null ? "Substituir arquivo" : "Escolher arquivo")
+            </label>
+            <span class="rp-help">@(draft.File?.Name ?? draft.ExistingFileName ?? "Somente arquivo PDF")</span>
+        </div>
+    </div>
+
+    <div class="rp-form-actions rp-equipment-art-editor__actions">
+        <button class="rp-btn rp-btn--ghost" type="button" @onclick="SaveDraftAsync">
+            @(editingItem is null ? "Adicionar ART" : "Salvar edição")
+        </button>
+        @if (editingItem is not null)
+        {
+            <button class="rp-btn rp-btn--ghost" type="button" @onclick="CancelEdit">Cancelar edição</button>
+        }
+    </div>
+
+    @if (Items.Count > 0)
+    {
+        <div class="rp-table-wrap rp-equipment-art-editor__list">
+            <table class="rp-table">
+                <thead>
+                    <tr><th>Número</th><th>Período</th><th>Anexo</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Items)
+                    {
+                        <tr class="@(IsCurrent(item) ? string.Empty : "rp-row--inactive")">
+                            <td>@item.ArtNumber</td>
+                            <td>@FormatPeriod(item)</td>
+                            <td>@(item.File?.Name ?? item.ExistingFileName ?? "-")</td>
+                            <td><span class="rp-badge @(IsCurrent(item) ? "rp-badge--success" : "rp-badge--muted")">@(IsCurrent(item) ? "Válida" : "Vencida")</span></td>
+                            <td class="rp-row-actions">
+                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="() => BeginEdit(item)">Editar</button>
+                                <button class="rp-btn rp-btn--danger-outline rp-btn--sm" type="button" @onclick="() => AskRemove(item)">Excluir</button>
+                            </td>
+                        </tr>
+                        @if (pendingRemoval == item)
+                        {
+                            <tr class="rp-row--inactive">
+                                <td colspan="5">
+                                    <div class="rp-alert rp-alert--danger rp-confirm">
+                                        <span>Confirma a exclusão desta ART?</span>
+                                        <button class="rp-btn rp-btn--danger rp-btn--sm" type="button" @onclick="ConfirmRemove">Excluir ART</button>
+                                        <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="CancelRemove">Cancelar</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter] public string Id { get; set; } = "equipment-art";
+    [Parameter] public List<EquipmentArtDraft> Items { get; set; } = [];
+
+    private EquipmentArtDraft draft = new();
+    private EquipmentArtDraft? editingItem;
+    private EquipmentArtDraft? pendingRemoval;
+    private string? errorMessage;
+
+    private async Task OnFileChange(InputFileChangeEventArgs args)
+    {
+        if (!IsPdf(args.File))
+        {
+            draft.File = null;
+            errorMessage = "Anexe somente arquivos PDF.";
+            return;
+        }
+
+        draft.File = args.File;
+        errorMessage = null;
+        await Task.CompletedTask;
+    }
+
+    private Task SaveDraftAsync()
+    {
+        errorMessage = ValidateDraft();
+        if (errorMessage is not null) return Task.CompletedTask;
+
+        if (editingItem is null)
+        {
+            Items.Add(draft);
+        }
+        else
+        {
+            editingItem.ArtNumber = draft.ArtNumber.Trim();
+            editingItem.ValidFrom = draft.ValidFrom;
+            editingItem.ValidTo = draft.ValidTo;
+            editingItem.File = draft.File;
+            editingItem.ExistingFileName = draft.ExistingFileName;
+        }
+
+        draft = new();
+        editingItem = null;
+        errorMessage = null;
+        return Task.CompletedTask;
+    }
+
+    private string? ValidateDraft()
+    {
+        if (string.IsNullOrWhiteSpace(draft.ArtNumber)) return "Informe o número da ART.";
+        if (draft.ValidFrom is not null && draft.ValidTo is not null && draft.ValidTo < draft.ValidFrom)
+            return "A previsão de término deve ser posterior à data de início.";
+        if (editingItem is null && draft.File is null) return "Anexe o arquivo PDF da ART.";
+        if (draft.File is not null && !IsPdf(draft.File)) return "Anexe somente arquivos PDF.";
+        return null;
+    }
+
+    private void BeginEdit(EquipmentArtDraft item)
+    {
+        draft = new()
+        {
+            Id = item.Id,
+            ArtNumber = item.ArtNumber,
+            ValidFrom = item.ValidFrom,
+            ValidTo = item.ValidTo,
+            File = item.File,
+            ExistingFileName = item.ExistingFileName
+        };
+        editingItem = item;
+        errorMessage = null;
+        pendingRemoval = null;
+    }
+
+    private void CancelEdit()
+    {
+        draft = new();
+        editingItem = null;
+        errorMessage = null;
+    }
+
+    private void AskRemove(EquipmentArtDraft item)
+    {
+        pendingRemoval = item;
+        errorMessage = null;
+    }
+
+    private void ConfirmRemove()
+    {
+        if (pendingRemoval is null) return;
+        if (editingItem == pendingRemoval) CancelEdit();
+        Items.Remove(pendingRemoval);
+        pendingRemoval = null;
+    }
+
+    private void CancelRemove()
+    {
+        pendingRemoval = null;
+    }
+
+    private static bool IsCurrent(EquipmentArtDraft item) =>
+        item.ValidTo is null || item.ValidTo.Value.Date >= DateTime.Today;
+
+    private static string FormatPeriod(EquipmentArtDraft item) =>
+        $"{(item.ValidFrom?.ToString("dd/MM/yyyy") ?? "-")} — {(item.ValidTo?.ToString("dd/MM/yyyy") ?? "-")}";
+
+    private static bool IsPdf(IBrowserFile file) =>
+        string.Equals(Path.GetExtension(file.Name), ".pdf", StringComparison.OrdinalIgnoreCase);
+}

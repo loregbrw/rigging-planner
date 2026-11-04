@@ -23,29 +23,12 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal?>("CapacityT")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Description")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("DrawingRef")
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal?>("LengthM")
-                        .HasPrecision(18, 3)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("ReviewDueDate")
@@ -54,6 +37,9 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(40)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("TagId")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("UnitWeightKg")
@@ -66,6 +52,8 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Status");
+
+                    b.HasIndex("TagId");
 
                     b.ToTable("Accessories");
                 });
@@ -211,10 +199,10 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("FileId")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("ValidFrom")
+                    b.Property<DateTime?>("ValidFrom")
                         .HasColumnType("TEXT");
 
-                    b.Property<DateTime>("ValidTo")
+                    b.Property<DateTime?>("ValidTo")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -539,6 +527,10 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("RiggerCrea")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid?>("RiggerId")
                         .HasColumnType("TEXT");
 
@@ -645,6 +637,39 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.HasIndex("Sha256");
 
                     b.ToTable("StoredFiles");
+                });
+
+            modelBuilder.Entity("RiggingPlanner.Domain.Entities.Tag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Tags");
+                });
+
+            modelBuilder.Entity("RiggingPlanner.Domain.Entities.Accessory", b =>
+                {
+                    b.HasOne("RiggingPlanner.Domain.Entities.Tag", "Tag")
+                        .WithMany("Accessories")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Tag");
                 });
 
             modelBuilder.Entity("RiggingPlanner.Domain.Entities.AccessoryEvent", b =>
@@ -820,6 +845,11 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.Navigation("PlanArtFiles");
 
                     b.Navigation("PlanDrawings");
+                });
+
+            modelBuilder.Entity("RiggingPlanner.Domain.Entities.Tag", b =>
+                {
+                    b.Navigation("Accessories");
                 });
 #pragma warning restore 612, 618
         }

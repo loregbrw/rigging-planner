@@ -1,10 +1,379 @@
 @page "/accessories"
+@using System.ComponentModel.DataAnnotations
+@using System.Security.Cryptography
+@using System.Text
+@inject IJSRuntime JS
+@inject IDbContextFactory<AppDbContext> DbFactory
 
-<RpPageHeader Title="Acessórios" Subtitle="Mantenha o histórico e a disponibilidade dos equipamentos" />
+<RpPageHeader Title="Acessórios" Subtitle="Cadastre nome, peso unitário e tags para reutilizar nos planos">
+    <Actions><button class="rp-btn rp-btn--ghost" @onclick="OpenTagManager">Administrar tags</button></Actions>
+</RpPageHeader>
 
-<RpCard Title="Cadastro de acessórios">
-    <div class="rp-empty">
-        <p class="rp-empty__title">Nenhum acessório cadastrado ainda</p>
-        <p class="rp-muted">Os alertas de desgaste e descarte aparecerão nesta área.</p>
+<div class="rp-stack">
+    <RpCard Class="rp-card--tag-picker" Title="@(editingId is null ? "Novo acessório" : "Editar acessório")">
+        @if (!string.IsNullOrWhiteSpace(message))
+        {
+            <div class="rp-alert rp-alert--success">@message</div>
+        }
+        <EditForm Model="form" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <div class="rp-form-grid">
+                <div class="rp-field rp-col-6">
+                    <label class="rp-label" for="name">Nome <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                    <InputText id="name" class="rp-input" @bind-Value="form.Name" />
+                    <ValidationMessage For="() => form.Name" />
+                </div>
+                <div class="rp-field rp-col-3">
+                    <label class="rp-label rp-label--nowrap" for="unit-weight">Peso unitário (kg) <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                    <RpDecimalInput id="unit-weight" class="rp-input rp-input--num" @bind-Value="form.UnitWeightKg" />
+                    <ValidationMessage For="() => form.UnitWeightKg" />
+                </div>
+                <div class="rp-field rp-col-3">
+                    <label class="rp-label" for="tag-input">Tag</label>
+                    <RpTagPicker TItem="Tag"
+                                 InputId="tag-input"
+                                 InputValue="@tagInput"
+                                 Suggestions="TagSuggestions"
+                                 SelectedItem="SelectedFormTag"
+                                 ItemText="@(tag => tag.Name)"
+                                 SelectedStyle="@(tag => TagStyle(tag.Name))"
+                                 ItemStyle="@(tag => TagStyle(tag.Name))"
+                                 CanCreate="@(!string.IsNullOrWhiteSpace(tagInput) && !HasExactTag)"
+                                 CreateLabel="@($"Criar tag “{tagInput.Trim()}”")"
+                                 OnInput="OnTagInput"
+                                 OnSelect="SelectFormTag"
+                                 OnCreate="CreateAndSelectTagAsync"
+                                 OnRemove="RemoveFormTag" />
+                    <small class="rp-help">Uma tag por acessório.</small>
+                </div>
+            </div>
+            <div class="rp-form-actions">
+                <button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">@(editingId is null ? "Cadastrar acessório" : "Salvar alterações")</button>
+                @if (editingId is not null)
+                {
+                    <button class="rp-btn rp-btn--ghost" type="button" @onclick="CancelEdit">Cancelar</button>
+                }
+            </div>
+        </EditForm>
+    </RpCard>
+
+    <RpCard Title="Acessórios cadastrados">
+        <div class="rp-form-grid rp-filter-bar">
+            <div class="rp-field rp-col-8">
+                <label class="rp-label" for="search">Pesquisar</label>
+                <input id="search" class="rp-input" placeholder="Nome ou tag" value="@searchText" @oninput="OnSearchInput" />
+            </div>
+            <div class="rp-field rp-col-4">
+                <label class="rp-label" for="tag-filter">Filtrar por tag</label>
+                <InputSelect id="tag-filter" class="rp-select" @bind-Value="selectedTagId" @bind-Value:after="ApplyFilter">
+                    <option value="">Todas as tags</option>
+                    @foreach (var tag in allTags)
+                    {
+                        <option value="@tag.Id">@tag.Name</option>
+                    }
+                </InputSelect>
+            </div>
+        </div>
+        @if (filteredAccessories.Count == 0)
+        {
+            <div class="rp-empty"><p class="rp-empty__title">Nenhum acessório encontrado</p><p class="rp-muted">Ajuste a busca ou cadastre um novo acessório.</p></div>
+        }
+        else
+        {
+            <div class="rp-table-wrap"><table class="rp-table"><thead><tr><th>Nome</th><th>Tag</th><th class="rp-num">Peso unitário</th><th></th></tr></thead><tbody>
+                @foreach (var accessory in filteredAccessories)
+                {
+                    <tr>
+                        <td>@accessory.Name</td>
+                        <td>@if (accessory.Tag is not null) { <span class="rp-tag" style="@TagStyle(accessory.Tag.Name)">@accessory.Tag.Name</span> }</td>
+                        <td class="rp-num">@accessory.UnitWeightKg.ToString("N2") kg</td>
+                        <td class="rp-row-actions"><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => BeginEdit(accessory)">Editar</button> <button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(accessory)">Inativar</button></td>
+                    </tr>
+                }
+            </tbody></table></div>
+        }
+    </RpCard>
+    <RpInactiveSection TItem="Accessory"
+                       Title="Acessórios inativos"
+                       Description="Acessórios inativos não podem ser editados nem adicionados a novos planos."
+                       EmptyText="Nenhum acessório inativo."
+                       Items="inactiveAccessories">
+        <HeaderTemplate><th>Nome</th><th>Tag</th><th class="rp-num">Peso unitário</th><th></th></HeaderTemplate>
+        <RowTemplate Context="accessory">
+                    <tr class="rp-row--inactive">
+                        <td>@accessory.Name</td>
+                        <td>@if (accessory.Tag is not null) { <span class="rp-tag" style="@TagStyle(accessory.Tag.Name)">@accessory.Tag.Name</span> }</td>
+                        <td class="rp-num">@accessory.UnitWeightKg.ToString("N2") kg</td>
+                        <td class="rp-row-actions"><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(accessory)">Reativar</button> <button class="rp-btn rp-btn--danger-outline rp-btn--sm" disabled="@(deleteId == accessory.Id)" @onclick="() => AskDelete(accessory)">Excluir definitivamente</button></td>
+                    </tr>
+                    @if (deleteId == accessory.Id)
+                    {
+                        <tr class="rp-row--inactive"><td colspan="4"><div class="rp-alert rp-alert--danger rp-confirm"><span>Você está prestes a excluir este acessório permanentemente. Essa informação não poderá ser recuperada. Planos já finalizados continuam preservando a descrição e o peso usados; planos em andamento impedem a exclusão.</span><button class="rp-btn rp-btn--danger rp-btn--sm" @onclick="DeleteAsync">Excluir definitivamente</button><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="CancelDelete">Cancelar</button></div></td></tr>
+                    }
+        </RowTemplate>
+    </RpInactiveSection>
+</div>
+
+@if (showTagManager)
+{
+    <div class="rp-modal-backdrop" @onclick="CloseTagManager">
+        <section class="rp-modal" role="dialog" aria-modal="true" aria-labelledby="tag-manager-title" @onclick:stopPropagation>
+            <div class="rp-modal__header"><div><h2 id="tag-manager-title">Administrar tags</h2><p class="rp-muted">Renomeie ou exclua tags que não são mais necessárias.</p></div><button class="rp-btn rp-btn--ghost" @onclick="CloseTagManager">Fechar</button></div>
+            @if (!string.IsNullOrWhiteSpace(tagMessage)) { <div class="rp-alert rp-alert--success">@tagMessage</div> }
+            <div class="rp-table-wrap"><table class="rp-table"><thead><tr><th>Tag</th><th>Uso</th><th></th></tr></thead><tbody>
+                @foreach (var tag in allTags)
+                {
+                    <tr>
+                        <td>@if (editingTagId == tag.Id) { <input class="rp-input" @bind="editingTagName" /> } else { <span class="rp-tag" style="@TagStyle(tag.Name)">@tag.Name</span> }</td>
+                        <td>@tag.Accessories.Count acessório(s)</td>
+                        <td class="rp-row-actions">
+                            @if (editingTagId == tag.Id)
+                            {
+                                <button class="rp-btn rp-btn--primary rp-btn--sm" @onclick="SaveTagEditAsync">Salvar</button>
+                                <button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="CancelTagEdit">Cancelar</button>
+                            }
+                            else
+                            {
+                                <button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => BeginTagEdit(tag)">Editar</button>
+                                <button class="rp-btn rp-btn--ghost rp-btn--sm" disabled="@(tagToDelete?.Id == tag.Id)" @onclick="() => AskDeleteTag(tag)">Excluir</button>
+                            }
+                        </td>
+                    </tr>
+                    @if (tagToDelete?.Id == tag.Id)
+                    {
+                        <tr class="rp-row--inactive">
+                            <td colspan="3">
+                                <div class="rp-alert rp-alert--danger rp-confirm">
+                                    <span>Excluir a tag “@tagToDelete.Name”? Ela será removida dos acessórios, mas os acessórios não serão excluídos.</span>
+                                    <button class="rp-btn rp-btn--danger rp-btn--sm" @onclick="DeleteTagAsync">Confirmar exclusão</button>
+                                    <button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => tagToDelete = null">Cancelar</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody></table></div>
+        </section>
     </div>
-</RpCard>
+}
+
+@code {
+    private List<Accessory> accessories = [];
+    private List<Accessory> filteredAccessories = [];
+    private List<Accessory> inactiveAccessories = [];
+    private List<Tag> allTags = [];
+    private AccessoryForm form = new();
+    private Guid? editingId;
+    private string? message;
+    private string? tagMessage;
+    private string searchText = string.Empty;
+    private Guid? selectedTagId;
+    private string tagInput = string.Empty;
+    private bool isSaving;
+    private bool showTagManager;
+    private Guid? editingTagId;
+    private string editingTagName = string.Empty;
+    private Tag? tagToDelete;
+    private Guid? deleteId;
+
+    private Tag? SelectedFormTag => allTags.FirstOrDefault(x => x.Id == form.TagId);
+    private bool HasExactTag => allTags.Any(x => string.Equals(x.Name, tagInput.Trim(), StringComparison.CurrentCultureIgnoreCase));
+    private List<Tag> TagSuggestions => string.IsNullOrWhiteSpace(tagInput)
+        ? []
+        : allTags.Where(x => x.Id != form.TagId && x.Name.Contains(tagInput.Trim(), StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        allTags = await db.Tags.Include(x => x.Accessories).AsNoTracking().OrderBy(x => x.Name).ToListAsync();
+        accessories = await db.Accessories.Include(x => x.Tag).AsNoTracking().OrderBy(x => x.Name).ToListAsync();
+        inactiveAccessories = accessories.Where(x => x.Status != "active").ToList();
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        var search = searchText.Trim();
+        filteredAccessories = accessories.Where(x => x.Status == "active")
+            .Where(x => string.IsNullOrEmpty(search)
+                || x.Name.Contains(search, StringComparison.CurrentCultureIgnoreCase)
+                || (x.Tag?.Name.Contains(search, StringComparison.CurrentCultureIgnoreCase) ?? false))
+            .Where(x => selectedTagId is null || x.TagId == selectedTagId)
+            .ToList();
+    }
+
+    private void OnSearchInput(ChangeEventArgs args)
+    {
+        searchText = args.Value?.ToString() ?? string.Empty;
+        ApplyFilter();
+    }
+
+    private async Task SaveAsync()
+    {
+        isSaving = true;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var stored = editingId is null ? null : await db.Accessories.FindAsync(editingId.Value);
+        if (editingId is not null && stored is null)
+        {
+            message = "O acessório não foi encontrado.";
+            isSaving = false;
+            return;
+        }
+        if (stored is null)
+        {
+            db.Accessories.Add(new Accessory
+            {
+                Id = Guid.NewGuid(), Name = form.Name.Trim(),                 UnitWeightKg = form.UnitWeightKg ?? 0,
+                TagId = form.TagId, Status = "active", CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now
+            });
+        }
+        else
+        {
+            stored.Name = form.Name.Trim();
+            stored.UnitWeightKg = form.UnitWeightKg ?? 0;
+            stored.TagId = form.TagId;
+            stored.UpdatedAt = DateTime.Now;
+        }
+        await db.SaveChangesAsync();
+        form = new();
+        tagInput = string.Empty;
+        editingId = null;
+        message = stored is null ? "Acessório cadastrado com sucesso." : "Acessório atualizado com sucesso.";
+        isSaving = false;
+        await LoadAsync();
+    }
+
+    private async Task CreateAndSelectTagAsync()
+    {
+        var name = tagInput.Trim();
+        if (string.IsNullOrWhiteSpace(name)) return;
+        var existing = allTags.FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.CurrentCultureIgnoreCase));
+        if (existing is not null) { SelectFormTag(existing); return; }
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var tag = new Tag { Id = Guid.NewGuid(), Name = name, CreatedAt = DateTime.Now };
+        db.Tags.Add(tag);
+        await db.SaveChangesAsync();
+        allTags.Add(tag);
+        form.TagId = tag.Id;
+        tagInput = string.Empty;
+    }
+
+    private void OnTagInput(ChangeEventArgs args)
+    {
+        tagInput = args.Value?.ToString() ?? string.Empty;
+        form.TagId = null;
+    }
+
+    private void SelectFormTag(Tag tag)
+    {
+        form.TagId = tag.Id;
+        tagInput = string.Empty;
+    }
+
+    private void RemoveFormTag()
+    {
+        form.TagId = null;
+        tagInput = string.Empty;
+    }
+
+    private void BeginEdit(Accessory accessory)
+    {
+        editingId = accessory.Id;
+        form = new AccessoryForm { Name = accessory.Name, UnitWeightKg = accessory.UnitWeightKg, TagId = accessory.TagId };
+        tagInput = string.Empty;
+        message = null;
+    }
+
+    private void CancelEdit()
+    {
+        editingId = null;
+        form = new();
+        tagInput = string.Empty;
+        message = null;
+    }
+
+    private async Task ToggleStatusAsync(Accessory accessory)
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var stored = await db.Accessories.FindAsync(accessory.Id);
+        if (stored is null) return;
+        stored.Status = stored.Status == "active" ? "inactive" : "active";
+        stored.UpdatedAt = DateTime.Now;
+        await db.SaveChangesAsync();
+        await LoadAsync();
+    }
+
+    private void AskDelete(Accessory accessory) => deleteId = accessory.Id;
+    private void CancelDelete() => deleteId = null;
+
+    private async Task DeleteAsync()
+    {
+        if (deleteId is null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var accessory = await db.Accessories.FindAsync(deleteId.Value);
+        if (accessory is null) { CancelDelete(); return; }
+        var inProgressUse = await db.PlanAccessories.AnyAsync(x => x.AccessoryId == accessory.Id
+            && x.Plan.DeletedAt == null && x.Plan.Status != "finalized");
+        if (inProgressUse)
+        {
+            message = "Não é possível excluir: o acessório está ligado a um plano em andamento.";
+            CancelDelete();
+            return;
+        }
+        db.Accessories.Remove(accessory);
+        await db.SaveChangesAsync();
+        CancelDelete();
+        await LoadAsync();
+    }
+
+    private void OpenTagManager() => showTagManager = true;
+    private void CloseTagManager() { showTagManager = false; tagToDelete = null; CancelTagEdit(); }
+    private void BeginTagEdit(Tag tag) { editingTagId = tag.Id; editingTagName = tag.Name; tagMessage = null; }
+    private void CancelTagEdit() { editingTagId = null; editingTagName = string.Empty; }
+    private void AskDeleteTag(Tag tag) { tagToDelete = tag; tagMessage = null; }
+
+    private async Task SaveTagEditAsync()
+    {
+        var name = editingTagName.Trim();
+        if (editingTagId is null || string.IsNullOrWhiteSpace(name)) return;
+        if (allTags.Any(x => x.Id != editingTagId && string.Equals(x.Name, name, StringComparison.CurrentCultureIgnoreCase))) { tagMessage = "Já existe uma tag com esse nome."; return; }
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var tag = await db.Tags.FindAsync(editingTagId.Value);
+        if (tag is null) return;
+        tag.Name = name;
+        await db.SaveChangesAsync();
+        tagMessage = "Tag atualizada.";
+        await LoadAsync();
+        CancelTagEdit();
+    }
+
+    private async Task DeleteTagAsync()
+    {
+        if (tagToDelete is null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var tag = await db.Tags.FindAsync(tagToDelete.Id);
+        if (tag is null) return;
+        db.Tags.Remove(tag);
+        await db.SaveChangesAsync();
+        tagMessage = "Tag excluída.";
+        tagToDelete = null;
+        await LoadAsync();
+    }
+
+    private static string TagStyle(string name)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(name.Trim().ToLowerInvariant()));
+        var hue = (hash[0] * 360 + hash[1]) % 360;
+        return $"--rp-tag-hue: {hue};";
+    }
+
+    private sealed class AccessoryForm
+    {
+        [Required(ErrorMessage = "Informe o nome.")]
+        public string Name { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Informe o peso unitário.")] public decimal? UnitWeightKg { get; set; }
+        public Guid? TagId { get; set; }
+    }
+}
