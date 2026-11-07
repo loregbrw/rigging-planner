@@ -7,6 +7,7 @@ Projeto da matéria *Jornada de Aprendizagem — Sistemas Inteligentes Conectado
 ## Documentação
 - [`docs/project-brief.md`](docs/project-brief.md): escopo, regras de negócio e decisões (fonte oficial da verdade).
 - [`docs/progress.md`](docs/progress.md): features e etapas já realizadas.
+- [`docs/system-design.md`](docs/system-design.md): design system e diretrizes de CSS.
 
 ## Requisitos para desenvolver
 - Windows 10/11

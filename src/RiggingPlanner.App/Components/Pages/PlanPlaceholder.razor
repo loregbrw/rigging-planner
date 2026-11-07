@@ -11,6 +11,8 @@
     </Actions>
 </RpPageHeader>
 
+<RpPlanLeaveGuard PlanId="@PlanId" IsReadOnly="@isReadOnly" IsSaving="false" />
+
 <div class="rp-stack">
     <RpStepper Steps="steps" Links="stepLinks" Current="CurrentStep" />
     <RpPlanNavigation PreviousUrl="@PreviousUrl" NextUrl="@NextUrl" />
@@ -25,7 +27,7 @@
 @code {
     [Parameter] public Guid PlanId { get; set; }
 
-    private readonly string[] steps = ["Dados de entrada", "Capacidade", "Anexos", "Preview", "Exportação"];
+    private readonly string[] steps = ["Dados de entrada", "Capacidade de Carga", "Anexos", "Preview", "Exportação"];
     private IReadOnlyList<string> stepLinks => [$"new-plan/{PlanId}", $"new-plan/{PlanId}/capacity", $"new-plan/{PlanId}/attachments", $"new-plan/{PlanId}/preview", $"new-plan/{PlanId}/export"];
     [Parameter] public string Stage { get; set; } = "attachments";
     private string CurrentSegment => Stage.ToLowerInvariant();
@@ -45,13 +47,15 @@
     };
     private string? PreviousUrl => CurrentStep == 2 ? $"new-plan/{PlanId}/capacity" : CurrentStep == 3 ? $"new-plan/{PlanId}/attachments" : $"new-plan/{PlanId}/preview";
     private string? NextUrl => CurrentStep == 2 ? $"new-plan/{PlanId}/preview" : CurrentStep == 3 ? $"new-plan/{PlanId}/export" : null;
-    private string PlanTitle => isReadOnly ? "Plano finalizado" : isPersisted ? "Editar plano" : "Novo plano";
+    private RiggingPlan? plan;
+    private string PlanTitle => Draft.GetPageTitle(plan);
     private bool isPersisted;
     private bool isReadOnly;
     private void SavePlan() => Navigation.NavigateTo($"/new-plan/{PlanId}?save=true");
     private void DiscardChanges()
     {
         Draft.Reset();
+        Draft.SuppressLeaveConfirmation = true;
         Navigation.NavigateTo("/");
     }
 
@@ -59,13 +63,14 @@
     {
         if (Draft.PlanId == PlanId && Draft.IsInitialized)
         {
+            plan = Draft.Plan;
             isPersisted = Draft.IsPersisted;
             isReadOnly = Draft.Plan?.Status == "finalized";
             return;
         }
 
         await using var db = await DbFactory.CreateDbContextAsync();
-        var plan = await db.RiggingPlans.AsNoTracking().SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+        plan = await db.RiggingPlans.AsNoTracking().SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
         isPersisted = plan is not null;
         isReadOnly = plan?.Status == "finalized";
     }

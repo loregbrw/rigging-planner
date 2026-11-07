@@ -1,10 +1,45 @@
-<button type="@Type" class="rp-btn rp-btn--@Variant @Class">
-    @ChildContent
-</button>
+@if (!string.IsNullOrEmpty(Href))
+{
+    <a href="@Href" class="@ButtonClass" @attributes="AdditionalAttributes">
+        @ChildContent
+    </a>
+}
+else
+{
+    <button type="@Type" disabled="@Disabled" @onclick="OnClick" class="@ButtonClass" @attributes="AdditionalAttributes">
+        @ChildContent
+    </button>
+}
 
 @code {
     [Parameter] public string Variant { get; set; } = "secondary";
+    [Parameter] public string? Size { get; set; }
     [Parameter] public string Type { get; set; } = "button";
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string ButtonClass
+    {
+        get
+        {
+            var classes = new List<string> { "rp-btn" };
+            if (!string.IsNullOrWhiteSpace(Variant))
+            {
+                classes.Add($"rp-btn--{Variant.Trim()}");
+            }
+            if (!string.IsNullOrWhiteSpace(Size))
+            {
+                classes.Add($"rp-btn--{Size.Trim()}");
+            }
+            if (!string.IsNullOrWhiteSpace(Class))
+            {
+                classes.Add(Class.Trim());
+            }
+            return string.Join(" ", classes);
+        }
+    }
 }

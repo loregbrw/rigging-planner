@@ -1,0 +1,118 @@
+@using Microsoft.AspNetCore.Components.Routing
+@inject NavigationManager Navigation
+@inject PlanDraftState Draft
+
+@if (showConfirmation)
+{
+    <div class="rp-modal-backdrop" @onclick="CancelLeave">
+        <section class="rp-modal" role="dialog" aria-modal="true" @onclick:stopPropagation>
+            <div class="rp-modal__header">
+                <h2>Sair da página?</h2>
+            </div>
+            <p class="rp-muted">
+                Suas alterações só são salvas ao clicar no botão "Salvar". Se sair agora, todas as informações adicionadas ou alteradas serão perdidas.
+            </p>
+            <div class="rp-form-actions">
+                <button class="rp-btn rp-btn--danger" type="button" @onclick="ConfirmLeave">
+                    Sair sem salvar
+                </button>
+                <button class="rp-btn rp-btn--ghost" type="button" @onclick="CancelLeave">
+                    Continuar editando
+                </button>
+            </div>
+        </section>
+    </div>
+}
+
+<NavigationLock ConfirmExternalNavigation="@(!IsReadOnly && !IsSaving && !allowNavigation && !Draft.SuppressLeaveConfirmation)"
+                OnBeforeInternalNavigation="OnBeforeInternalNavigation" />
+
+@code {
+    [Parameter] public Guid? PlanId { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public bool IsSaving { get; set; }
+
+    private bool showConfirmation;
+    private string? pendingTargetLocation;
+    private bool allowNavigation;
+
+    public void AllowNextNavigation()
+    {
+        allowNavigation = true;
+        Draft.SuppressLeaveConfirmation = true;
+    }
+
+    private void OnBeforeInternalNavigation(LocationChangingContext context)
+    {
+        if (allowNavigation || Draft.SuppressLeaveConfirmation || IsReadOnly || IsSaving)
+        {
+            return;
+        }
+
+        if (IsSamePlanNavigation(context.TargetLocation))
+        {
+            return;
+        }
+
+        context.PreventNavigation();
+        pendingTargetLocation = context.TargetLocation;
+        showConfirmation = true;
+        StateHasChanged();
+    }
+
+    private bool IsSamePlanNavigation(string targetLocation)
+    {
+        string relative;
+        try
+        {
+            relative = Navigation.ToBaseRelativePath(targetLocation);
+        }
+        catch
+        {
+            relative = targetLocation;
+        }
+
+        var path = relative.Split('?')[0].Trim('/');
+
+        if (PlanId is null && path.Equals("new-plan", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var workflowId = PlanId ?? Draft.PlanId;
+        if (workflowId is not null && workflowId != Guid.Empty)
+        {
+            var planPrefix = $"new-plan/{workflowId.Value}";
+            if (path.Equals(planPrefix, StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith($"{planPrefix}/", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void ConfirmLeave()
+    {
+        showConfirmation = false;
+        allowNavigation = true;
+        Draft.SuppressLeaveConfirmation = true;
+        Draft.Reset();
+
+        if (!string.IsNullOrEmpty(pendingTargetLocation))
+        {
+            Navigation.NavigateTo(pendingTargetLocation);
+        }
+        else
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
+
+    private void CancelLeave()
+    {
+        showConfirmation = false;
+        pendingTargetLocation = null;
+    }
+}
