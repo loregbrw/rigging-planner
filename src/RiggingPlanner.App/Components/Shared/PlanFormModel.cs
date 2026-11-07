@@ -48,14 +48,52 @@ public sealed class PlanFormModel : IValidatableObject
         if (string.IsNullOrWhiteSpace(ClientName))
         {
             yield return new ValidationResult("Selecione ou informe um cliente.", [nameof(ClientName)]);
-            yield break;
         }
-
-        if (ClientId is null && !IsValidCnpj(ClientCnpj))
+        else if (ClientId is null && !IsValidCnpj(ClientCnpj))
         {
             yield return new ValidationResult(
                 "Informe um CNPJ válido para o novo cliente.",
                 [nameof(ClientCnpj)]);
+        }
+
+        if (string.IsNullOrWhiteSpace(EquipmentModel))
+        {
+            yield return new ValidationResult("Selecione ou informe um equipamento.", [nameof(EquipmentModel)]);
+        }
+        else if (EquipmentId is null)
+        {
+            if (string.IsNullOrWhiteSpace(EquipmentTruckModel))
+            {
+                yield return new ValidationResult("Informe o caminhão do novo equipamento.", [nameof(EquipmentTruckModel)]);
+            }
+            if (string.IsNullOrWhiteSpace(EquipmentChassisNumber))
+            {
+                yield return new ValidationResult("Informe o chassi do novo equipamento.", [nameof(EquipmentChassisNumber)]);
+            }
+            if (string.IsNullOrWhiteSpace(EquipmentLicensePlate))
+            {
+                yield return new ValidationResult("Informe a placa do novo equipamento.", [nameof(EquipmentLicensePlate)]);
+            }
+            if (EquipmentNominalCapacity is null or <= 0)
+            {
+                yield return new ValidationResult("Informe a capacidade nominal do novo equipamento.", [nameof(EquipmentNominalCapacity)]);
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(RiggerDisplayName))
+        {
+            yield return new ValidationResult("Selecione ou informe um responsável técnico.", [nameof(RiggerDisplayName)]);
+        }
+        else if (RiggerId is null)
+        {
+            if (string.IsNullOrWhiteSpace(RiggerFullName))
+            {
+                yield return new ValidationResult("Informe o nome completo do novo responsável.", [nameof(RiggerFullName)]);
+            }
+            if (string.IsNullOrWhiteSpace(RiggerRppNumber))
+            {
+                yield return new ValidationResult("Informe o RPP do novo responsável.", [nameof(RiggerRppNumber)]);
+            }
         }
     }
 
