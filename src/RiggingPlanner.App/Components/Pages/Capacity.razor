@@ -11,6 +11,8 @@
     </Actions>
 </RpPageHeader>
 
+<RpPlanLeaveGuard PlanId="@PlanId" IsReadOnly="@isReadOnly" IsSaving="false" />
+
 @if (isLoading)
 {
     <p class="rp-muted">Carregando planilha...</p>
@@ -158,7 +160,7 @@ else
     private decimal? utilization => plan?.LoadCapacityT is > 0 ? grossWeightTons / plan.LoadCapacityT.Value * 100 : null;
     private readonly string[] steps = ["Dados de entrada", "Capacidade de Carga", "Anexos", "Preview", "Exportação"];
     private IReadOnlyList<string> stepLinks => [$"new-plan/{PlanId}", $"new-plan/{PlanId}/capacity", $"new-plan/{PlanId}/attachments", $"new-plan/{PlanId}/preview", $"new-plan/{PlanId}/export"];
-    private string PageTitle => isReadOnly ? "Plano finalizado" : IsDraft ? "Novo plano" : "Editar plano";
+    private string PageTitle => Draft.GetPageTitle(plan);
 
     private Equipment? SelectedEquipment => equipmentOptions.FirstOrDefault(x => x.Id == Draft.Form.EquipmentId);
     private bool IsExistingEquipment => Draft.Form.EquipmentId is not null;
@@ -374,6 +376,7 @@ else
 
     private void DiscardChanges()
     {
+        Draft.SuppressLeaveConfirmation = true;
         Draft.Reset();
         Navigation.NavigateTo("/");
     }

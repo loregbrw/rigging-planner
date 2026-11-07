@@ -86,6 +86,8 @@
 - [x] Sincronização dos dados recém-preenchidos na primeira etapa ao abrir a capacidade, sem salvamento intermediário no banco
 - [x] Padronização de nomenclatura na interface de Rigger para Responsável (menu lateral, tela de cadastro e seções do plano)
 - [x] Otimizações de build e watch do .NET (`Directory.Build.props`, exclusão de docs/artefatos, aceleração de compilação incremental e aplicação de migrations condicionada a pendências)
+- [x] Confirmação ao tentar sair da página de novo plano ou edição sem salvar (`RpPlanLeaveGuard` com `NavigationLock` e modal de confirmação)
+- [x] Título dinâmico nas etapas do plano exibindo o número e a descrição da operação para planos existentes (ex.: `Plano 2611001 — Içamento Chiller`) em vez de "Novo plano"
 
 ## Estado atual
 
@@ -104,6 +106,8 @@
 - [x] Finalização de plano com confirmação e bloqueio de edição
 - [x] Separação visual de ativos/inativos, reativação e exclusão definitiva protegida para responsáveis, equipamentos e acessórios
 - [x] Confirmações de exclusão posicionadas junto ao registro selecionado, inclusive no administrador de tags
+- [x] Confirmação ao tentar sair da página de novo plano ou edição com alterações não salvas
+- [x] Título da página de plano com número e descrição para planos existentes
 
 ### Modelado, mas ainda sem fluxo completo na interface
 - [ ] Pastas de um nível

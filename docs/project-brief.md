@@ -355,6 +355,8 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - Riggers, equipamentos e acessórios têm ativos e inativos separados; inativos não podem ser editados nem usados em novos planos.
 - A exclusão definitiva de rigger, equipamento ou acessório exige confirmação e é bloqueada quando há vínculo com plano não finalizado. Planos finalizados preservam os valores copiados.
 - O número do plano usa o formato AAMMNNN e é gerado por mês da data do plano.
+- Sair da edição/criação de um plano sem salvar exige confirmação informando que as alterações serão perdidas. A navegação entre as 5 etapas internas é livre pois o rascunho fica preservado em memória.
+- O título do cabeçalho nas etapas do plano exibe o número e a descrição do plano (ex.: `Plano 2611001 — Içamento Chiller`) para planos existentes, e "Novo plano" para rascunhos não persistidos.
 
 ### Pendências que ainda dependem de decisão ou implementação
 

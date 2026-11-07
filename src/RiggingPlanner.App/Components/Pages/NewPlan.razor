@@ -7,13 +7,15 @@
 @inject IJSRuntime JS
 
 <RpPageHeader
-    Title="@((PlanId is null || isDraftPlan) ? "Novo plano" : isReadOnly ? "Plano finalizado" : "Editar plano")"
+    Title="@PageTitle"
     Subtitle="Dados de entrada — Preencha os dados sem perder informações entre as etapas">
     <Actions>
         <RpPlanActions IsNew="@(PlanId is null || isDraftPlan)" IsReadOnly="@isReadOnly" IsSaving="@isSaving"
                        Save="SaveFormAsync" Discard="AskDiscard" />
     </Actions>
 </RpPageHeader>
+
+<RpPlanLeaveGuard PlanId="@WorkflowPlanId" IsReadOnly="@isReadOnly" IsSaving="@isSaving" />
 
 <div class="rp-stack">
     <RpStepper Steps="steps" Links="stepLinks" Current="0" />
@@ -47,6 +49,8 @@
     private bool isSaving;
     private bool isReadOnly;
     private bool isDraftPlan;
+    private RiggingPlan? plan;
+    private string PageTitle => Draft.GetPageTitle(plan);
     private string? errorMessage;
     private Client? SelectedClient => clientOptions.FirstOrDefault(x => x.Id == form.ClientId);
     private Rigger? SelectedRigger => riggerOptions.FirstOrDefault(x => x.Id == form.RiggerId);
@@ -71,6 +75,7 @@
     private void AskDiscard() => DiscardChanges();
     private void DiscardChanges()
     {
+        Draft.SuppressLeaveConfirmation = true;
         Draft.Reset();
         Navigation.NavigateTo("/");
     }
@@ -145,6 +150,7 @@
             && ((PlanId is not null && Draft.PlanId == PlanId)
                 || (PlanId is null && !Draft.IsPersisted)))
         {
+            plan = Draft.Plan;
             isDraftPlan = !Draft.IsPersisted;
             isNewClientSelected = Draft.Plan?.ClientId is null && !string.IsNullOrWhiteSpace(form.ClientName);
             isNewRiggerSelected = Draft.Plan?.RiggerId is null && !string.IsNullOrWhiteSpace(form.RiggerDisplayName);
@@ -163,10 +169,11 @@
             Draft.Plan ??= new RiggingPlan { Id = Draft.PlanId.Value };
             Draft.IsPersisted = false;
             Draft.IsInitialized = true;
+            plan = Draft.Plan;
             return;
         }
 
-        var plan = await db.RiggingPlans.AsNoTracking().SingleOrDefaultAsync(x => x.Id == PlanId);
+        plan = await db.RiggingPlans.AsNoTracking().SingleOrDefaultAsync(x => x.Id == PlanId);
         if (plan is null)
         {
             errorMessage = "Plano não encontrado.";
@@ -249,6 +256,8 @@
                 await db.SaveChangesAsync();
                 await SaveAccessoriesAsync(db, existingPlan.Id);
                 await transaction.CommitAsync();
+                Draft.SuppressLeaveConfirmation = true;
+                Draft.Reset();
                 Navigation.NavigateTo("/");
                 return;
             }
@@ -295,6 +304,8 @@
             await db.SaveChangesAsync();
             await SaveAccessoriesAsync(db, newPlan.Id);
             await transaction.CommitAsync();
+            Draft.SuppressLeaveConfirmation = true;
+            Draft.Reset();
             Navigation.NavigateTo("/");
         }
         catch (Exception exception)
