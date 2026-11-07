@@ -21,6 +21,7 @@
     <RpStepper Steps="steps" Links="stepLinks" Current="0" />
     <RpPlanNavigation PreviousUrl="@null" NextUrl="@($"new-plan/{WorkflowPlanId}/capacity")" />
     <RpPlanInputForm Model="form" IsReadOnly="isReadOnly" IsSaving="isSaving" ErrorMessage="@errorMessage"
+                     ErrorMessageChanged="@(e => errorMessage = e)"
                      RiggerOptions="riggerOptions" ClientSuggestions="ClientSuggestions" SelectedClient="SelectedClient"
                      IsNewClientSelected="isNewClientSelected" IsExistingClient="IsExistingClient" HasExactClient="HasExactClient"
                      OnValidSubmit="SaveAsync" OnClientNameInput="OnClientNameInput" OnClientSelect="SelectClient"
@@ -75,8 +76,8 @@
     private void AskDiscard() => DiscardChanges();
     private void DiscardChanges()
     {
-        Draft.SuppressLeaveConfirmation = true;
         Draft.Reset();
+        Draft.SuppressLeaveConfirmation = true;
         Navigation.NavigateTo("/");
     }
 
@@ -256,8 +257,8 @@
                 await db.SaveChangesAsync();
                 await SaveAccessoriesAsync(db, existingPlan.Id);
                 await transaction.CommitAsync();
-                Draft.SuppressLeaveConfirmation = true;
                 Draft.Reset();
+                Draft.SuppressLeaveConfirmation = true;
                 Navigation.NavigateTo("/");
                 return;
             }
@@ -304,8 +305,8 @@
             await db.SaveChangesAsync();
             await SaveAccessoriesAsync(db, newPlan.Id);
             await transaction.CommitAsync();
-            Draft.SuppressLeaveConfirmation = true;
             Draft.Reset();
+            Draft.SuppressLeaveConfirmation = true;
             Navigation.NavigateTo("/");
         }
         catch (Exception exception)

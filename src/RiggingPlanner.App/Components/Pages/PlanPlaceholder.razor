@@ -54,8 +54,8 @@
     private void SavePlan() => Navigation.NavigateTo($"/new-plan/{PlanId}?save=true");
     private void DiscardChanges()
     {
-        Draft.SuppressLeaveConfirmation = true;
         Draft.Reset();
+        Draft.SuppressLeaveConfirmation = true;
         Navigation.NavigateTo("/");
     }
 

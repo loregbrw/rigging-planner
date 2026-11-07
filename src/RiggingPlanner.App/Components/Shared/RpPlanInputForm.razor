@@ -163,6 +163,7 @@
     [Parameter] public bool IsReadOnly { get; set; }
     [Parameter] public bool IsSaving { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public EventCallback<string?> ErrorMessageChanged { get; set; }
     [Parameter] public IReadOnlyList<Rigger> RiggerOptions { get; set; } = [];
     [Parameter] public IReadOnlyList<Rigger> RiggerSuggestions { get; set; } = [];
     [Parameter] public Rigger? SelectedRigger { get; set; }
@@ -194,9 +195,17 @@
 
     public async Task SubmitAsync()
     {
-        if (!IsReadOnly && editContext.Validate())
+        if (IsReadOnly) return;
+        if (editContext.Validate())
         {
+            await ErrorMessageChanged.InvokeAsync(null);
             await OnValidSubmit.InvokeAsync();
+        }
+        else
+        {
+            var msg = "Valores obrigatórios faltando ou dados inválidos. Verifique os campos obrigatórios e preencha-os corretamente.";
+            await ErrorMessageChanged.InvokeAsync(msg);
+            StateHasChanged();
         }
     }
 }
