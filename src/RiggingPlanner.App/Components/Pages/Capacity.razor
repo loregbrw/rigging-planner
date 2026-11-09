@@ -34,7 +34,7 @@ else
             <fieldset disabled="@isReadOnly" class="rp-readonly-fields">
                 <div class="rp-stack" style="gap: var(--rp-space-6);">
                     
-                    <!-- Subseção 1 & 2: Configurações do guindaste e Composição de carga bruta (Lado a lado) -->
+                    <!-- Configurações do guindaste e Composição de carga bruta (Lado a lado) -->
                     <div class="rp-capacity-sections">
                         <section class="rp-capacity-section" aria-labelledby="crane-config-section">
                             <h3 id="crane-config-section" class="rp-section-title">Configurações do guindaste</h3>
@@ -109,74 +109,87 @@ else
                         </section>
                     </div>
 
-                    <!-- Subseção 3: Lingadas / Amarras -->
+                    <!-- ================= LINGADAS / AMARRAS (Inline Table Manager) ================= -->
                     <section class="rp-capacity-section" aria-labelledby="lingada-section">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--rp-space-2);">
                             <h3 id="lingada-section" class="rp-section-title" style="margin: 0;">Lingadas / Amarras</h3>
-                            @if (lingadaForm.EditingId is not null)
+                            @if (!isAddingLingada && lingadaForm.EditingId is null)
                             {
-                                <span class="rp-tag" style="background: var(--rp-primary-100); color: var(--rp-primary-900); font-weight: 600;">Modo de edição</span>
+                                <button class="rp-btn rp-btn--primary rp-btn--sm" type="button" @onclick="StartAddLingada" title="Adicionar lingada" style="width: 2rem; height: 2rem; padding: 0; display: grid; place-items: center; font-size: 1.1rem; font-weight: 700;">+</button>
                             }
                         </div>
-                        <p class="rp-help" style="margin-bottom: var(--rp-space-3);">Adicione, edite ou remova as lingadas e amarras utilizadas no plano de rigging.</p>
+                        <p class="rp-help" style="margin-bottom: var(--rp-space-3);">Gerencie as lingadas e amarras diretamente na tabela abaixo.</p>
 
-                        <!-- Formulário compacto de adição/edição de lingada -->
-                        <div style="background: var(--rp-surface-subtle); border: 1px solid var(--rp-border-subtle); border-radius: var(--rp-radius-md); padding: var(--rp-space-3); margin-bottom: var(--rp-space-3);">
-                            <div class="rp-form-grid" style="grid-template-columns: repeat(12, 1fr); display: grid; gap: var(--rp-space-2); align-items: end;">
-                                <div class="rp-field rp-col-6" style="grid-column: span 6; margin-bottom: 0;">
-                                    <label class="rp-label">Descrição <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                                    <InputText class="rp-input" @bind-Value="lingadaForm.Description" placeholder="Ex: Cinta plana 3 metros — Capacidade 6t" />
-                                </div>
-                                <div class="rp-field rp-col-2" style="grid-column: span 2; margin-bottom: 0;">
-                                    <label class="rp-label">Qtd. (pç) <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                                    <RpDecimalInput class="rp-input rp-input--num" @bind-Value="lingadaForm.Quantity" />
-                                </div>
-                                <div class="rp-field rp-col-2" style="grid-column: span 2; margin-bottom: 0;">
-                                    <label class="rp-label">Peso unit. (kg) <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                                    <RpDecimalInput class="rp-input rp-input--num" @bind-Value="lingadaForm.UnitWeightKg" />
-                                </div>
-                                <div class="rp-field rp-col-2" style="grid-column: span 2; margin-bottom: 0; display: flex; gap: var(--rp-space-2);">
-                                    @if (lingadaForm.EditingId is not null)
-                                    {
-                                        <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="CancelEditLingada" title="Cancelar">Cancelar</button>
-                                    }
-                                    <button class="rp-btn rp-btn--primary rp-btn--sm" type="button" style="width: 100%; height: 2.375rem;" @onclick="SaveLingadaAsync">@(lingadaForm.EditingId is null ? "Adicionar" : "Salvar")</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tabela de lingadas -->
+                        <!-- Tabela com Gerenciamento Inline -->
                         <div class="rp-table-wrap" style="background: var(--rp-surface-subtle); border-radius: var(--rp-radius-md); padding: var(--rp-space-2); border: 1px solid var(--rp-border-subtle);">
                             <table class="rp-table" style="background: transparent;">
                                 <thead>
                                     <tr>
                                         <th style="width: 70px;">Item</th>
                                         <th>Descrição</th>
-                                        <th class="rp-num">Qtd. (pç)</th>
-                                        <th class="rp-num">Unitário (kg)</th>
-                                        <th class="rp-num">Total (kg)</th>
-                                        <th style="width: 140px;"></th>
+                                        <th class="rp-num" style="width: 110px;">Qtd. (pç)</th>
+                                        <th class="rp-num" style="width: 140px;">Unitário (kg)</th>
+                                        <th class="rp-num" style="width: 130px;">Total (kg)</th>
+                                        <th style="width: 160px;"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    <!-- Linha de Adição/Edição Inline -->
+                                    @if (isAddingLingada || lingadaForm.EditingId is not null)
+                                    {
+                                        <tr style="background: var(--rp-primary-50); outline: 2px solid var(--rp-primary-300);">
+                                            <td><span class="rp-badge rp-badge--primary">@(lingadaForm.EditingId is not null ? "Edit" : "Novo")</span></td>
+                                            <td>
+                                                <InputText class="rp-input rp-input--sm" @bind-Value="lingadaForm.Description" placeholder="Descrição da lingada..." />
+                                            </td>
+                                            <td>
+                                                <RpDecimalInput class="rp-input rp-input--sm rp-input--num" @bind-Value="lingadaForm.Quantity" />
+                                            </td>
+                                            <td>
+                                                <RpDecimalInput class="rp-input rp-input--sm rp-input--num" @bind-Value="lingadaForm.UnitWeightKg" />
+                                            </td>
+                                            <td class="rp-num" style="font-weight: 600;">
+                                                @(((lingadaForm.Quantity ?? 0) * (lingadaForm.UnitWeightKg ?? 0)).ToString("N2")) kg
+                                            </td>
+                                            <td class="rp-row-actions" style="display: flex; gap: var(--rp-space-1);">
+                                                <button class="rp-btn rp-btn--primary rp-btn--sm" type="button" @onclick="SaveLingadaInline">Salvar</button>
+                                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="CancelLingadaInline">Cancelar</button>
+                                            </td>
+                                        </tr>
+                                    }
+
                                     @{ int lingadaIndex = 1; }
                                     @foreach (var item in lingadaItems)
                                     {
-                                        <tr class="@(lingadaForm.EditingId == item.Id ? "rp-row-highlight" : string.Empty)">
+                                        <tr>
                                             <td>@(lingadaIndex++)</td>
                                             <td>@item.Description</td>
                                             <td class="rp-num">@item.Quantity.ToString("N2")</td>
                                             <td class="rp-num">@item.UnitWeightKg.ToString("N2") kg</td>
                                             <td class="rp-num">@((item.Quantity * item.UnitWeightKg).ToString("N2")) kg</td>
                                             <td class="rp-row-actions">
-                                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="() => EditLingada(item)">Editar</button>
-                                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="() => RemoveItemAsync(item.Id)">Remover</button>
+                                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="() => EditLingadaInline(item)">Editar</button>
+                                                <button class="rp-btn rp-btn--danger-outline rp-btn--sm" type="button" @onclick="() => AskRemoveLingada(item)">Excluir</button>
                                             </td>
                                         </tr>
+                                        @if (pendingLingadaRemoval == item)
+                                        {
+                                            <tr class="rp-row--inactive">
+                                                <td colspan="6">
+                                                    <div class="rp-alert rp-alert--danger rp-confirm" style="display: flex; align-items: center; justify-content: space-between; padding: var(--rp-space-2) var(--rp-space-3); margin: 0;">
+                                                        <span>Confirma a exclusão desta lingada?</span>
+                                                        <div style="display: flex; gap: var(--rp-space-2);">
+                                                            <button class="rp-btn rp-btn--danger rp-btn--sm" type="button" @onclick="ConfirmRemoveLingada">Sim, excluir</button>
+                                                            <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="CancelRemoveLingada">Cancelar</button>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
                                     }
-                                    @if (!lingadaItems.Any())
+                                    @if (!lingadaItems.Any() && !isAddingLingada && lingadaForm.EditingId is null)
                                     {
-                                        <tr><td colspan="6" class="rp-muted" style="text-align: center; padding: var(--rp-space-3);">Nenhuma lingada ou amarra cadastrada.</td></tr>
+                                        <tr><td colspan="6" class="rp-muted" style="text-align: center; padding: var(--rp-space-4);">Nenhuma lingada ou amarra cadastrada. Clique no botão "+" acima para adicionar.</td></tr>
                                     }
                                 </tbody>
                             </table>
@@ -186,65 +199,63 @@ else
                         </div>
                     </section>
 
-                    <!-- Subseção 4: Dispositivos / Balancim -->
+                    <!-- ================= DISPOSITIVOS / BALANCIM (Inline Table Manager) ================= -->
                     <section class="rp-capacity-section" aria-labelledby="device-section">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--rp-space-2);">
                             <h3 id="device-section" class="rp-section-title" style="margin: 0;">Dispositivos / Balancim</h3>
-                            @if (deviceForm.EditingId is not null)
+                            @if (!isAddingDevice && deviceForm.EditingId is null)
                             {
-                                <span class="rp-tag" style="background: var(--rp-primary-100); color: var(--rp-primary-900); font-weight: 600;">Modo de edição</span>
+                                <button class="rp-btn rp-btn--primary rp-btn--sm" type="button" @onclick="StartAddDevice" title="Adicionar dispositivo" style="width: 2rem; height: 2rem; padding: 0; display: grid; place-items: center; font-size: 1.1rem; font-weight: 700;">+</button>
                             }
                         </div>
-                        <p class="rp-help" style="margin-bottom: var(--rp-space-3);">Adicione, edite ou remova os dispositivos e balancins utilizados no plano de rigging.</p>
+                        <p class="rp-help" style="margin-bottom: var(--rp-space-3);">Gerencie os dispositivos e balancins diretamente na tabela abaixo.</p>
 
-                        <!-- Formulário compacto de adição/edição de dispositivo -->
-                        <div style="background: var(--rp-surface-subtle); border: 1px solid var(--rp-border-subtle); border-radius: var(--rp-radius-md); padding: var(--rp-space-3); margin-bottom: var(--rp-space-3);">
-                            <div class="rp-form-grid" style="grid-template-columns: repeat(12, 1fr); display: grid; gap: var(--rp-space-2); align-items: end;">
-                                <div class="rp-field rp-col-5" style="grid-column: span 5; margin-bottom: 0;">
-                                    <label class="rp-label">Descrição <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                                    <InputText class="rp-input" @bind-Value="deviceForm.Description" placeholder="Ex: Balancim modular 10t" />
-                                </div>
-                                <div class="rp-field rp-col-2" style="grid-column: span 2; margin-bottom: 0;">
-                                    <label class="rp-label">Ref. / Desenho</label>
-                                    <InputText class="rp-input" @bind-Value="deviceForm.DrawingRef" placeholder="Ex: BAL-01" />
-                                </div>
-                                <div class="rp-field rp-col-1" style="grid-column: span 1; margin-bottom: 0;">
-                                    <label class="rp-label">Qtd.</label>
-                                    <RpDecimalInput class="rp-input rp-input--num" @bind-Value="deviceForm.Quantity" />
-                                </div>
-                                <div class="rp-field rp-col-2" style="grid-column: span 2; margin-bottom: 0;">
-                                    <label class="rp-label">Peso unit. (kg)</label>
-                                    <RpDecimalInput class="rp-input rp-input--num" @bind-Value="deviceForm.UnitWeightKg" />
-                                </div>
-                                <div class="rp-field rp-col-2" style="grid-column: span 2; margin-bottom: 0; display: flex; gap: var(--rp-space-2);">
-                                    @if (deviceForm.EditingId is not null)
-                                    {
-                                        <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="CancelEditDevice" title="Cancelar">Cancelar</button>
-                                    }
-                                    <button class="rp-btn rp-btn--primary rp-btn--sm" type="button" style="width: 100%; height: 2.375rem;" @onclick="SaveDeviceAsync">@(deviceForm.EditingId is null ? "Adicionar" : "Salvar")</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Tabela de dispositivos -->
+                        <!-- Tabela com Gerenciamento Inline -->
                         <div class="rp-table-wrap" style="background: var(--rp-surface-subtle); border-radius: var(--rp-radius-md); padding: var(--rp-space-2); border: 1px solid var(--rp-border-subtle);">
                             <table class="rp-table" style="background: transparent;">
                                 <thead>
                                     <tr>
                                         <th style="width: 70px;">Item</th>
                                         <th>Descrição</th>
-                                        <th>Ref. / Desenho</th>
-                                        <th class="rp-num">Qtd. (pç)</th>
-                                        <th class="rp-num">Unitário (kg)</th>
-                                        <th class="rp-num">Total (kg)</th>
-                                        <th style="width: 140px;"></th>
+                                        <th style="width: 120px;">Ref. / Desenho</th>
+                                        <th class="rp-num" style="width: 90px;">Qtd.</th>
+                                        <th class="rp-num" style="width: 130px;">Unitário (kg)</th>
+                                        <th class="rp-num" style="width: 120px;">Total (kg)</th>
+                                        <th style="width: 160px;"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    <!-- Linha de Adição/Edição Inline -->
+                                    @if (isAddingDevice || deviceForm.EditingId is not null)
+                                    {
+                                        <tr style="background: var(--rp-primary-50); outline: 2px solid var(--rp-primary-300);">
+                                            <td><span class="rp-badge rp-badge--primary">@(deviceForm.EditingId is not null ? "Edit" : "Novo")</span></td>
+                                            <td>
+                                                <InputText class="rp-input rp-input--sm" @bind-Value="deviceForm.Description" placeholder="Descrição..." />
+                                            </td>
+                                            <td>
+                                                <InputText class="rp-input rp-input--sm" @bind-Value="deviceForm.DrawingRef" placeholder="Ref..." />
+                                            </td>
+                                            <td>
+                                                <RpDecimalInput class="rp-input rp-input--sm rp-input--num" @bind-Value="deviceForm.Quantity" />
+                                            </td>
+                                            <td>
+                                                <RpDecimalInput class="rp-input rp-input--sm rp-input--num" @bind-Value="deviceForm.UnitWeightKg" />
+                                            </td>
+                                            <td class="rp-num" style="font-weight: 600;">
+                                                @(((deviceForm.Quantity ?? 0) * (deviceForm.UnitWeightKg ?? 0)).ToString("N2")) kg
+                                            </td>
+                                            <td class="rp-row-actions" style="display: flex; gap: var(--rp-space-1);">
+                                                <button class="rp-btn rp-btn--primary rp-btn--sm" type="button" @onclick="SaveDeviceInline">Salvar</button>
+                                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="CancelDeviceInline">Cancelar</button>
+                                            </td>
+                                        </tr>
+                                    }
+
                                     @{ int deviceIndex = lingadaItems.Count + 1; }
                                     @foreach (var item in deviceItems)
                                     {
-                                        <tr class="@(deviceForm.EditingId == item.Id ? "rp-row-highlight" : string.Empty)">
+                                        <tr>
                                             <td>@(deviceIndex++)</td>
                                             <td>@item.Description</td>
                                             <td>@(string.IsNullOrWhiteSpace(item.DrawingRef) ? "-" : item.DrawingRef)</td>
@@ -252,14 +263,28 @@ else
                                             <td class="rp-num">@item.UnitWeightKg.ToString("N2") kg</td>
                                             <td class="rp-num">@((item.Quantity * item.UnitWeightKg).ToString("N2")) kg</td>
                                             <td class="rp-row-actions">
-                                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="() => EditDevice(item)">Editar</button>
-                                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="() => RemoveItemAsync(item.Id)">Remover</button>
+                                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="() => EditDeviceInline(item)">Editar</button>
+                                                <button class="rp-btn rp-btn--danger-outline rp-btn--sm" type="button" @onclick="() => AskRemoveDevice(item)">Excluir</button>
                                             </td>
                                         </tr>
+                                        @if (pendingDeviceRemoval == item)
+                                        {
+                                            <tr class="rp-row--inactive">
+                                                <td colspan="7">
+                                                    <div class="rp-alert rp-alert--danger rp-confirm" style="display: flex; align-items: center; justify-content: space-between; padding: var(--rp-space-2) var(--rp-space-3); margin: 0;">
+                                                        <span>Confirma a exclusão deste dispositivo?</span>
+                                                        <div style="display: flex; gap: var(--rp-space-2);">
+                                                            <button class="rp-btn rp-btn--danger rp-btn--sm" type="button" @onclick="ConfirmRemoveDevice">Sim, excluir</button>
+                                                            <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="CancelRemoveDevice">Cancelar</button>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
                                     }
-                                    @if (!deviceItems.Any())
+                                    @if (!deviceItems.Any() && !isAddingDevice && deviceForm.EditingId is null)
                                     {
-                                        <tr><td colspan="7" class="rp-muted" style="text-align: center; padding: var(--rp-space-3);">Nenhum dispositivo ou balancim cadastrado.</td></tr>
+                                        <tr><td colspan="7" class="rp-muted" style="text-align: center; padding: var(--rp-space-4);">Nenhum dispositivo ou balancim cadastrado. Clique no botão "+" acima para adicionar.</td></tr>
                                     }
                                 </tbody>
                             </table>
@@ -283,6 +308,10 @@ else
     private List<PlanAccessory> items = [];
     private LingadaForm lingadaForm = new();
     private DeviceForm deviceForm = new();
+    private bool isAddingLingada;
+    private bool isAddingDevice;
+    private PlanAccessory? pendingLingadaRemoval;
+    private PlanAccessory? pendingDeviceRemoval;
     private bool isLoading = true;
     private bool isReadOnly;
     private string? errorMessage;
@@ -362,8 +391,17 @@ else
         Navigation.NavigateTo($"/new-plan/{PlanId}?save=true");
     }
 
-    private void EditLingada(PlanAccessory item)
+    private void StartAddLingada()
     {
+        isAddingLingada = true;
+        lingadaForm = new LingadaForm();
+        pendingLingadaRemoval = null;
+        errorMessage = null;
+    }
+
+    private void EditLingadaInline(PlanAccessory item)
+    {
+        isAddingLingada = false;
         lingadaForm = new LingadaForm
         {
             EditingId = item.Id,
@@ -371,16 +409,18 @@ else
             Quantity = item.Quantity,
             UnitWeightKg = item.UnitWeightKg
         };
+        pendingLingadaRemoval = null;
         errorMessage = null;
     }
 
-    private void CancelEditLingada()
+    private void CancelLingadaInline()
     {
+        isAddingLingada = false;
         lingadaForm = new();
         errorMessage = null;
     }
 
-    private async Task SaveLingadaAsync()
+    private void SaveLingadaInline()
     {
         if (plan is null || isReadOnly) return;
         if (string.IsNullOrWhiteSpace(lingadaForm.Description) || lingadaForm.Quantity is not > 0 || lingadaForm.UnitWeightKg is null)
@@ -415,12 +455,41 @@ else
             }
         }
 
+        isAddingLingada = false;
         lingadaForm = new();
         errorMessage = null;
     }
 
-    private void EditDevice(PlanAccessory item)
+    private void AskRemoveLingada(PlanAccessory item)
     {
+        pendingLingadaRemoval = item;
+        errorMessage = null;
+    }
+
+    private void ConfirmRemoveLingada()
+    {
+        if (pendingLingadaRemoval is null) return;
+        if (lingadaForm.EditingId == pendingLingadaRemoval.Id) CancelLingadaInline();
+        items.Remove(pendingLingadaRemoval);
+        pendingLingadaRemoval = null;
+    }
+
+    private void CancelRemoveLingada()
+    {
+        pendingLingadaRemoval = null;
+    }
+
+    private void StartAddDevice()
+    {
+        isAddingDevice = true;
+        deviceForm = new DeviceForm();
+        pendingDeviceRemoval = null;
+        errorMessage = null;
+    }
+
+    private void EditDeviceInline(PlanAccessory item)
+    {
+        isAddingDevice = false;
         deviceForm = new DeviceForm
         {
             EditingId = item.Id,
@@ -429,16 +498,18 @@ else
             Quantity = item.Quantity,
             UnitWeightKg = item.UnitWeightKg
         };
+        pendingDeviceRemoval = null;
         errorMessage = null;
     }
 
-    private void CancelEditDevice()
+    private void CancelDeviceInline()
     {
+        isAddingDevice = false;
         deviceForm = new();
         errorMessage = null;
     }
 
-    private async Task SaveDeviceAsync()
+    private void SaveDeviceInline()
     {
         if (plan is null || isReadOnly) return;
         if (string.IsNullOrWhiteSpace(deviceForm.Description) || deviceForm.Quantity is not > 0 || deviceForm.UnitWeightKg is null)
@@ -474,16 +545,28 @@ else
             }
         }
 
+        isAddingDevice = false;
         deviceForm = new();
         errorMessage = null;
     }
 
-    private async Task RemoveItemAsync(Guid id)
+    private void AskRemoveDevice(PlanAccessory item)
     {
-        if (isReadOnly) return;
-        items.RemoveAll(x => x.Id == id);
-        if (lingadaForm.EditingId == id) lingadaForm = new();
-        if (deviceForm.EditingId == id) deviceForm = new();
+        pendingDeviceRemoval = item;
+        errorMessage = null;
+    }
+
+    private void ConfirmRemoveDevice()
+    {
+        if (pendingDeviceRemoval is null) return;
+        if (deviceForm.EditingId == pendingDeviceRemoval.Id) CancelDeviceInline();
+        items.Remove(pendingDeviceRemoval);
+        pendingDeviceRemoval = null;
+    }
+
+    private void CancelRemoveDevice()
+    {
+        pendingDeviceRemoval = null;
     }
 
     private void DiscardChanges()
@@ -496,7 +579,7 @@ else
     private sealed class LingadaForm
     {
         public Guid? EditingId { get; set; }
-        [Required(ErrorMessage = "Informe a descrição da lingada.")] public string Description { get; set; } = string.Empty;
+        [Required] public string Description { get; set; } = string.Empty;
         [Range(0.01, double.MaxValue)] public decimal? Quantity { get; set; } = 1;
         [Range(0.01, double.MaxValue)] public decimal? UnitWeightKg { get; set; }
     }
@@ -504,7 +587,7 @@ else
     private sealed class DeviceForm
     {
         public Guid? EditingId { get; set; }
-        [Required(ErrorMessage = "Informe a descrição do dispositivo.")] public string Description { get; set; } = string.Empty;
+        [Required] public string Description { get; set; } = string.Empty;
         public string? DrawingRef { get; set; }
         [Range(0.01, double.MaxValue)] public decimal? Quantity { get; set; } = 1;
         [Range(0.01, double.MaxValue)] public decimal? UnitWeightKg { get; set; }

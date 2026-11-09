@@ -9,7 +9,7 @@
 - [x] Suporte completo a adição, edição inline e remoção de itens diretamente na tela de capacidade de carga (`Capacity.razor`).
 - [x] Tabelas na página de cadastro de plano estilizadas com fundo cinza (`var(--rp-surface-subtle)`), conferindo aparência integrada e neutra.
 - [x] Consolidação das seções da tela de capacidade de carga em um único formulário unificado intitulado **"Capacidade de carga"**, padronizado com 4 subseções: "Configurações do guindaste", "Composição de carga bruta", "Lingadas / Amarras" e "Dispositivos / Balancim".
-- [x] Seções "Configurações do guindaste" e "Composição de carga bruta" posicionadas lado a lado, e formulários de lingada e dispositivo compactados verticalmente para eliminar espaços em branco excessivos após os inputs.
+- [x] Redesenho completo do gerenciamento de lingadas/amarras e dispositivos/balancins na página de capacidade de carga (`Capacity.razor`), eliminando formulários estáticos separados e adotando um fluxo 100% integrado por tabela com edição inline (linhas editáveis diretamente na tabela) e chips de modelos rápidos (presets).
 
 ### Refatoração visual — Design system e componentes
 - [x] Tokens, reset, base, layout e componentes CSS separados em camadas `rp.*`
