@@ -4,6 +4,13 @@
 
 ## Etapas realizadas
 
+### Atualização — Acessórios dinâmicos por plano, edição inline e tabelas cinza
+- [x] Remoção do catálogo global de acessórios e da tela de administração de acessórios; lingadas/amarras e dispositivos/balancins passaram a ser dinâmicos por plano.
+- [x] Suporte completo a adição, edição inline e remoção de itens diretamente na tela de capacidade de carga (`Capacity.razor`).
+- [x] Tabelas na página de cadastro de plano estilizadas com fundo cinza (`var(--rp-surface-subtle)`), conferindo aparência integrada e neutra.
+- [x] Consolidação das seções da tela de capacidade de carga em um único formulário unificado intitulado **"Capacidade de carga"**, padronizado com 4 subseções: "Configurações do guindaste", "Composição de carga bruta", "Lingadas / Amarras" e "Dispositivos / Balancim".
+- [x] Seções "Configurações do guindaste" e "Composição de carga bruta" posicionadas lado a lado, e formulários de lingada e dispositivo compactados verticalmente para eliminar espaços em branco excessivos após os inputs.
+
 ### Refatoração visual — Design system e componentes
 - [x] Tokens, reset, base, layout e componentes CSS separados em camadas `rp.*`
 - [x] Shell com sidebar azul-marinho, topbar glass sutil e conteúdo rolável
