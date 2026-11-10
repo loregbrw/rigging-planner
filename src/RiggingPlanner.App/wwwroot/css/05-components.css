@@ -253,8 +253,6 @@
     .rp-capacity-section .rp-form-grid {
         display: grid;
         grid-template-columns: 1fr;
-        grid-template-rows: repeat(4, 1fr);
-        flex: 1;
         gap: var(--rp-space-3);
     }
     @media (max-width: 760px) { .rp-summary-grid { grid-template-columns: 1fr; } }
