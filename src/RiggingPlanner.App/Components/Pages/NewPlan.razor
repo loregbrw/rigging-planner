@@ -239,6 +239,10 @@
         Draft.PlanId = plan.Id;
         Draft.IsPersisted = true;
         Draft.IsInitialized = true;
+
+        var dbAccessories = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
+        Draft.Accessories.Clear();
+        Draft.Accessories.AddRange(dbAccessories);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
