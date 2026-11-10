@@ -4,15 +4,13 @@ namespace RiggingPlanner.App.Components.Shared;
 
 public sealed class PlanFormModel : IValidatableObject
 {
-    [Required(ErrorMessage = "Informe o nome da operação.")]
+    [Required(ErrorMessage = "Informe a descrição da operação.")]
     public string OperationName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Informe o local.")]
     public string Location { get; set; } = string.Empty;
 
     public DateTime PlanDate { get; set; } = DateTime.Today;
-    public string ArtNumber { get; set; } = string.Empty;
-    public string SupervisorName { get; set; } = string.Empty;
     public Guid? ClientId { get; set; }
     public string? ClientName { get; set; }
     public string ClientCnpj { get; set; } = string.Empty;
@@ -50,68 +48,53 @@ public sealed class PlanFormModel : IValidatableObject
         if (string.IsNullOrWhiteSpace(ClientName))
         {
             yield return new ValidationResult("Selecione ou informe um cliente.", [nameof(ClientName)]);
-            yield break;
         }
-
-        if (EquipmentId is null && !IsNewEquipment)
-        {
-            yield return new ValidationResult("Selecione ou informe um equipamento.", [nameof(EquipmentModel)]);
-        }
-
-        if (IsNewEquipment)
-        {
-            if (string.IsNullOrWhiteSpace(EquipmentModel))
-            {
-                yield return new ValidationResult("Informe o modelo do equipamento.", [nameof(EquipmentModel)]);
-            }
-            if (string.IsNullOrWhiteSpace(EquipmentTruckModel))
-            {
-                yield return new ValidationResult("Informe o caminhão.", [nameof(EquipmentTruckModel)]);
-            }
-            if (string.IsNullOrWhiteSpace(EquipmentChassisNumber))
-            {
-                yield return new ValidationResult("Informe o chassi.", [nameof(EquipmentChassisNumber)]);
-            }
-            if (string.IsNullOrWhiteSpace(EquipmentLicensePlate))
-            {
-                yield return new ValidationResult("Informe a placa.", [nameof(EquipmentLicensePlate)]);
-            }
-            if (EquipmentNominalCapacity is not > 0)
-            {
-                yield return new ValidationResult("Informe a capacidade nominal.", [nameof(EquipmentNominalCapacity)]);
-            }
-        }
-
-        if (ClientId is null && !IsValidCnpj(ClientCnpj))
+        else if (ClientId is null && !IsValidCnpj(ClientCnpj))
         {
             yield return new ValidationResult(
                 "Informe um CNPJ válido para o novo cliente.",
                 [nameof(ClientCnpj)]);
         }
 
-        if (RiggerId is null && !IsNewRigger && string.IsNullOrWhiteSpace(RiggerDisplayName))
+        if (string.IsNullOrWhiteSpace(EquipmentModel))
         {
-            yield return new ValidationResult(
-                "Selecione ou informe um rigger.",
-                [nameof(RiggerDisplayName)]);
+            yield return new ValidationResult("Selecione ou informe um equipamento.", [nameof(EquipmentModel)]);
+        }
+        else if (EquipmentId is null)
+        {
+            if (string.IsNullOrWhiteSpace(EquipmentTruckModel))
+            {
+                yield return new ValidationResult("Informe o caminhão do novo equipamento.", [nameof(EquipmentTruckModel)]);
+            }
+            if (string.IsNullOrWhiteSpace(EquipmentChassisNumber))
+            {
+                yield return new ValidationResult("Informe o chassi do novo equipamento.", [nameof(EquipmentChassisNumber)]);
+            }
+            if (string.IsNullOrWhiteSpace(EquipmentLicensePlate))
+            {
+                yield return new ValidationResult("Informe a placa do novo equipamento.", [nameof(EquipmentLicensePlate)]);
+            }
+            if (EquipmentNominalCapacity is null or <= 0)
+            {
+                yield return new ValidationResult("Informe a capacidade nominal do novo equipamento.", [nameof(EquipmentNominalCapacity)]);
+            }
         }
 
-        if (RiggerId is null && IsNewRigger)
+        if (string.IsNullOrWhiteSpace(RiggerDisplayName))
+        {
+            yield return new ValidationResult("Selecione ou informe um responsável técnico.", [nameof(RiggerDisplayName)]);
+        }
+        else if (RiggerId is null)
         {
             if (string.IsNullOrWhiteSpace(RiggerFullName))
             {
-                yield return new ValidationResult("Informe o nome completo do novo rigger.", [nameof(RiggerFullName)]);
+                yield return new ValidationResult("Informe o nome completo do novo responsável.", [nameof(RiggerFullName)]);
             }
             if (string.IsNullOrWhiteSpace(RiggerRppNumber))
             {
-                yield return new ValidationResult("Informe o RPP do novo rigger.", [nameof(RiggerRppNumber)]);
-            }
-            if (string.IsNullOrWhiteSpace(RiggerCreaNumber))
-            {
-                yield return new ValidationResult("Informe o CREA do novo rigger.", [nameof(RiggerCreaNumber)]);
+                yield return new ValidationResult("Informe o RPP do novo responsável.", [nameof(RiggerRppNumber)]);
             }
         }
-
     }
 
     private static bool IsValidCnpj(string? value)

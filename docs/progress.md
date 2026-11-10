@@ -4,6 +4,13 @@
 
 ## Etapas realizadas
 
+### Atualização — Acessórios dinâmicos por plano, edição inline e tabelas cinza
+- [x] Remoção do catálogo global de acessórios e da tela de administração de acessórios; lingadas/amarras e dispositivos/balancins passaram a ser dinâmicos por plano.
+- [x] Suporte completo a adição, edição inline e remoção de itens diretamente na tela de capacidade de carga (`Capacity.razor`).
+- [x] Tabelas na página de cadastro de plano estilizadas com fundo cinza (`var(--rp-surface-subtle)`), conferindo aparência integrada e neutra.
+- [x] Consolidação das seções da tela de capacidade de carga em um único formulário unificado intitulado **"Capacidade de carga"**, padronizado com 4 subseções: "Configurações do guindaste", "Composição de carga bruta", "Lingadas / Amarras" e "Dispositivos / Balancim".
+- [x] Redesenho completo do gerenciamento de lingadas/amarras e dispositivos/balancins na página de capacidade de carga (`Capacity.razor`), eliminando formulários estáticos separados e adotando um fluxo 100% integrado por tabela com edição inline (linhas editáveis diretamente na tabela) e chips de modelos rápidos (presets).
+
 ### Refatoração visual — Design system e componentes
 - [x] Tokens, reset, base, layout e componentes CSS separados em camadas `rp.*`
 - [x] Shell com sidebar azul-marinho, topbar glass sutil e conteúdo rolável
@@ -53,22 +60,22 @@
 ### Etapas 4 e 6 — Dados de entrada e capacidade de carga
 - [x] Cadastro persistente de equipamentos com modelo, caminhão, chassi, placas, ano e ARTs opcionais com validade e histórico
 - [x] Editor específico de ARTs dentro do formulário do equipamento, com adição múltipla, edição sem reenviar o PDF existente, datas opcionais, exclusão protegida e histórico visual de validade
-- [x] Cadastro persistente de riggers, com nome completo, nome de exibição, RPP e CREA
-- [x] Seleção de equipamento e rigger no plano, copiando os dados para manter o plano autossuficiente
+- [x] Cadastro persistente de responsáveis (riggers), com nome completo, nome de exibição, RPP e CREA
+- [x] Seleção de equipamento e responsável no plano, copiando os dados para manter o plano autossuficiente
 - [x] Tela de capacidade de carga vinculada ao plano
 - [x] Inclusão e remoção de itens de lingada e dispositivos, usando acessórios cadastrados ou descrição avulsa
 - [x] Persistência dos itens em `plan_accessories` e dos parâmetros digitados da configuração do guindaste
 - [x] Exibição dos totais de lingada, dispositivos, carga bruta em kg/t e taxa de utilização do guindaste
 - [x] Tags de acessórios normalizadas em tabela própria, com autocomplete, chips coloridos, uma tag por acessório e administração
 - [x] Ciclo de vida de cadastros: ativos separados de inativos, reativação e exclusão definitiva protegida por vínculos
-- [x] Finalização de planos com bloqueio de edição e snapshot histórico do rigger, incluindo CREA
+- [x] Finalização de planos com bloqueio de edição e snapshot histórico do responsável, incluindo CREA
 - [x] Cadastro independente de clientes, com nome, CNPJ, ativação/inativação e exclusão protegida
 - [x] Cliente no plano por autocomplete: cadastro existente preenche e bloqueia o CNPJ; cliente novo exige nome e CNPJ no próprio formulário
 - [x] CNPJ obrigatório com máscara `00.000.000/0000-00` no cadastro e no plano
 - [x] Cliente no plano usa seletor visual semelhante ao seletor de tags
 - [x] Cliente no plano usa o mesmo comportamento de teclado do seletor de tags (setas, Enter, criação e remoção)
-- [x] Rigger no plano usa seção própria com autocomplete, seleção de cadastro existente, criação rápida e remoção
-- [x] Novo rigger no plano exige nome completo, nome de exibição, RPP e CREA; cadastros existentes preenchem esses dados
+- [x] Responsável no plano usa seção própria com autocomplete, seleção de cadastro existente, criação rápida e remoção
+- [x] Novo responsável no plano exige nome completo, nome de exibição, RPP e CREA; cadastros existentes preenchem esses dados
 - [x] Máscara de CNPJ aceita formatos legado numérico e novo alfanumérico
 - [x] Navegação entre etapas sem salvamento intermediário
 - [x] Estado de edição compartilhado entre dados de entrada e capacidade
@@ -77,13 +84,17 @@
 - [x] Preview e exportação acessíveis pela navegação das etapas, com título global do plano
 - [x] Lista de planos simplificada para a ação única de abrir
 - [x] Seção independente de dados da carga no plano, com descrição, dimensões e peso
-- [x] Equipamento no plano com seletor tipo tag, preenchimento automático e criação rápida de novo cadastro
-- [x] Primeira etapa do plano organizada em seções de identificação, cliente, carga, equipamento, rigger e referências do documento
-- [x] ART do plano e supervisor responsável incluídos no cadastro inicial
-- [x] Segunda etapa reorganizada em blocos visuais separados para guindaste, configuração, resultados e composição da carga
+- [x] Primeira etapa do plano organizada em seções de identificação, cliente, carga, responsável e observações
+- [x] Remoção da seção "Referências do documento" (ART do plano e supervisor responsável retirados do formulário)
+- [x] Seção "Informações do Guindaste" transferida para a subpágina "Capacidade", centralizando o seletor tipo tag, caminhão, chassi, placa, ano e capacidade nominal com opção de criação rápida
+- [x] Segunda etapa reorganizada em blocos visuais separados para informações do guindaste, configuração, resultados e composição da carga
 - [x] Cargas extras editáveis e composição da carga bruta calculada na exibição
 - [x] Reidratação do formulário principal ao salvar alterações feitas diretamente na etapa de capacidade
 - [x] Sincronização dos dados recém-preenchidos na primeira etapa ao abrir a capacidade, sem salvamento intermediário no banco
+- [x] Padronização de nomenclatura na interface de Rigger para Responsável (menu lateral, tela de cadastro e seções do plano)
+- [x] Otimizações de build e watch do .NET (`Directory.Build.props`, exclusão de docs/artefatos, aceleração de compilação incremental e aplicação de migrations condicionada a pendências)
+- [x] Confirmação ao tentar sair da página de novo plano ou edição sem salvar (`RpPlanLeaveGuard` com `NavigationLock` e modal de confirmação)
+- [x] Título dinâmico nas etapas do plano exibindo o número e a descrição da operação para planos existentes (ex.: `Plano 2611001 — Içamento Chiller`) em vez de "Novo plano"
 
 ## Estado atual
 
@@ -91,17 +102,19 @@
 - [x] Lista de planos não excluídos, criação e edição de planos em rascunho
 - [x] Numeração automática no formato AAMMNNN, reiniciada por mês da data do plano
 - [x] Cadastro e seleção de equipamentos ativos, com cópia dos dados para o plano
-- [x] Cadastro e seleção de riggers ativos, com cópia de nome, RPP e CREA para o plano
-- [x] Cadastro rápido de rigger durante o preenchimento do plano, com snapshot dos dados no plano
+- [x] Cadastro e seleção de responsáveis ativos, com cópia de nome, RPP e CREA para o plano
+- [x] Cadastro rápido de responsável durante o preenchimento do plano, com snapshot dos dados no plano
 - [x] Cadastro de acessórios com nome, peso unitário e uma tag opcional
 - [x] Tags normalizadas, autocomplete com criação, seleção por teclado, chips coloridos e administração
 - [x] Pesquisa automática de acessórios por nome ou tag e filtro por tag
-- [x] Tela de capacidade com acessórios cadastrados ou itens avulsos, quantidade, peso unitário e seções de lingada/dispositivo
+- [x] Tela de capacidade com seleção/criação de guindaste, configuração, acessórios cadastrados ou itens avulsos, quantidade, peso unitário e seções de lingada/dispositivo
 - [x] Totais de itens, carga bruta, conversão kg/t e taxa de utilização calculados na exibição
 - [x] Campos decimais com entrada pt-BR por meio de `RpDecimalInput`
 - [x] Finalização de plano com confirmação e bloqueio de edição
-- [x] Separação visual de ativos/inativos, reativação e exclusão definitiva protegida para riggers, equipamentos e acessórios
+- [x] Separação visual de ativos/inativos, reativação e exclusão definitiva protegida para responsáveis, equipamentos e acessórios
 - [x] Confirmações de exclusão posicionadas junto ao registro selecionado, inclusive no administrador de tags
+- [x] Confirmação ao tentar sair da página de novo plano ou edição com alterações não salvas
+- [x] Título da página de plano com número e descrição para planos existentes
 
 ### Modelado, mas ainda sem fluxo completo na interface
 - [ ] Pastas de um nível

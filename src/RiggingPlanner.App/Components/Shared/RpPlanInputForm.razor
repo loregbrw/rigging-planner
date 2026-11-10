@@ -12,28 +12,31 @@
         <DataAnnotationsValidator />
         <fieldset disabled="@IsReadOnly" class="rp-readonly-fields">
             <div class="rp-form-grid">
-                <section class="rp-client-section rp-col-12" aria-labelledby="identification-section-title">
-                    <h3 id="identification-section-title" class="rp-section-title">Identificação do plano</h3>
-                    <div class="rp-form-grid">
-                        <div class="rp-field rp-col-12">
-                            <label class="rp-label" for="operation">Descrição da operação <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                            <InputText id="operation" class="rp-input" @bind-Value="Model.OperationName" />
-                            <ValidationMessage For="() => Model.OperationName" />
-                        </div>
-                        <div class="rp-field rp-col-6">
-                            <label class="rp-label" for="location">Local <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                            <InputText id="location" class="rp-input" @bind-Value="Model.Location" />
-                            <ValidationMessage For="() => Model.Location" />
-                        </div>
-                        <div class="rp-field rp-col-6">
-                            <label class="rp-label" for="plan-date">Data do plano <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                            <InputDate id="plan-date" class="rp-input" @bind-Value="Model.PlanDate" />
-                            <ValidationMessage For="() => Model.PlanDate" />
-                        </div>
-                    </div>
-                </section>
+                <div class="rp-field rp-col-12">
+                    <label class="rp-label" for="operation">
+                        Descrição da operação <span class="rp-required-marker" aria-hidden="true">*</span>
+                    </label>
+                    <InputText id="operation" class="rp-input" @bind-Value="Model.OperationName" />
+                    <ValidationMessage For="() => Model.OperationName" />
+                </div>
+                <div class="rp-field rp-col-6">
+                    <label class="rp-label" for="location">
+                        Local <span class="rp-required-marker" aria-hidden="true">*</span>
+                    </label>
+                    <InputText id="location" class="rp-input" @bind-Value="Model.Location" />
+                    <ValidationMessage For="() => Model.Location" />
+                </div>
+                <div class="rp-field rp-col-6">
+                    <label class="rp-label" for="plan-date">
+                        Data do plano <span class="rp-required-marker" aria-hidden="true">*</span>
+                    </label>
+                    <InputDate id="plan-date" class="rp-input" @bind-Value="Model.PlanDate" />
+                    <ValidationMessage For="() => Model.PlanDate" />
+                </div>
                 <section class="rp-client-section rp-col-12" aria-labelledby="client-section-title">
-                    <h3 id="client-section-title" class="rp-section-title">Cliente <span class="rp-required-marker" aria-hidden="true">*</span></h3>
+                    <h3 id="client-section-title" class="rp-section-title">
+                        Cliente / Contratante <span class="rp-required-marker" aria-hidden="true">*</span>
+                    </h3>
                     <div class="rp-client-fields">
                         <div class="rp-field">
                             <label class="rp-label" for="client-name">Nome / Razão social</label>
@@ -66,11 +69,126 @@
                         </div>
                     </div>
                 </section>
+                <section class="rp-client-section rp-col-12" aria-labelledby="crane-info-title">
+                    <h3 id="crane-info-title" class="rp-section-title">
+                        Informações do guindaste <span class="rp-required-marker" aria-hidden="true">*</span>
+                    </h3>
+                    <div class="rp-field">
+                        <label class="rp-label" for="crane-model">Modelo</label>
+                        <RpTagPicker TItem="Equipment" InputId="crane-model"
+                                     InputValue="@Model.EquipmentModel" Suggestions="EquipmentSuggestions"
+                                     SelectedItem="@(SelectedEquipment ?? (IsNewEquipmentSelected ? new Equipment { CraneModel = Model.EquipmentModel } : null))"
+                                     ItemText="@(equipment => equipment.CraneModel)"
+                                     CanCreate="@(!string.IsNullOrWhiteSpace(Model.EquipmentModel) && !HasExactEquipment)"
+                                     CreateLabel="@($"Criar equipamento “{Model.EquipmentModel?.Trim()}”")"
+                                     OnInput="OnEquipmentModelInput" OnSelect="OnEquipmentSelect"
+                                     OnCreate="OnEquipmentCreate" OnRemove="OnEquipmentRemove" />
+                        <ValidationMessage For="() => Model.EquipmentModel" />
+                        <span class="rp-help">Selecione um equipamento existente ou crie um novo.</span>
+                    </div>
+                    @if (IsExistingEquipment)
+                    {
+                        <div class="rp-form-grid rp-mt-3">
+                            <div class="rp-field rp-col-4"><label class="rp-label">Caminhão</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentTruckModel" disabled /></div>
+                            <div class="rp-field rp-col-4"><label class="rp-label">Chassi</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentChassisNumber" disabled /></div>
+                            <div class="rp-field rp-col-4"><label class="rp-label">Placa</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentLicensePlate" disabled /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Ano de fabricação</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentManufactureYear" disabled /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Capacidade nominal (t)</label><input class="rp-input rp-input--disabled rp-input--num" value="@Model.EquipmentNominalCapacity" disabled /></div>
+                        </div>
+                    }
+                    else if (IsNewEquipmentSelected)
+                    {
+                        <span class="rp-help">O equipamento será criado ao salvar o plano.</span>
+                        <div class="rp-form-grid rp-mt-3">
+                            <div class="rp-field rp-col-4">
+                                <label class="rp-label">Caminhão <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                                <InputText class="rp-input" @bind-Value="Model.EquipmentTruckModel" />
+                                <ValidationMessage For="() => Model.EquipmentTruckModel" />
+                            </div>
+                            <div class="rp-field rp-col-4">
+                                <label class="rp-label">Chassi <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                                <InputText class="rp-input" @bind-Value="Model.EquipmentChassisNumber" />
+                                <ValidationMessage For="() => Model.EquipmentChassisNumber" />
+                            </div>
+                            <div class="rp-field rp-col-4">
+                                <label class="rp-label">Placa <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                                <InputText class="rp-input" @bind-Value="Model.EquipmentLicensePlate" />
+                                <ValidationMessage For="() => Model.EquipmentLicensePlate" />
+                            </div>
+                            <div class="rp-field rp-col-6">
+                                <label class="rp-label">Ano de fabricação</label>
+                                <InputNumber class="rp-input rp-input--num" @bind-Value="Model.EquipmentManufactureYear" />
+                            </div>
+                            <div class="rp-field rp-col-6">
+                                <label class="rp-label">Capacidade nominal (t) <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                                <RpDecimalInput class="rp-input rp-input--num" @bind-Value="Model.EquipmentNominalCapacity" />
+                                <ValidationMessage For="() => Model.EquipmentNominalCapacity" />
+                            </div>
+                        </div>
+                    }
+                </section>
+                <section class="rp-client-section rp-col-12" aria-labelledby="rigger-section-title">
+                    <h3 id="rigger-section-title" class="rp-section-title">
+                        Responsável Técnico <span class="rp-required-marker" aria-hidden="true">*</span>
+                    </h3>
+                    <div class="rp-field">
+                        <label class="rp-label" for="rigger-name">Nome de exibição</label>
+                        <RpTagPicker TItem="Rigger" InputId="rigger-name" InputValue="@Model.RiggerDisplayName"
+                                     Suggestions="RiggerSuggestions"
+                                     SelectedItem="@(SelectedRigger ?? (IsNewRiggerSelected ? new Rigger { DisplayName = Model.RiggerDisplayName } : null))"
+                                     ItemText="@(rigger => $"{rigger.DisplayName} — RPP {rigger.RppNumber}")"
+                                     CanCreate="@(!string.IsNullOrWhiteSpace(Model.RiggerDisplayName) && !HasExactRigger)"
+                                     CreateLabel="@($"Criar responsável “{Model.RiggerDisplayName?.Trim()}”")"
+                                     OnInput="OnRiggerNameInput" OnSelect="OnRiggerSelect" OnCreate="OnRiggerCreate"
+                                     OnRemove="OnRiggerRemove" />
+                        <ValidationMessage For="() => Model.RiggerDisplayName" />
+                        <span class="rp-help">Selecione um cadastro existente ou crie um responsável novo.</span>
+                    </div>
+                    @if (IsExistingRigger)
+                    {
+                        <div class="rp-form-grid rp-mt-3">
+                            <div class="rp-field rp-col-4">
+                                <label class="rp-label">Nome completo</label>
+                                <input class="rp-input rp-input--disabled" value="@Model.RiggerFullName" disabled />
+                            </div>
+                            <div class="rp-field rp-col-4">
+                                <label class="rp-label">RPP</label>
+                                <input class="rp-input rp-input--disabled" value="@Model.RiggerRppNumber" disabled />
+                            </div>
+                            <div class="rp-field rp-col-4">
+                                <label class="rp-label">CREA</label>
+                                <input class="rp-input rp-input--disabled" value="@Model.RiggerCreaNumber" disabled />
+                            </div>
+                        </div>
+                    }
+                    else if (IsNewRiggerSelected)
+                    {
+                        <div class="rp-form-grid rp-mt-3">
+                            <div class="rp-field rp-col-4">
+                                <label class="rp-label">Nome completo <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                                <InputText class="rp-input" @bind-Value="Model.RiggerFullName" />
+                                <ValidationMessage For="() => Model.RiggerFullName" />
+                            </div>
+                            <div class="rp-field rp-col-4">
+                                <label class="rp-label">RPP <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                                <InputText class="rp-input" @bind-Value="Model.RiggerRppNumber" />
+                                <ValidationMessage For="() => Model.RiggerRppNumber" />
+                            </div>
+                            <div class="rp-field rp-col-4">
+                                <label class="rp-label">CREA</label>
+                                <InputText class="rp-input" @bind-Value="Model.RiggerCreaNumber" />
+                                <ValidationMessage For="() => Model.RiggerCreaNumber" />
+                            </div>
+                        </div>
+                    }
+                </section>
                 <section class="rp-client-section rp-col-12" aria-labelledby="load-section-title">
                     <h3 id="load-section-title" class="rp-section-title">Dados da carga</h3>
                     <div class="rp-form-grid">
                         <div class="rp-field rp-col-12">
-                            <label class="rp-label" for="load">Descrição da carga <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                            <label class="rp-label" for="load">
+                                Descrição da carga<span class="rp-required-marker" aria-hidden="true">*</span>
+                            </label>
                             <InputText id="load" class="rp-input" @bind-Value="Model.LoadDescription" />
                             <ValidationMessage For="() => Model.LoadDescription" />
                         </div>
@@ -92,91 +210,9 @@
                         </div>
                     </div>
                 </section>
-                <section class="rp-client-section rp-col-12" aria-labelledby="equipment-section-title">
-                    <h3 id="equipment-section-title" class="rp-section-title">Equipamento</h3>
-                    <div class="rp-field">
-                        <label class="rp-label" for="equipment-model">Modelo</label>
-                        <RpTagPicker TItem="Equipment" InputId="equipment-model"
-                                     InputValue="@Model.EquipmentModel" Suggestions="EquipmentSuggestions"
-                                     SelectedItem="@(SelectedEquipment ?? (IsNewEquipmentSelected ? new Equipment { CraneModel = Model.EquipmentModel } : null))"
-                                     ItemText="@(equipment => equipment.CraneModel)"
-                                     CanCreate="@(!string.IsNullOrWhiteSpace(Model.EquipmentModel) && !HasExactEquipment)"
-                                     CreateLabel="@($"Criar equipamento “{Model.EquipmentModel?.Trim()}”")"
-                                     OnInput="OnEquipmentModelInput" OnSelect="OnEquipmentSelect"
-                                     OnCreate="OnEquipmentCreate" OnRemove="OnEquipmentRemove" />
-                        <ValidationMessage For="() => Model.EquipmentModel" />
-                        <span class="rp-help">Selecione um equipamento existente ou crie um novo.</span>
-                    </div>
-                    @if (IsExistingEquipment)
-                    {
-                        <div class="rp-form-grid rp-mt-3">
-                            <div class="rp-field rp-col-3"><label class="rp-label">Caminhão</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentTruckModel" disabled /></div>
-                            <div class="rp-field rp-col-3"><label class="rp-label">Chassi</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentChassisNumber" disabled /></div>
-                            <div class="rp-field rp-col-3"><label class="rp-label">Placa</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentLicensePlate" disabled /></div>
-                            <div class="rp-field rp-col-3"><label class="rp-label">Ano de fabricação</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentManufactureYear" disabled /></div>
-                            <div class="rp-field rp-col-3"><label class="rp-label">Capacidade nominal (t)</label><input class="rp-input rp-input--disabled rp-input--num" value="@Model.EquipmentNominalCapacity" disabled /></div>
-                        </div>
-                    }
-                    else if (IsNewEquipmentSelected)
-                    {
-                        <span class="rp-help">O equipamento será criado ao salvar o plano. Para anexar a ART agora, use o cadastro de equipamentos.</span>
-                        <div class="rp-form-grid rp-mt-3">
-                            <div class="rp-field rp-col-3"><label class="rp-label">Caminhão</label><InputText class="rp-input" @bind-Value="Model.EquipmentTruckModel" /><ValidationMessage For="() => Model.EquipmentTruckModel" /></div>
-                            <div class="rp-field rp-col-3"><label class="rp-label">Chassi</label><InputText class="rp-input" @bind-Value="Model.EquipmentChassisNumber" /><ValidationMessage For="() => Model.EquipmentChassisNumber" /></div>
-                            <div class="rp-field rp-col-3"><label class="rp-label">Placa</label><InputText class="rp-input" @bind-Value="Model.EquipmentLicensePlate" /><ValidationMessage For="() => Model.EquipmentLicensePlate" /></div>
-                            <div class="rp-field rp-col-3"><label class="rp-label">Ano de fabricação</label><InputNumber class="rp-input rp-input--num" @bind-Value="Model.EquipmentManufactureYear" /></div>
-                            <div class="rp-field rp-col-3"><label class="rp-label">Capacidade nominal (t)</label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="Model.EquipmentNominalCapacity" /><ValidationMessage For="() => Model.EquipmentNominalCapacity" /></div>
-                        </div>
-                    }
-                </section>
-                <section class="rp-client-section rp-col-12" aria-labelledby="rigger-section-title">
-                    <h3 id="rigger-section-title" class="rp-section-title">Responsável</h3>
-                    <div class="rp-field">
-                        <label class="rp-label" for="rigger-name">Nome de exibição</label>
-                        <RpTagPicker TItem="Rigger" InputId="rigger-name"
-                                     InputValue="@Model.RiggerDisplayName" Suggestions="RiggerSuggestions"
-                                     SelectedItem="@(SelectedRigger ?? (IsNewRiggerSelected ? new Rigger { DisplayName = Model.RiggerDisplayName } : null))"
-                                     ItemText="@(rigger => $"{rigger.DisplayName} — RPP {rigger.RppNumber}")"
-                                     CanCreate="@(!string.IsNullOrWhiteSpace(Model.RiggerDisplayName) && !HasExactRigger)"
-                                     CreateLabel="@($"Criar responsável “{Model.RiggerDisplayName?.Trim()}”")"
-                                     OnInput="OnRiggerNameInput" OnSelect="OnRiggerSelect"
-                                     OnCreate="OnRiggerCreate" OnRemove="OnRiggerRemove" />
-                        <ValidationMessage For="() => Model.RiggerDisplayName" />
-                        <span class="rp-help">Selecione um cadastro existente ou crie um responsável novo.</span>
-                    </div>
-                    @if (IsExistingRigger)
-                    {
-                        <div class="rp-form-grid rp-mt-3">
-                            <div class="rp-field rp-col-3"><label class="rp-label">Nome completo</label><input class="rp-input rp-input--disabled" value="@Model.RiggerFullName" disabled /></div>
-                            <div class="rp-field rp-col-3"><label class="rp-label">RPP</label><input class="rp-input rp-input--disabled" value="@Model.RiggerRppNumber" disabled /></div>
-                            <div class="rp-field rp-col-3"><label class="rp-label">CREA</label><input class="rp-input rp-input--disabled" value="@Model.RiggerCreaNumber" disabled /></div>
-                        </div>
-                    }
-                    else if (IsNewRiggerSelected)
-                    {
-                        <div class="rp-form-grid rp-mt-3">
-                            <div class="rp-field rp-col-3"><label class="rp-label">Nome completo</label><InputText class="rp-input" @bind-Value="Model.RiggerFullName" /><ValidationMessage For="() => Model.RiggerFullName" /></div>
-                            <div class="rp-field rp-col-3"><label class="rp-label">RPP</label><InputText class="rp-input" @bind-Value="Model.RiggerRppNumber" /><ValidationMessage For="() => Model.RiggerRppNumber" /></div>
-                            <div class="rp-field rp-col-3"><label class="rp-label">CREA</label><InputText class="rp-input" @bind-Value="Model.RiggerCreaNumber" /><ValidationMessage For="() => Model.RiggerCreaNumber" /></div>
-                        </div>
-                    }
-                </section>
-                <section class="rp-client-section rp-col-12" aria-labelledby="document-section-title">
-                    <h3 id="document-section-title" class="rp-section-title">Referências do documento</h3>
-                    <div class="rp-form-grid">
-                        <div class="rp-field rp-col-6">
-                            <label class="rp-label" for="art-number">Número da ART do plano</label>
-                            <InputText id="art-number" class="rp-input" @bind-Value="Model.ArtNumber" />
-                            <span class="rp-help">A ART em PDF será anexada em uma etapa posterior.</span>
-                        </div>
-                        <div class="rp-field rp-col-6">
-                            <label class="rp-label" for="supervisor">Supervisor responsável</label>
-                            <InputText id="supervisor" class="rp-input" @bind-Value="Model.SupervisorName" />
-                            <span class="rp-help">Campo opcional, conforme a folha-resumo.</span>
-                        </div>
-                    </div>
-                </section>
-                <div class="rp-field rp-col-12"><label class="rp-label" for="observations">Observações</label><InputTextArea id="observations" class="rp-textarea" @bind-Value="Model.Observations" /></div>
+                <div class="rp-field rp-col-12"><label class="rp-label" for="observations">Observações</label>
+                    <InputTextArea id="observations" class="rp-textarea" @bind-Value="Model.Observations" />
+                </div>
             </div>
         </fieldset>
     </EditForm>
@@ -187,18 +223,19 @@
     [Parameter] public bool IsReadOnly { get; set; }
     [Parameter] public bool IsSaving { get; set; }
     [Parameter] public string? ErrorMessage { get; set; }
-    [Parameter] public IReadOnlyList<Equipment> EquipmentOptions { get; set; } = [];
-    [Parameter] public IReadOnlyList<Equipment> EquipmentSuggestions { get; set; } = [];
-    [Parameter] public Equipment? SelectedEquipment { get; set; }
-    [Parameter] public bool IsNewEquipmentSelected { get; set; }
-    [Parameter] public bool IsExistingEquipment { get; set; }
-    [Parameter] public bool HasExactEquipment { get; set; }
+    [Parameter] public EventCallback<string?> ErrorMessageChanged { get; set; }
     [Parameter] public IReadOnlyList<Rigger> RiggerOptions { get; set; } = [];
     [Parameter] public IReadOnlyList<Rigger> RiggerSuggestions { get; set; } = [];
     [Parameter] public Rigger? SelectedRigger { get; set; }
     [Parameter] public bool IsNewRiggerSelected { get; set; }
     [Parameter] public bool IsExistingRigger { get; set; }
     [Parameter] public bool HasExactRigger { get; set; }
+    [Parameter] public IReadOnlyList<Equipment> EquipmentOptions { get; set; } = [];
+    [Parameter] public IReadOnlyList<Equipment> EquipmentSuggestions { get; set; } = [];
+    [Parameter] public Equipment? SelectedEquipment { get; set; }
+    [Parameter] public bool IsNewEquipmentSelected { get; set; }
+    [Parameter] public bool IsExistingEquipment { get; set; }
+    [Parameter] public bool HasExactEquipment { get; set; }
     [Parameter] public IReadOnlyList<Client> ClientSuggestions { get; set; } = [];
     [Parameter] public Client? SelectedClient { get; set; }
     [Parameter] public bool IsNewClientSelected { get; set; }
@@ -219,6 +256,8 @@
     [Parameter] public EventCallback OnEquipmentCreate { get; set; }
     [Parameter] public EventCallback OnEquipmentRemove { get; set; }
 
+    [Inject] private IJSRuntime JS { get; set; } = null!;
+
     private EditContext editContext = null!;
 
     protected override void OnParametersSet()
@@ -228,9 +267,22 @@
 
     public async Task SubmitAsync()
     {
-        if (!IsReadOnly && editContext.Validate())
+        if (IsReadOnly) return;
+        if (editContext.Validate())
         {
+            await ErrorMessageChanged.InvokeAsync(null);
             await OnValidSubmit.InvokeAsync();
+        }
+        else
+        {
+            var msg = "Valores obrigatórios faltando ou dados inválidos. Verifique os campos obrigatórios e preencha-os corretamente.";
+            await ErrorMessageChanged.InvokeAsync(msg);
+            StateHasChanged();
+            try
+            {
+                await JS.InvokeVoidAsync("eval", "window.scrollTo({ top: 0, behavior: 'smooth' });");
+            }
+            catch { }
         }
     }
 }
