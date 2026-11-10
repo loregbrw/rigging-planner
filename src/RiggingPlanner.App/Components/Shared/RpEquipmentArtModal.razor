@@ -1,0 +1,381 @@
+@using Microsoft.AspNetCore.Components.Forms
+@inject IDbContextFactory<AppDbContext> DbFactory
+
+@if (IsOpen && Equipment is not null)
+{
+    <div class="rp-modal-backdrop" @onclick="CloseAsync">
+        <div class="rp-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true" aria-labelledby="art-modal-title">
+            <div class="rp-modal__header">
+                <div>
+                    <h2 id="art-modal-title" class="rp-section-title">Gerenciar ARTs — @Equipment.CraneModel (@Equipment.LicensePlate)</h2>
+                    <p class="rp-help">Adicione, edite ou remova as ARTs deste equipamento. Cada ART exige número e arquivo PDF.</p>
+                </div>
+                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="CloseAsync" aria-label="Fechar">✕</button>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(message))
+            {
+                <div class="rp-alert @(isError ? "rp-alert--danger" : "rp-alert--success")">@message</div>
+            }
+
+            @if (items.Count > 0)
+            {
+                <div class="rp-table-wrap" style="margin-bottom: var(--rp-space-5);">
+                    <table class="rp-table">
+                        <thead>
+                            <tr><th>Número</th><th>Período</th><th>Anexo</th><th>Status</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in items)
+                            {
+                                <tr class="@(IsCurrent(item) ? string.Empty : "rp-row--inactive")">
+                                    <td>@item.ArtNumber</td>
+                                    <td>@FormatPeriod(item)</td>
+                                    <td>@(item.File?.Name ?? item.ExistingFileName ?? "-")</td>
+                                    <td><span class="rp-badge @(IsCurrent(item) ? "rp-badge--success" : "rp-badge--muted")">@(IsCurrent(item) ? "Válida" : "Vencida")</span></td>
+                                    <td class="rp-row-actions">
+                                        <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="() => BeginEdit(item)">Editar</button>
+                                        <button class="rp-btn rp-btn--danger-outline rp-btn--sm" type="button" @onclick="() => AskRemove(item)">Excluir</button>
+                                    </td>
+                                </tr>
+                                @if (pendingRemoval == item)
+                                {
+                                    <tr class="rp-row--inactive">
+                                        <td colspan="5">
+                                            <div class="rp-alert rp-alert--danger rp-confirm">
+                                                <span>Confirma a exclusão desta ART?</span>
+                                                <button class="rp-btn rp-btn--danger rp-btn--sm" type="button" @onclick="ConfirmRemoveAsync" disabled="@isBusy">Excluir ART</button>
+                                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="CancelRemove">Cancelar</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="rp-alert rp-alert--info" style="margin-bottom: var(--rp-space-5);">Este equipamento ainda não possui ARTs cadastradas. Cadastre pelo menos uma ART abaixo.</div>
+            }
+
+            <div class="rp-card" style="padding: var(--rp-space-4); background: var(--rp-surface-muted);">
+                <h3 class="rp-section-title" style="font-size: 1rem; margin-bottom: var(--rp-space-3);">
+                    @(editingItem is null ? "Adicionar nova ART" : $"Editando ART {editingItem.ArtNumber}")
+                </h3>
+                <div class="rp-form-grid">
+                    <div class="rp-field rp-col-4">
+                        <label class="rp-label" for="modal-art-number">Número da ART <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                        <input id="modal-art-number" class="rp-input" @bind="draft.ArtNumber" placeholder="Ex: 2026/123456" />
+                    </div>
+                    <div class="rp-field rp-col-4">
+                        <label class="rp-label" for="modal-art-from">Data de início</label>
+                        <input id="modal-art-from" type="date" class="rp-input" @bind="draft.ValidFrom" />
+                    </div>
+                    <div class="rp-field rp-col-4">
+                        <label class="rp-label" for="modal-art-to">Previsão de término</label>
+                        <input id="modal-art-to" type="date" class="rp-input" @bind="draft.ValidTo" />
+                    </div>
+                    <div class="rp-field rp-col-12">
+                        <label class="rp-label" for="modal-art-file">Anexo PDF <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                        <InputFile id="modal-art-file" class="rp-file-input" OnChange="OnFileChange" accept=".pdf,application/pdf" />
+                        <label class="rp-btn rp-btn--ghost rp-file-button" for="modal-art-file">
+                            <svg class="rp-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+                            </svg>
+                            @(draft.ExistingFileName is not null || draft.File is not null ? "Substituir arquivo PDF" : "Escolher arquivo PDF")
+                        </label>
+                        <span class="rp-help">@(draft.File?.Name ?? draft.ExistingFileName ?? "Nenhum arquivo selecionado (obrigatório PDF)")</span>
+                    </div>
+                </div>
+
+                <div class="rp-form-actions" style="margin-top: var(--rp-space-4);">
+                    <button class="rp-btn rp-btn--primary" type="button" @onclick="SaveDraftAsync" disabled="@isBusy">
+                        @(editingItem is null ? "Adicionar ART" : "Salvar alterações da ART")
+                    </button>
+                    @if (editingItem is not null)
+                    {
+                        <button class="rp-btn rp-btn--ghost" type="button" @onclick="CancelEdit">Cancelar edição</button>
+                    }
+                </div>
+            </div>
+
+            <div class="rp-form-actions" style="margin-top: var(--rp-space-5); justify-content: flex-end;">
+                <button class="rp-btn rp-btn--ghost" type="button" @onclick="CloseAsync">Concluir / Fechar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public Equipment? Equipment { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private List<EquipmentArtDraft> items = [];
+    private EquipmentArtDraft draft = new();
+    private EquipmentArtDraft? editingItem;
+    private EquipmentArtDraft? pendingRemoval;
+    private string? message;
+    private bool isError;
+    private bool isBusy;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsOpen && Equipment is not null)
+        {
+            await LoadItemsAsync();
+            CancelEdit();
+            message = null;
+        }
+    }
+
+    private async Task LoadItemsAsync()
+    {
+        if (Equipment is null) return;
+        await using var db = await DbFactory.CreateDbContextAsync();
+        items = await db.EquipmentReports
+            .AsNoTracking()
+            .Include(x => x.File)
+            .Where(x => x.EquipmentId == Equipment.Id)
+            .OrderByDescending(x => x.ValidFrom)
+            .Select(x => new EquipmentArtDraft
+            {
+                Id = x.Id,
+                ArtNumber = x.ArtNumber,
+                ValidFrom = x.ValidFrom,
+                ValidTo = x.ValidTo,
+                ExistingFileName = x.File.OriginalName
+            })
+            .ToListAsync();
+    }
+
+    private async Task OnFileChange(InputFileChangeEventArgs args)
+    {
+        if (!IsPdf(args.File))
+        {
+            draft.File = null;
+            message = "Anexe somente arquivos PDF.";
+            isError = true;
+            return;
+        }
+
+        draft.File = args.File;
+        message = null;
+        isError = false;
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveDraftAsync()
+    {
+        message = ValidateDraft();
+        if (message is not null)
+        {
+            isError = true;
+            return;
+        }
+
+        isBusy = true;
+        message = null;
+        isError = false;
+
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            if (editingItem is null || editingItem.Id is null)
+            {
+                // Create new ART
+                var file = await SaveFileAsync(draft.File!);
+                db.StoredFiles.Add(file);
+                db.EquipmentReports.Add(new EquipmentReport
+                {
+                    Id = Guid.NewGuid(),
+                    EquipmentId = Equipment!.Id,
+                    FileId = file.Id,
+                    ArtNumber = draft.ArtNumber.Trim(),
+                    ValidFrom = draft.ValidFrom,
+                    ValidTo = draft.ValidTo,
+                    CreatedAt = DateTime.Now
+                });
+                await db.SaveChangesAsync();
+                message = "ART adicionada com sucesso.";
+            }
+            else
+            {
+                // Update existing ART
+                var report = await db.EquipmentReports.Include(x => x.File).SingleOrDefaultAsync(x => x.Id == editingItem.Id.Value);
+                if (report is null)
+                {
+                    message = "A ART não foi encontrada.";
+                    isError = true;
+                    isBusy = false;
+                    return;
+                }
+
+                report.ArtNumber = draft.ArtNumber.Trim();
+                report.ValidFrom = draft.ValidFrom;
+                report.ValidTo = draft.ValidTo;
+
+                if (draft.File is not null)
+                {
+                    var oldFile = report.File;
+                    var file = await SaveFileAsync(draft.File);
+                    report.FileId = file.Id;
+                    db.StoredFiles.Add(file);
+                    if (oldFile is not null) db.StoredFiles.Remove(oldFile);
+                }
+
+                await db.SaveChangesAsync();
+                message = "ART atualizada com sucesso.";
+            }
+
+            await LoadItemsAsync();
+            CancelEdit();
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            message = $"Erro ao salvar ART: {ex.Message}";
+            isError = true;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private string? ValidateDraft()
+    {
+        if (string.IsNullOrWhiteSpace(draft.ArtNumber)) return "Informe o número da ART.";
+        if (draft.ValidFrom is not null && draft.ValidTo is not null && draft.ValidTo < draft.ValidFrom)
+            return "A previsão de término deve ser posterior à data de início.";
+        if (editingItem is null && draft.File is null) return "Anexe o arquivo PDF da ART.";
+        if (draft.File is not null && !IsPdf(draft.File)) return "Anexe somente arquivos PDF.";
+        return null;
+    }
+
+    private void BeginEdit(EquipmentArtDraft item)
+    {
+        draft = new()
+        {
+            Id = item.Id,
+            ArtNumber = item.ArtNumber,
+            ValidFrom = item.ValidFrom,
+            ValidTo = item.ValidTo,
+            ExistingFileName = item.ExistingFileName
+        };
+        editingItem = item;
+        message = null;
+        isError = false;
+        pendingRemoval = null;
+    }
+
+    private void CancelEdit()
+    {
+        draft = new();
+        editingItem = null;
+        message = null;
+        isError = false;
+    }
+
+    private void AskRemove(EquipmentArtDraft item)
+    {
+        pendingRemoval = item;
+        message = null;
+    }
+
+    private void CancelRemove()
+    {
+        pendingRemoval = null;
+    }
+
+    private async Task ConfirmRemoveAsync()
+    {
+        if (pendingRemoval is null || pendingRemoval.Id is null) return;
+        isBusy = true;
+        message = null;
+        isError = false;
+
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var report = await db.EquipmentReports.Include(x => x.File).SingleOrDefaultAsync(x => x.Id == pendingRemoval.Id.Value);
+            if (report is not null)
+            {
+                if (await db.RiggingPlans.AnyAsync(x => x.EquipmentReportId == report.Id && x.DeletedAt == null))
+                {
+                    message = $"A ART {report.ArtNumber} está vinculada a um plano e não pode ser excluída.";
+                    isError = true;
+                    pendingRemoval = null;
+                    isBusy = false;
+                    return;
+                }
+
+                db.EquipmentReports.Remove(report);
+                if (report.File is not null) db.StoredFiles.Remove(report.File);
+                await db.SaveChangesAsync();
+            }
+
+            if (editingItem == pendingRemoval) CancelEdit();
+            pendingRemoval = null;
+            message = "ART excluída com sucesso.";
+            await LoadItemsAsync();
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            message = $"Erro ao excluir ART: {ex.Message}";
+            isError = true;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private Task CloseAsync() => OnClose.InvokeAsync();
+
+    private static bool IsCurrent(EquipmentArtDraft item) =>
+        item.ValidTo is null || item.ValidTo.Value.Date >= DateTime.Today;
+
+    private static string FormatPeriod(EquipmentArtDraft item) =>
+        $"{(item.ValidFrom?.ToString("dd/MM/yyyy") ?? "-")} — {(item.ValidTo?.ToString("dd/MM/yyyy") ?? "-")}";
+
+    private static bool IsPdf(IBrowserFile file) =>
+        string.Equals(Path.GetExtension(file.Name), ".pdf", StringComparison.OrdinalIgnoreCase);
+
+    private static async Task<StoredFile> SaveFileAsync(IBrowserFile browserFile)
+    {
+        var fileId = Guid.NewGuid();
+        var extension = Path.GetExtension(browserFile.Name);
+        var folder = Path.Combine(FileSystem.AppDataDirectory, "equipment-art");
+        Directory.CreateDirectory(folder);
+        var relativePath = Path.Combine("equipment-art", fileId + extension);
+        var absolutePath = Path.Combine(FileSystem.AppDataDirectory, relativePath);
+        await using var input = browserFile.OpenReadStream(10 * 1024 * 1024);
+        await using var output = File.Create(absolutePath);
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var buffer = new byte[81920];
+        int read;
+        long size = 0;
+        while ((read = await input.ReadAsync(buffer)) > 0)
+        {
+            await output.WriteAsync(buffer.AsMemory(0, read));
+            sha.TransformBlock(buffer, 0, read, null, 0);
+            size += read;
+        }
+        sha.TransformFinalBlock([], 0, 0);
+        return new StoredFile
+        {
+            Id = fileId,
+            RelativePath = relativePath,
+            OriginalName = browserFile.Name,
+            ContentType = browserFile.ContentType,
+            SizeBytes = size,
+            Sha256 = Convert.ToHexString(sha.Hash!).ToLowerInvariant(),
+            CreatedAt = DateTime.Now
+        };
+    }
+}

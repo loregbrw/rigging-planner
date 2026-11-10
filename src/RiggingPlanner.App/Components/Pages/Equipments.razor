@@ -4,10 +4,10 @@
 @using Microsoft.Maui.Storage
 @inject IDbContextFactory<AppDbContext> DbFactory
 
-<RpPageHeader Title="Equipamentos" Subtitle="Cadastre os equipamentos para reaproveitar nos planos de rigging" />
+<RpPageHeader Title="Equipamentos" Subtitle="Cadastre os equipamentos e gerencie suas ARTs e laudos de conformidade" />
 
 <div class="rp-stack">
-    <RpCard Title="@(editingId is null ? "Novo equipamento" : "Editar equipamento")">
+    <RpCard Title="@(editingId is null ? "Novo equipamento (com ART inicial obrigatória)" : $"Editando equipamento — {form.CraneModel}")">
         @if (message is not null)
         {
             <div class="rp-alert @(isError ? "rp-alert--danger" : "rp-alert--success")">@message</div>
@@ -15,16 +15,61 @@
         <EditForm Model="form" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
             <div class="rp-form-grid">
-                <div class="rp-field rp-col-4"><label class="rp-label">Modelo <span class="rp-required-marker" aria-hidden="true">*</span></label><InputText class="rp-input" @bind-Value="form.CraneModel" /><ValidationMessage For="() => form.CraneModel" /></div>
+                <div class="rp-field rp-col-4"><label class="rp-label">Modelo do Guindaste <span class="rp-required-marker" aria-hidden="true">*</span></label><InputText class="rp-input" @bind-Value="form.CraneModel" /><ValidationMessage For="() => form.CraneModel" /></div>
                 <div class="rp-field rp-col-4"><label class="rp-label">Caminhão <span class="rp-required-marker" aria-hidden="true">*</span></label><InputText class="rp-input" @bind-Value="form.TruckModel" /><ValidationMessage For="() => form.TruckModel" /></div>
                 <div class="rp-field rp-col-4"><label class="rp-label">Chassi <span class="rp-required-marker" aria-hidden="true">*</span></label><InputText class="rp-input" @bind-Value="form.ChassisNumber" /><ValidationMessage For="() => form.ChassisNumber" /></div>
                 <div class="rp-field rp-col-4"><label class="rp-label">Placas <span class="rp-required-marker" aria-hidden="true">*</span></label><InputText class="rp-input" @bind-Value="form.LicensePlate" /><ValidationMessage For="() => form.LicensePlate" /></div>
                 <div class="rp-field rp-col-4"><label class="rp-label">Ano de fabricação <span class="rp-required-marker" aria-hidden="true">*</span></label><InputNumber class="rp-input rp-input--num" step="1" inputmode="numeric" @bind-Value="form.ManufactureYear" /><ValidationMessage For="() => form.ManufactureYear" /></div>
                 <div class="rp-field rp-col-4"><label class="rp-label">Capacidade nominal (t) <span class="rp-required-marker" aria-hidden="true">*</span></label><RpDecimalInput class="rp-input rp-input--num" @bind-Value="form.NominalCapacity" /><ValidationMessage For="() => form.NominalCapacity" /></div>
             </div>
-            <RpEquipmentArtEditor Items="artItems" />
-            <div class="rp-form-actions">
-                <button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">@(editingId is null ? "Cadastrar equipamento" : "Salvar equipamento")</button>
+
+            @if (editingId is null)
+            {
+                <div class="rp-card" style="margin-top: var(--rp-space-4); padding: var(--rp-space-4); background: var(--rp-surface-muted);">
+                    <h3 class="rp-section-title" style="font-size: 1.05rem; margin-bottom: var(--rp-space-2);">ART Inicial Obrigatória</h3>
+                    <p class="rp-help" style="margin-bottom: var(--rp-space-3);">Todo equipamento precisa de pelo menos uma ART válida com anexo PDF para ser cadastrado.</p>
+                    <div class="rp-form-grid">
+                        <div class="rp-field rp-col-4">
+                            <label class="rp-label" for="new-art-number">Número da ART <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                            <InputText id="new-art-number" class="rp-input" @bind-Value="initialArtNumber" placeholder="Ex: 2026/123456" />
+                        </div>
+                        <div class="rp-field rp-col-4">
+                            <label class="rp-label" for="new-art-from">Data de início</label>
+                            <InputDate id="new-art-from" class="rp-input" @bind-Value="initialArtValidFrom" />
+                        </div>
+                        <div class="rp-field rp-col-4">
+                            <label class="rp-label" for="new-art-to">Previsão de término</label>
+                            <InputDate id="new-art-to" class="rp-input" @bind-Value="initialArtValidTo" />
+                        </div>
+                        <div class="rp-field rp-col-12">
+                            <label class="rp-label" for="new-art-file">Anexo PDF da ART <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                            <InputFile id="new-art-file" class="rp-file-input" OnChange="OnInitialFileChange" accept=".pdf,application/pdf" />
+                            <label class="rp-btn rp-btn--ghost rp-file-button" for="new-art-file">
+                                <svg class="rp-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+                                </svg>
+                                @(initialArtFile is not null ? "Arquivo selecionado: " + initialArtFile.Name : "Escolher arquivo PDF")
+                            </label>
+                            <span class="rp-help">@(initialArtFile?.Name ?? "Nenhum arquivo PDF selecionado")</span>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="rp-card" style="margin-top: var(--rp-space-4); padding: var(--rp-space-4); background: var(--rp-surface-muted); display: flex; align-items: center; justify-content: space-between; gap: var(--rp-space-4);">
+                    <div>
+                        <h3 class="rp-section-title" style="font-size: 1rem; margin-bottom: var(--rp-space-1);">Gestão de ARTs e Laudos</h3>
+                        <p class="rp-help">Para adicionar novas ARTs, substituir arquivos ou gerenciar o histórico deste equipamento, utilize o gerenciador dedicado.</p>
+                    </div>
+                    <button class="rp-btn rp-btn--ghost" type="button" @onclick="OpenArtModalForEditing">
+                        Gerenciar ARTs deste equipamento
+                    </button>
+                </div>
+            }
+
+            <div class="rp-form-actions" style="margin-top: var(--rp-space-4);">
+                <button class="rp-btn rp-btn--primary" type="submit" disabled="@isSaving">@(editingId is null ? "Cadastrar equipamento" : "Salvar alterações do equipamento")</button>
                 @if (editingId is not null)
                 {
                     <button class="rp-btn rp-btn--ghost" type="button" @onclick="CancelEdit">Cancelar</button>
@@ -32,14 +77,39 @@
             </div>
         </EditForm>
     </RpCard>
+
     <RpCard Title="Equipamentos ativos">
-        <div class="rp-table-wrap"><table class="rp-table"><thead><tr><th>Modelo</th><th>Caminhão</th><th>Chassi</th><th>Placas</th><th>Ano</th><th>ART</th><th></th></tr></thead><tbody>
-            @foreach (var equipment in activeEquipments)
-            {
-                <tr><td>@equipment.CraneModel</td><td>@equipment.TruckModel</td><td>@equipment.ChassisNumber</td><td>@equipment.LicensePlate</td><td>@(equipment.ManufactureYear?.ToString() ?? "-")</td><td>@RenderArtStatus(equipment)</td><td class="rp-row-actions"><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => BeginEditAsync(equipment)">Editar</button> <button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(equipment)">Inativar</button></td></tr>
-            }
-        </tbody></table></div>
+        <p class="rp-help" style="margin-bottom: var(--rp-space-3);">Clique no status da ART na tabela para gerenciar, adicionar ou substituir documentos PDF instantaneamente.</p>
+        <div class="rp-table-wrap">
+            <table class="rp-table">
+                <thead>
+                    <tr><th>Modelo</th><th>Caminhão</th><th>Chassi</th><th>Placas</th><th>Ano</th><th>ARTs (Clique para gerenciar)</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var equipment in activeEquipments)
+                    {
+                        <tr>
+                            <td>@equipment.CraneModel</td>
+                            <td>@equipment.TruckModel</td>
+                            <td>@equipment.ChassisNumber</td>
+                            <td>@equipment.LicensePlate</td>
+                            <td>@(equipment.ManufactureYear?.ToString() ?? "-")</td>
+                            <td>
+                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="() => OpenArtModal(equipment)" title="Gerenciar ARTs deste equipamento">
+                                    @RenderArtSummary(equipment)
+                                </button>
+                            </td>
+                            <td class="rp-row-actions">
+                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="() => BeginEditAsync(equipment)">Editar</button>
+                                <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="() => ToggleStatusAsync(equipment)">Inativar</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     </RpCard>
+
     @if (message is not null) { <div class="rp-alert rp-alert--danger">@message</div> }
     <RpInactiveSection TItem="Equipment"
                        Title="Equipamentos inativos"
@@ -48,25 +118,51 @@
                        Items="inactiveEquipments">
         <HeaderTemplate><th>Modelo</th><th>Caminhão</th><th>Chassi</th><th>Placas</th><th></th></HeaderTemplate>
         <RowTemplate Context="equipment">
-                <tr class="rp-row--inactive"><td>@equipment.CraneModel</td><td>@equipment.TruckModel</td><td>@equipment.ChassisNumber</td><td>@equipment.LicensePlate</td><td class="rp-row-actions"><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(equipment)">Reativar</button> <button class="rp-btn rp-btn--danger-outline rp-btn--sm" disabled="@(deleteId == equipment.Id)" @onclick="() => AskDelete(equipment)">Excluir definitivamente</button></td></tr>
+                <tr class="rp-row--inactive">
+                    <td>@equipment.CraneModel</td>
+                    <td>@equipment.TruckModel</td>
+                    <td>@equipment.ChassisNumber</td>
+                    <td>@equipment.LicensePlate</td>
+                    <td class="rp-row-actions">
+                        <button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="() => ToggleStatusAsync(equipment)">Reativar</button>
+                        <button class="rp-btn rp-btn--danger-outline rp-btn--sm" disabled="@(deleteId == equipment.Id)" @onclick="() => AskDelete(equipment)">Excluir definitivamente</button>
+                    </td>
+                </tr>
                 @if (deleteId == equipment.Id)
                 {
-                    <tr class="rp-row--inactive"><td colspan="5"><div class="rp-alert rp-alert--danger rp-confirm"><span>Você está prestes a excluir este equipamento permanentemente. Essa informação não poderá ser recuperada. Planos já finalizados continuam preservando os dados históricos; planos em andamento impedem a exclusão.</span><button class="rp-btn rp-btn--danger rp-btn--sm" @onclick="DeleteAsync">Excluir definitivamente</button><button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="CancelDelete">Cancelar</button></div></td></tr>
-            }
+                    <tr class="rp-row--inactive">
+                        <td colspan="5">
+                            <div class="rp-alert rp-alert--danger rp-confirm">
+                                <span>Você está prestes a excluir este equipamento permanentemente. Essa informação não poderá ser recuperada. Planos já finalizados continuam preservando os dados históricos; planos em andamento impedem a exclusão.</span>
+                                <button class="rp-btn rp-btn--danger rp-btn--sm" @onclick="DeleteAsync">Excluir definitivamente</button>
+                                <button class="rp-btn rp-btn--ghost rp-btn--sm" @onclick="CancelDelete">Cancelar</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
         </RowTemplate>
     </RpInactiveSection>
 </div>
+
+<RpEquipmentArtModal IsOpen="isArtModalOpen" Equipment="artModalEquipment" OnClose="CloseArtModalAsync" OnChanged="LoadAsync" />
 
 @code {
     private List<Equipment> activeEquipments = [];
     private List<Equipment> inactiveEquipments = [];
     private EquipmentForm form = new();
-    private List<EquipmentArtDraft> artItems = [];
     private Guid? editingId;
     private bool isSaving;
     private Guid? deleteId;
     private string? message;
     private bool isError;
+    private bool isArtModalOpen;
+    private Equipment? artModalEquipment;
+
+    // Initial ART fields for new equipment creation
+    private string initialArtNumber = string.Empty;
+    private DateTime? initialArtValidFrom;
+    private DateTime? initialArtValidTo;
+    private IBrowserFile? initialArtFile;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -77,11 +173,50 @@
         inactiveEquipments = await db.Equipments.AsNoTracking().Include(x => x.Reports).Where(x => !x.IsActive).OrderBy(x => x.CraneModel).ToListAsync();
     }
 
-    private async Task SaveAsync()
+    private async Task OnInitialFileChange(InputFileChangeEventArgs args)
     {
-        isSaving = true;
+        if (!string.Equals(Path.GetExtension(args.File.Name), ".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            initialArtFile = null;
+            message = "Anexe somente arquivos PDF para a ART.";
+            isError = true;
+            return;
+        }
+
+        initialArtFile = args.File;
         message = null;
         isError = false;
+        await Task.CompletedTask;
+    }
+
+    private async Task SaveAsync()
+    {
+        message = null;
+        isError = false;
+
+        if (editingId is null)
+        {
+            if (string.IsNullOrWhiteSpace(initialArtNumber))
+            {
+                message = "Informe o número da ART inicial.";
+                isError = true;
+                return;
+            }
+            if (initialArtFile is null)
+            {
+                message = "Anexe o arquivo PDF da ART inicial.";
+                isError = true;
+                return;
+            }
+            if (initialArtValidFrom is not null && initialArtValidTo is not null && initialArtValidTo < initialArtValidFrom)
+            {
+                message = "A previsão de término da ART deve ser posterior à data de início.";
+                isError = true;
+                return;
+            }
+        }
+
+        isSaving = true;
         await using var db = await DbFactory.CreateDbContextAsync();
         var stored = editingId is null ? null : await db.Equipments.Include(x => x.Reports).SingleOrDefaultAsync(x => x.Id == editingId);
         if (editingId is not null && stored is null)
@@ -102,26 +237,35 @@
         stored.CraneModel = form.CraneModel.Trim();
         stored.NominalCapacity = form.NominalCapacity;
         stored.UpdatedAt = DateTime.Now;
-        if (editingId is null) db.Equipments.Add(stored);
+
+        if (editingId is null)
+        {
+            db.Equipments.Add(stored);
+            var file = await SaveFileAsync(initialArtFile!);
+            db.StoredFiles.Add(file);
+            db.EquipmentReports.Add(new EquipmentReport
+            {
+                Id = Guid.NewGuid(),
+                EquipmentId = stored.Id,
+                FileId = file.Id,
+                ArtNumber = initialArtNumber.Trim(),
+                ValidFrom = initialArtValidFrom,
+                ValidTo = initialArtValidTo,
+                CreatedAt = DateTime.Now
+            });
+        }
 
         await db.SaveChangesAsync();
         var wasEditing = editingId is not null;
-        editingId = stored.Id;
-        try
-        {
-            await SaveArtsAsync(db, stored);
-            await db.SaveChangesAsync();
-        }
-        catch (InvalidOperationException exception)
-        {
-            message = exception.Message;
-            isError = true;
-            isSaving = false;
-            return;
-        }
+        
         form = new();
-        artItems = [];
-        message = wasEditing ? "Equipamento e ARTs atualizados com sucesso." : "Equipamento cadastrado com sucesso.";
+        initialArtNumber = string.Empty;
+        initialArtValidFrom = null;
+        initialArtValidTo = null;
+        initialArtFile = null;
+        editingId = null;
+
+        message = wasEditing ? "Equipamento atualizado com sucesso." : "Equipamento e ART inicial cadastrados com sucesso.";
         isSaving = false;
         await LoadAsync();
     }
@@ -129,13 +273,14 @@
     private async Task BeginEditAsync(Equipment equipment)
     {
         editingId = equipment.Id;
-        await LoadArtItemsAsync(equipment.Id);
         form = new()
         {
-            CraneModel = equipment.CraneModel, TruckModel = equipment.TruckModel,
-            ChassisNumber = equipment.ChassisNumber, LicensePlate = equipment.LicensePlate,
-            ManufactureYear = equipment.ManufactureYear
-            ,NominalCapacity = equipment.NominalCapacity
+            CraneModel = equipment.CraneModel,
+            TruckModel = equipment.TruckModel,
+            ChassisNumber = equipment.ChassisNumber,
+            LicensePlate = equipment.LicensePlate,
+            ManufactureYear = equipment.ManufactureYear,
+            NominalCapacity = equipment.NominalCapacity
         };
         message = null;
         isError = false;
@@ -145,7 +290,10 @@
     {
         editingId = null;
         form = new();
-        artItems = [];
+        initialArtNumber = string.Empty;
+        initialArtValidFrom = null;
+        initialArtValidTo = null;
+        initialArtFile = null;
         message = null;
         isError = false;
     }
@@ -153,109 +301,46 @@
     private static bool IsReportCurrent(EquipmentReport report) =>
         report.ValidTo is null || report.ValidTo.Value.Date >= DateTime.Today;
 
-    private async Task LoadArtItemsAsync(Guid equipmentId)
+    private RenderFragment RenderArtSummary(Equipment equipment) => builder =>
     {
-        await using var db = await DbFactory.CreateDbContextAsync();
-        artItems = await db.EquipmentReports
-            .AsNoTracking()
-            .Include(x => x.File)
-            .Where(x => x.EquipmentId == equipmentId)
-            .OrderByDescending(x => x.ValidFrom)
-            .Select(x => new EquipmentArtDraft
-            {
-                Id = x.Id,
-                ArtNumber = x.ArtNumber,
-                ValidFrom = x.ValidFrom,
-                ValidTo = x.ValidTo,
-                ExistingFileName = x.File.OriginalName
-            })
-            .ToListAsync();
-    }
-
-    private async Task SaveArtsAsync(AppDbContext db, Equipment equipment)
-    {
-        var existingReports = await db.EquipmentReports
-            .Include(x => x.File)
-            .Where(x => x.EquipmentId == equipment.Id)
-            .ToListAsync();
-        var incomingIds = artItems.Where(x => x.Id is not null).Select(x => x.Id!.Value).ToHashSet();
-        var removedReports = existingReports.Where(x => !incomingIds.Contains(x.Id)).ToList();
-
-        foreach (var report in removedReports)
+        var count = equipment.Reports.Count;
+        if (count == 0)
         {
-            if (await db.RiggingPlans.AnyAsync(x => x.EquipmentReportId == report.Id && x.DeletedAt == null))
-            {
-                throw new InvalidOperationException($"A ART {report.ArtNumber} está vinculada a um plano e não pode ser excluída.");
-            }
-
-            db.EquipmentReports.Remove(report);
-            if (report.File is not null) db.StoredFiles.Remove(report.File);
-        }
-
-        foreach (var item in artItems)
-        {
-            if (item.Id is null)
-            {
-                if (item.File is null) throw new InvalidOperationException($"A ART {item.ArtNumber} está sem anexo.");
-                EnsurePdf(item.File, item.ArtNumber);
-                var file = await SaveFileAsync(item.File);
-                db.StoredFiles.Add(file);
-                db.EquipmentReports.Add(new EquipmentReport
-                {
-                    Id = Guid.NewGuid(),
-                    EquipmentId = equipment.Id,
-                    FileId = file.Id,
-                    ArtNumber = item.ArtNumber.Trim(),
-                    ValidFrom = item.ValidFrom,
-                    ValidTo = item.ValidTo,
-                    CreatedAt = DateTime.Now
-                });
-                continue;
-            }
-
-            var report = existingReports.SingleOrDefault(x => x.Id == item.Id.Value);
-            if (report is null) throw new InvalidOperationException("Uma das ARTs informadas não foi encontrada.");
-            report.ArtNumber = item.ArtNumber.Trim();
-            report.ValidFrom = item.ValidFrom;
-            report.ValidTo = item.ValidTo;
-            if (item.File is not null)
-            {
-                EnsurePdf(item.File, item.ArtNumber);
-                var oldFile = report.File;
-                var file = await SaveFileAsync(item.File);
-                report.FileId = file.Id;
-                db.StoredFiles.Add(file);
-                if (oldFile is not null) db.StoredFiles.Remove(oldFile);
-            }
-        }
-
-    }
-
-    private static void EnsurePdf(IBrowserFile file, string artNumber)
-    {
-        if (!string.Equals(Path.GetExtension(file.Name), ".pdf", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException($"A ART {artNumber} deve ter um anexo PDF.");
-        }
-    }
-
-    private RenderFragment RenderArtStatus(Equipment equipment) => builder =>
-    {
-        var report = equipment.Reports
-            .OrderByDescending(x => IsReportCurrent(x))
-            .ThenByDescending(x => x.ValidFrom)
-            .FirstOrDefault();
-        if (report is null)
-        {
-            builder.AddContent(0, new MarkupString("<span class=\"rp-badge rp-badge--muted\">Sem ART</span>"));
+            builder.AddContent(0, new MarkupString("<span class=\"rp-badge rp-badge--muted\">Sem ARTs — Clique para adicionar</span>"));
             return;
         }
 
+        var currentCount = equipment.Reports.Count(IsReportCurrent);
+        var latest = equipment.Reports.OrderByDescending(x => IsReportCurrent(x)).ThenByDescending(x => x.ValidFrom).FirstOrDefault();
+
         builder.OpenElement(1, "span");
-        builder.AddAttribute(2, "class", $"rp-badge {(IsReportCurrent(report) ? "rp-badge--success" : "rp-badge--muted")}");
-        builder.AddContent(3, $"{report.ArtNumber} — {(IsReportCurrent(report) ? "Válida" : "Vencida")}");
+        builder.AddAttribute(2, "class", $"rp-badge {(currentCount > 0 ? "rp-badge--success" : "rp-badge--muted")}");
+        builder.AddContent(3, $"{count} ART{(count == 1 ? string.Empty : "s")} ({currentCount} válida{(currentCount == 1 ? string.Empty : "s")}) — {latest?.ArtNumber}");
         builder.CloseElement();
     };
+
+    private void OpenArtModal(Equipment equipment)
+    {
+        artModalEquipment = equipment;
+        isArtModalOpen = true;
+    }
+
+    private void OpenArtModalForEditing()
+    {
+        if (editingId is null) return;
+        var equipment = activeEquipments.Concat(inactiveEquipments).FirstOrDefault(x => x.Id == editingId.Value);
+        if (equipment is not null)
+        {
+            OpenArtModal(equipment);
+        }
+    }
+
+    private async Task CloseArtModalAsync()
+    {
+        isArtModalOpen = false;
+        artModalEquipment = null;
+        await LoadAsync();
+    }
 
     private static async Task<StoredFile> SaveFileAsync(IBrowserFile browserFile)
     {
@@ -280,9 +365,13 @@
         sha.TransformFinalBlock([], 0, 0);
         return new StoredFile
         {
-            Id = fileId, RelativePath = relativePath, OriginalName = browserFile.Name,
-            ContentType = browserFile.ContentType, SizeBytes = size,
-            Sha256 = Convert.ToHexString(sha.Hash!).ToLowerInvariant(), CreatedAt = DateTime.Now
+            Id = fileId,
+            RelativePath = relativePath,
+            OriginalName = browserFile.Name,
+            ContentType = browserFile.ContentType,
+            SizeBytes = size,
+            Sha256 = Convert.ToHexString(sha.Hash!).ToLowerInvariant(),
+            CreatedAt = DateTime.Now
         };
     }
 

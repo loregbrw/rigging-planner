@@ -17,75 +17,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
-            modelBuilder.Entity("RiggingPlanner.Domain.Entities.Accessory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("ReviewDueDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid?>("TagId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<decimal>("UnitWeightKg")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("TagId");
-
-                    b.ToTable("Accessories");
-                });
-
-            modelBuilder.Entity("RiggingPlanner.Domain.Entities.AccessoryEvent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("AccessoryId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("EventDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("EventType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AccessoryId");
-
-                    b.ToTable("AccessoryEvents");
-                });
-
             modelBuilder.Entity("RiggingPlanner.Domain.Entities.Client", b =>
                 {
                     b.Property<Guid>("Id")
@@ -242,9 +173,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid?>("AccessoryId")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -274,8 +202,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AccessoryId");
 
                     b.HasIndex("PlanId", "SortOrder")
                         .IsUnique();
@@ -662,27 +588,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.ToTable("Tags");
                 });
 
-            modelBuilder.Entity("RiggingPlanner.Domain.Entities.Accessory", b =>
-                {
-                    b.HasOne("RiggingPlanner.Domain.Entities.Tag", "Tag")
-                        .WithMany("Accessories")
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Tag");
-                });
-
-            modelBuilder.Entity("RiggingPlanner.Domain.Entities.AccessoryEvent", b =>
-                {
-                    b.HasOne("RiggingPlanner.Domain.Entities.Accessory", "Accessory")
-                        .WithMany("Events")
-                        .HasForeignKey("AccessoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Accessory");
-                });
-
             modelBuilder.Entity("RiggingPlanner.Domain.Entities.EquipmentReport", b =>
                 {
                     b.HasOne("RiggingPlanner.Domain.Entities.Equipment", "Equipment")
@@ -704,18 +609,11 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("RiggingPlanner.Domain.Entities.PlanAccessory", b =>
                 {
-                    b.HasOne("RiggingPlanner.Domain.Entities.Accessory", "Accessory")
-                        .WithMany("PlanItems")
-                        .HasForeignKey("AccessoryId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("RiggingPlanner.Domain.Entities.RiggingPlan", "Plan")
                         .WithMany("Accessories")
                         .HasForeignKey("PlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Accessory");
 
                     b.Navigation("Plan");
                 });
@@ -795,13 +693,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.Navigation("Rigger");
                 });
 
-            modelBuilder.Entity("RiggingPlanner.Domain.Entities.Accessory", b =>
-                {
-                    b.Navigation("Events");
-
-                    b.Navigation("PlanItems");
-                });
-
             modelBuilder.Entity("RiggingPlanner.Domain.Entities.Client", b =>
                 {
                     b.Navigation("Plans");
@@ -845,11 +736,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.Navigation("PlanArtFiles");
 
                     b.Navigation("PlanDrawings");
-                });
-
-            modelBuilder.Entity("RiggingPlanner.Domain.Entities.Tag", b =>
-                {
-                    b.Navigation("Accessories");
                 });
 #pragma warning restore 612, 618
         }
