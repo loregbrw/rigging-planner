@@ -257,9 +257,23 @@ else
                             <h3 id="gross-load-section" class="rp-section-title">Composição de carga bruta</h3>
                             <div class="rp-form-grid" style="grid-template-columns: 1fr;">
                                 <div class="rp-field">
-                                    <label class="rp-label">Carga líquida (Peso da carga)</label>
+                                    <label class="rp-label">Carga líquida</label>
                                     <div class="rp-input-with-unit">
                                         <RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.WeightKg" />
+                                        <span class="rp-input-unit">kg</span>
+                                    </div>
+                                </div>
+                                <div class="rp-field">
+                                    <label class="rp-label">Lingada / Amarração</label>
+                                    <div class="rp-input-with-unit">
+                                        <input class="rp-input rp-input--disabled rp-input--num" value="@lingadaTotal.ToString("N2")" disabled />
+                                        <span class="rp-input-unit">kg</span>
+                                    </div>
+                                </div>
+                                <div class="rp-field">
+                                    <label class="rp-label">Dispositivos / Balancim</label>
+                                    <div class="rp-input-with-unit">
+                                        <input class="rp-input rp-input--disabled rp-input--num" value="@deviceTotal.ToString("N2")" disabled />
                                         <span class="rp-input-unit">kg</span>
                                     </div>
                                 </div>
@@ -267,20 +281,6 @@ else
                                     <label class="rp-label">Cargas extras</label>
                                     <div class="rp-input-with-unit">
                                         <RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.ExtraLoadKg" />
-                                        <span class="rp-input-unit">kg</span>
-                                    </div>
-                                </div>
-                                <div class="rp-field">
-                                    <label class="rp-label">Lingada / Amarração <span style="font-weight: normal; font-size: 0.75rem; color: var(--rp-text-secondary);">(Tabela acima)</span></label>
-                                    <div class="rp-input-with-unit">
-                                        <input class="rp-input rp-input--disabled rp-input--num" value="@lingadaTotal.ToString("N2")" disabled />
-                                        <span class="rp-input-unit">kg</span>
-                                    </div>
-                                </div>
-                                <div class="rp-field">
-                                    <label class="rp-label">Dispositivos / Balancim <span style="font-weight: normal; font-size: 0.75rem; color: var(--rp-text-secondary);">(Tabela acima)</span></label>
-                                    <div class="rp-input-with-unit">
-                                        <input class="rp-input rp-input--disabled rp-input--num" value="@deviceTotal.ToString("N2")" disabled />
                                         <span class="rp-input-unit">kg</span>
                                     </div>
                                 </div>
