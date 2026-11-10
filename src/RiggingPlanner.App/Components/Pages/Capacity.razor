@@ -263,18 +263,20 @@ else
                                         <span class="rp-input-unit">kg</span>
                                     </div>
                                 </div>
-                                <div class="rp-field">
-                                    <label class="rp-label">Lingada / Amarração</label>
-                                    <div class="rp-input-with-unit">
-                                        <input class="rp-input rp-input--disabled rp-input--num" value="@lingadaTotal.ToString("N2")" disabled />
-                                        <span class="rp-input-unit">kg</span>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--rp-space-3);">
+                                    <div class="rp-field" style="margin: 0;">
+                                        <label class="rp-label">Lingadas / Amarras</label>
+                                        <div class="rp-input-with-unit">
+                                            <input class="rp-input rp-input--disabled rp-input--num" value="@lingadaTotal.ToString("N2")" disabled />
+                                            <span class="rp-input-unit">kg</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="rp-field">
-                                    <label class="rp-label">Dispositivos / Balancim</label>
-                                    <div class="rp-input-with-unit">
-                                        <input class="rp-input rp-input--disabled rp-input--num" value="@deviceTotal.ToString("N2")" disabled />
-                                        <span class="rp-input-unit">kg</span>
+                                    <div class="rp-field" style="margin: 0;">
+                                        <label class="rp-label">Dispositivos / Balancim</label>
+                                        <div class="rp-input-with-unit">
+                                            <input class="rp-input rp-input--disabled rp-input--num" value="@deviceTotal.ToString("N2")" disabled />
+                                            <span class="rp-input-unit">kg</span>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="rp-field">
@@ -284,10 +286,13 @@ else
                                         <span class="rp-input-unit">kg</span>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="rp-capacity-total-box" style="display: flex; align-items: center; justify-content: space-between; padding: var(--rp-space-3) var(--rp-space-4); background: var(--rp-primary-50); border: 1px solid var(--rp-primary-100); border-radius: var(--rp-radius-md); margin-top: var(--rp-space-3);">
-                                <span style="font-weight: 600; color: var(--rp-primary-900);">Carga bruta total</span>
-                                <span style="font-size: 1.1rem; font-weight: 700; color: var(--rp-primary-800); font-variant-numeric: tabular-nums;">@grossWeight.ToString("N2") kg</span>    
+                                <div class="rp-field">
+                                    <label class="rp-label">Carga bruta total</label>
+                                    <div class="rp-input-with-unit">
+                                        <input class="rp-input rp-input--disabled rp-input--num" style="background: var(--rp-primary-50); border-color: var(--rp-primary-100); color: var(--rp-primary-800); font-weight: 700;" value="@grossWeight.ToString("N2")" disabled />
+                                        <span class="rp-input-unit">kg</span>
+                                    </div>
+                                </div>
                             </div>
                         </section>
                     </div>
