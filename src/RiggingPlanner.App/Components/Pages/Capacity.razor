@@ -308,7 +308,7 @@ else
     private bool IsDraft => Draft.PlanId == PlanId && Draft.Plan is not null && !Draft.IsPersisted;
     private bool planWasLoadedFromDatabase;
     private RiggingPlan? plan;
-    private List<PlanAccessory> items = [];
+    private List<PlanAccessory> items => Draft.Accessories;
     private LingadaForm lingadaForm = new();
     private DeviceForm deviceForm = new();
     private bool isAddingLingada;
@@ -331,30 +331,40 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
         if (Draft.PlanId == PlanId && Draft.Plan is not null && Draft.IsInitialized)
         {
             plan = Draft.Plan;
             SyncEntryFormIntoDraftPlan();
-            items = Draft.Accessories;
             isReadOnly = plan.Status == "finalized";
-            planWasLoadedFromDatabase = false;
+
+            if (Draft.IsPersisted && Draft.Accessories.Count == 0)
+            {
+                var dbAccessories = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
+                if (dbAccessories.Count > 0)
+                {
+                    Draft.Accessories.AddRange(dbAccessories);
+                }
+            }
         }
-
-        await using var db = await DbFactory.CreateDbContextAsync();
-        plan ??= await db.RiggingPlans.SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
-        planWasLoadedFromDatabase = plan is not null && Draft.Plan != plan;
-        isReadOnly = plan?.Status == "finalized";
-
-        if (plan is not null && planWasLoadedFromDatabase)
+        else
         {
-            items = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
-            Draft.Plan = plan;
-            Draft.PlanId = PlanId;
-            Draft.Accessories.Clear();
-            Draft.Accessories.AddRange(items);
-            Draft.IsPersisted = true;
-            Draft.IsInitialized = true;
+            plan = await db.RiggingPlans.SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+            if (plan is not null)
+            {
+                Draft.Plan = plan;
+                Draft.PlanId = PlanId;
+                Draft.IsPersisted = true;
+                Draft.IsInitialized = true;
+
+                var dbAccessories = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
+                Draft.Accessories.Clear();
+                Draft.Accessories.AddRange(dbAccessories);
+            }
+            isReadOnly = plan?.Status == "finalized";
         }
+
         isLoading = false;
     }
 
