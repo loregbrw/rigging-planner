@@ -259,7 +259,7 @@ else
                                 <div class="rp-field">
                                     <label class="rp-label">Carga líquida</label>
                                     <div class="rp-input-with-unit">
-                                        <RpDecimalInput class="rp-input rp-input--num" @bind-Value="plan.WeightKg" />
+                                        <input class="rp-input rp-input--disabled rp-input--num" value="@(plan.WeightKg?.ToString("N2") ?? "0,00")" disabled />
                                         <span class="rp-input-unit">kg</span>
                                     </div>
                                 </div>
