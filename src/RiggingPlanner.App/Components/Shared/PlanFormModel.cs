@@ -29,7 +29,6 @@ public sealed class PlanFormModel : IValidatableObject
     public string EquipmentChassisNumber { get; set; } = string.Empty;
     public string EquipmentLicensePlate { get; set; } = string.Empty;
     public int? EquipmentManufactureYear { get; set; }
-    public decimal? EquipmentNominalCapacity { get; set; }
     public bool IsNewEquipment { get; set; }
     public Guid? RiggerId { get; set; }
     public string RiggerFullName { get; set; } = string.Empty;
@@ -73,10 +72,6 @@ public sealed class PlanFormModel : IValidatableObject
             if (string.IsNullOrWhiteSpace(EquipmentLicensePlate))
             {
                 yield return new ValidationResult("Informe a placa do novo equipamento.", [nameof(EquipmentLicensePlate)]);
-            }
-            if (EquipmentNominalCapacity is null or <= 0)
-            {
-                yield return new ValidationResult("Informe a capacidade nominal do novo equipamento.", [nameof(EquipmentNominalCapacity)]);
             }
         }
 

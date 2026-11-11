@@ -46,7 +46,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(x => x.ChassisNumber).HasMaxLength(100).IsRequired();
             entity.Property(x => x.CraneBrand).HasMaxLength(100).IsRequired();
             entity.Property(x => x.CraneModel).HasMaxLength(100).IsRequired();
-            entity.Property(x => x.NominalCapacity).HasPrecision(18, 3);
             entity.HasIndex(x => x.ChassisNumber).IsUnique();
         });
 

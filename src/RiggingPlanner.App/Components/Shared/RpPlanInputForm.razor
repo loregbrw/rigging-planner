@@ -93,7 +93,6 @@
                             <div class="rp-field rp-col-4"><label class="rp-label">Chassi</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentChassisNumber" disabled /></div>
                             <div class="rp-field rp-col-4"><label class="rp-label">Placa</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentLicensePlate" disabled /></div>
                             <div class="rp-field rp-col-6"><label class="rp-label">Ano de fabricação</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentManufactureYear" disabled /></div>
-                            <div class="rp-field rp-col-6"><label class="rp-label">Capacidade nominal (t)</label><input class="rp-input rp-input--disabled rp-input--num" value="@Model.EquipmentNominalCapacity" disabled /></div>
                         </div>
                     }
                     else if (IsNewEquipmentSelected)
@@ -118,11 +117,6 @@
                             <div class="rp-field rp-col-6">
                                 <label class="rp-label">Ano de fabricação</label>
                                 <InputNumber class="rp-input rp-input--num" @bind-Value="Model.EquipmentManufactureYear" />
-                            </div>
-                            <div class="rp-field rp-col-6">
-                                <label class="rp-label">Capacidade nominal (t) <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                                <RpDecimalInput class="rp-input rp-input--num" @bind-Value="Model.EquipmentNominalCapacity" />
-                                <ValidationMessage For="() => Model.EquipmentNominalCapacity" />
                             </div>
                         </div>
                     }
