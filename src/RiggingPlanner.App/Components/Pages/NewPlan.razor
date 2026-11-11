@@ -122,7 +122,6 @@
             ChassisNumber = form.EquipmentChassisNumber.Trim(),
             LicensePlate = form.EquipmentLicensePlate.Trim().ToUpperInvariant(),
             ManufactureYear = form.EquipmentManufactureYear,
-            NominalCapacity = form.EquipmentNominalCapacity ?? 0,
             EquipmentType = "munck",
             CraneBrand = string.Empty,
             IsActive = true,
@@ -429,7 +428,6 @@ string.Empty;
         form.EquipmentChassisNumber = string.Empty;
         form.EquipmentLicensePlate = string.Empty;
         form.EquipmentManufactureYear = null;
-        form.EquipmentNominalCapacity = null;
         isNewEquipmentSelected = false;
         form.IsNewEquipment = false;
     }
@@ -442,7 +440,6 @@ string.Empty;
         form.EquipmentChassisNumber = equipment.ChassisNumber;
         form.EquipmentLicensePlate = equipment.LicensePlate;
         form.EquipmentManufactureYear = equipment.ManufactureYear;
-        form.EquipmentNominalCapacity = equipment.NominalCapacity;
         isNewEquipmentSelected = false;
         form.IsNewEquipment = false;
     }
@@ -463,7 +460,6 @@ string.Empty;
         form.EquipmentChassisNumber = string.Empty;
         form.EquipmentLicensePlate = string.Empty;
         form.EquipmentManufactureYear = null;
-        form.EquipmentNominalCapacity = null;
         isNewEquipmentSelected = false;
         form.IsNewEquipment = false;
     }
@@ -539,7 +535,6 @@ IReadOnlyCollection<Rigger> riggerOptions)
             plan.ManufactureYear = equipment.ManufactureYear;
             plan.CraneBrand = equipment.CraneBrand;
             plan.CraneModel = equipment.CraneModel;
-            plan.CraneNominalCapacity = equipment.NominalCapacity;
         }
 
         var rigger = plan.RiggerId is null ? null : riggerOptions.FirstOrDefault(x => x.Id == plan.RiggerId);
@@ -568,6 +563,7 @@ IReadOnlyCollection<Rigger> riggerOptions)
     private static void CopyCapacityFields(RiggingPlan? source, RiggingPlan target)
     {
         if (source is null) return;
+        target.CraneNominalCapacity = source.CraneNominalCapacity;
         target.BoomLengthM = source.BoomLengthM;
         target.ExtraLoadKg = source.ExtraLoadKg;
         target.OperatingRadiusM = source.OperatingRadiusM;
@@ -605,7 +601,6 @@ IReadOnlyCollection<Rigger> riggerOptions)
         form.EquipmentChassisNumber = linkedEquipment?.ChassisNumber ?? plan.ChassisNumber ?? string.Empty;
         form.EquipmentLicensePlate = linkedEquipment?.LicensePlate ?? plan.LicensePlate ?? string.Empty;
         form.EquipmentManufactureYear = linkedEquipment?.ManufactureYear ?? plan.ManufactureYear;
-        form.EquipmentNominalCapacity = linkedEquipment?.NominalCapacity ?? plan.CraneNominalCapacity;
         isNewEquipmentSelected = plan.EquipmentId is null && !string.IsNullOrWhiteSpace(form.EquipmentModel);
         form.IsNewEquipment = isNewEquipmentSelected;
         form.RiggerId = plan.RiggerId;

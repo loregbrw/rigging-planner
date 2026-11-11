@@ -24,6 +24,38 @@ public class DatabaseMigrationTests : IDisposable
     }
 
     [Fact]
+    public void PersistsCraneNominalCapacity()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite($"Data Source={databasePath};Pooling=False")
+            .Options;
+
+        using (var context = new AppDbContext(options))
+        {
+            context.Database.Migrate();
+
+            var plan = new RiggingPlan
+            {
+                PlanNumber = "2611002",
+                PlanDate = new DateTime(2026, 11, 10),
+                Location = "Curitiba",
+                OperationName = "Teste Capacidade Nominal",
+                LoadDescription = "Carga",
+                CraneNominalCapacity = 75.50m
+            };
+
+            context.RiggingPlans.Add(plan);
+            context.SaveChanges();
+        }
+
+        using (var context = new AppDbContext(options))
+        {
+            var plan = context.RiggingPlans.Single();
+            Assert.Equal(75.50m, plan.CraneNominalCapacity);
+        }
+    }
+
+    [Fact]
     public void Migrate_CreatesExpectedSchema_AndPersistsRelationships()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
