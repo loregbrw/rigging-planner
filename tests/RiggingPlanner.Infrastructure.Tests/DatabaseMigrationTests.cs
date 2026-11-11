@@ -50,8 +50,42 @@ public class DatabaseMigrationTests : IDisposable
 
         using (var context = new AppDbContext(options))
         {
-            var plan = context.RiggingPlans.Single();
+            var plan = context.RiggingPlans.Single(x => x.PlanNumber == "2611002");
             Assert.Equal(75.50m, plan.CraneNominalCapacity);
+        }
+    }
+
+    [Fact]
+    public void PersistsOperationalQuadrants()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite($"Data Source={databasePath};Pooling=False")
+            .Options;
+
+        using (var context = new AppDbContext(options))
+        {
+            context.Database.Migrate();
+
+            var plan = new RiggingPlan
+            {
+                PlanNumber = "2611003",
+                PlanDate = new DateTime(2026, 11, 10),
+                Location = "Curitiba",
+                OperationName = "Teste Quadrantes",
+                LoadDescription = "Carga",
+                QuadrantStart = "LATERAL",
+                QuadrantEnd = "360 GRAUS"
+            };
+
+            context.RiggingPlans.Add(plan);
+            context.SaveChanges();
+        }
+
+        using (var context = new AppDbContext(options))
+        {
+            var plan = context.RiggingPlans.Single(x => x.PlanNumber == "2611003");
+            Assert.Equal("LATERAL", plan.QuadrantStart);
+            Assert.Equal("360 GRAUS", plan.QuadrantEnd);
         }
     }
 
