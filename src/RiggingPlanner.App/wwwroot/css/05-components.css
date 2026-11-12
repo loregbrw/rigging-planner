@@ -112,6 +112,27 @@
         color: var(--rp-text);
         text-decoration: none;
     }
+    .rp-btn--ghost-outline {
+        border-color: var(--rp-border-default);
+        background: transparent;
+        color: var(--rp-text);
+        box-shadow: none;
+    }
+    .rp-btn--ghost-outline:hover,
+    .rp-btn--ghost-outline:focus-visible {
+        border-color: var(--rp-border-default);
+        background: var(--rp-hover-bg);
+        color: var(--rp-text);
+        text-decoration: none;
+        box-shadow: none;
+    }
+    a.rp-btn--ghost-outline,
+    a.rp-btn--ghost-outline:hover,
+    a.rp-btn--ghost-outline:focus,
+    a.rp-btn--ghost-outline:visited {
+        color: var(--rp-text);
+        text-decoration: none;
+    }
     .rp-btn--sm { min-height: 32px; padding-inline: var(--rp-space-3); font-size: var(--rp-text-sm); }
 
     .rp-field { display: grid; gap: var(--rp-space-1); align-content: start; }
