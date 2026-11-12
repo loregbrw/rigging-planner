@@ -355,8 +355,8 @@ else
                                     <!-- Quadrante operacional -->
                                     <section class="rp-capacity-section" aria-labelledby="quadrant-section">
                                         <h3 id="quadrant-section" class="rp-section-title">Quadrante operacional</h3>
-                                        <div class="rp-form-grid" style="grid-template-columns: repeat(2, 1fr) !important;">
-                                            <div class="rp-field rp-col-6">
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--rp-space-3);">
+                                            <div class="rp-field" style="margin: 0;">
                                                 <label class="rp-label">Inicial</label>
                                                 <select class="rp-input" @bind="plan.QuadrantStart">
                                                     <option value="">Selecione...</option>
@@ -366,7 +366,7 @@ else
                                                     <option value="360 GRAUS">360 GRAUS</option>
                                                 </select>
                                             </div>
-                                            <div class="rp-field rp-col-6">
+                                            <div class="rp-field" style="margin: 0;">
                                                 <label class="rp-label">Final</label>
                                                 <select class="rp-input" @bind="plan.QuadrantEnd">
                                                     <option value="">Selecione...</option>
