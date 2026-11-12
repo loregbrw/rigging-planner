@@ -7,7 +7,7 @@
 <RpPageHeader Title="Equipamentos" Subtitle="Cadastre os equipamentos e gerencie suas ARTs e laudos de conformidade" />
 
 <div class="rp-stack">
-    <RpCard Title="@(editingId is null ? "Novo equipamento (com ART inicial obrigatória)" : $"Editando equipamento — {form.CraneModel}")">
+    <RpCard Title="@(editingId is null ? "Novo equipamento (com ART inicial obrigatória)" : $"Editando equipamento - {form.CraneModel}")">
         @if (message is not null)
         {
             <div class="rp-alert @(isError ? "rp-alert--danger" : "rp-alert--success")">@message</div>
@@ -303,7 +303,7 @@
         var count = equipment.Reports.Count;
         if (count == 0)
         {
-            builder.AddContent(0, new MarkupString("<span class=\"rp-badge rp-badge--muted\">Sem ARTs — Clique para adicionar</span>"));
+            builder.AddContent(0, new MarkupString("<span class=\"rp-badge rp-badge--muted\">Sem ARTs - Clique para adicionar</span>"));
             return;
         }
 
@@ -312,7 +312,7 @@
 
         builder.OpenElement(1, "span");
         builder.AddAttribute(2, "class", $"rp-badge {(currentCount > 0 ? "rp-badge--success" : "rp-badge--muted")}");
-        builder.AddContent(3, $"{count} ART{(count == 1 ? string.Empty : "s")} ({currentCount} válida{(currentCount == 1 ? string.Empty : "s")}) — {latest?.ArtNumber}");
+        builder.AddContent(3, $"{count} ART{(count == 1 ? string.Empty : "s")} ({currentCount} válida{(currentCount == 1 ? string.Empty : "s")}) - {latest?.ArtNumber}");
         builder.CloseElement();
     };
 

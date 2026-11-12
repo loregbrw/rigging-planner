@@ -200,7 +200,7 @@
         item.ValidTo is null || item.ValidTo.Value.Date >= DateTime.Today;
 
     private static string FormatPeriod(EquipmentArtDraft item) =>
-        $"{(item.ValidFrom?.ToString("dd/MM/yyyy") ?? "-")} — {(item.ValidTo?.ToString("dd/MM/yyyy") ?? "-")}";
+        $"{(item.ValidFrom?.ToString("dd/MM/yyyy") ?? "-")} - {(item.ValidTo?.ToString("dd/MM/yyyy") ?? "-")}";
 
     private static bool IsPdf(IBrowserFile file) =>
         string.Equals(Path.GetExtension(file.Name), ".pdf", StringComparison.OrdinalIgnoreCase);

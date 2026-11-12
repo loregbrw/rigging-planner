@@ -5,7 +5,7 @@
 @using RiggingPlanner.App.Components.Shared
 @using Microsoft.AspNetCore.Components.Forms
 
-<RpPageHeader Title="@PlanTitle" Subtitle="@($"{PageTitle} — etapa do plano de rigging")">
+<RpPageHeader Title="@PlanTitle" Subtitle="@($"{PageTitle} - etapa do plano de rigging")">
     <Actions>
         <RpPlanActions PlanId="@PlanId" IsReadOnly="@isReadOnly" IsSaving="isSaving" IsNew="@(!isPersisted)"
                        Save="SavePlan" Discard="DiscardChanges" />
@@ -182,7 +182,7 @@
                                  aria-labelledby="preview-modal-title">
                                 <div class="rp-modal__header">
                                     <div>
-                                        <h2 id="preview-modal-title" class="rp-section-title">Visualização —
+                                        <h2 id="preview-modal-title" class="rp-section-title">Visualização -
                                             @previewDrawing.File.OriginalName</h2>
                                             <span class="rp-help">@FormatByteSize(previewDrawing.File.SizeBytes)</span>
                                         </div>

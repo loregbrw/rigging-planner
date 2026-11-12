@@ -32,7 +32,7 @@ public sealed class PlanDraftState
 
         return string.IsNullOrWhiteSpace(description)
             ? $"Plano {planNumber}"
-            : $"Plano {planNumber} — {description}";
+            : $"Plano {planNumber} - {description}";
     }
 
     public void Reset()

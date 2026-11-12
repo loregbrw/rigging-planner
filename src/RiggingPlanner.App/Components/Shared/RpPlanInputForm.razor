@@ -60,7 +60,7 @@
                             <ValidationMessage For="() => Model.ClientCnpj" />
                             @if (IsExistingClient)
                             {
-                                <span class="rp-help rp-help--disabled">CNPJ do cadastro selecionado — não editável.</span>
+                                <span class="rp-help rp-help--disabled">CNPJ do cadastro selecionado - não editável.</span>
                             }
                             else
                             {
@@ -130,7 +130,7 @@
                         <RpTagPicker TItem="Rigger" InputId="rigger-name" InputValue="@Model.RiggerDisplayName"
                                      Suggestions="RiggerSuggestions"
                                      SelectedItem="@(SelectedRigger ?? (IsNewRiggerSelected ? new Rigger { DisplayName = Model.RiggerDisplayName } : null))"
-                                     ItemText="@(rigger => $"{rigger.DisplayName} — RPP {rigger.RppNumber}")"
+                                     ItemText="@(rigger => $"{rigger.DisplayName} - RPP {rigger.RppNumber}")"
                                      CanCreate="@(!string.IsNullOrWhiteSpace(Model.RiggerDisplayName) && !HasExactRigger)"
                                      CreateLabel="@($"Criar responsável “{Model.RiggerDisplayName?.Trim()}”")"
                                      OnInput="OnRiggerNameInput" OnSelect="OnRiggerSelect" OnCreate="OnRiggerCreate"
