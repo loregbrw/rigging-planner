@@ -20,73 +20,78 @@
 
     @if (CurrentSegment == "attachments")
     {
-        <RpCard Title="ART do Plano de Rigging">
-            <p class="rp-help" style="margin-bottom: var(--rp-space-4);">
-                Informe o número da ART emitida no CREA e anexe o arquivo PDF correspondente. Este documento integrará o plano de rigging final.
-            </p>
+        <RpCard Title="Anexos">
+            <div class="rp-stack" style="gap: var(--rp-space-6);">
+                <section class="rp-client-section" aria-labelledby="art-section-title">
+                    <h3 id="art-section-title" class="rp-section-title">ART do Plano de Rigging</h3>
+                    <p class="rp-help" style="margin-bottom: var(--rp-space-4);">
+                        Informe o número da ART emitida no CREA e anexe o arquivo PDF correspondente. Este documento integrará o plano de rigging final.
+                    </p>
 
-            @if (!string.IsNullOrWhiteSpace(errorMessage))
-            {
-                <div class="rp-alert rp-alert--danger" style="margin-bottom: var(--rp-space-4);">@errorMessage</div>
-            }
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="rp-alert rp-alert--danger" style="margin-bottom: var(--rp-space-4);">@errorMessage</div>
+                    }
 
-            @if (plan is not null)
-            {
-                <div class="rp-form-grid" style="grid-template-columns: 1fr 2fr; gap: var(--rp-space-4); align-items: start;">
-                    <div class="rp-field">
-                        <label class="rp-label" for="art-number-input">Número da ART</label>
-                        <input id="art-number-input" class="rp-input" @bind="plan.ArtNumber" placeholder="Ex: 2026/123456" disabled="@isReadOnly" />
-                        <span class="rp-help">Ex: 1720264496217</span>
-                    </div>
+                    @if (plan is not null)
+                    {
+                        <div class="rp-form-grid" style="display:flex; flex-direction: column; gap: var(--rp-space-4);">
+                            <div class="rp-field">
+                                <label class="rp-label" for="art-number-input">Número da ART</label>
+                                <input id="art-number-input" class="rp-input" @bind="plan.ArtNumber" disabled="@isReadOnly" />
+                                <span class="rp-help">Ex: 1720264496217</span>
+                            </div>
 
-                    <div class="rp-field">
-                        <label class="rp-label">Documento PDF da ART</label>
-                        @if (plan.ArtFile is not null)
-                        {
-                            <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--rp-space-3) var(--rp-space-4); background: var(--rp-surface-subtle); border: 1px solid var(--rp-border-subtle); border-radius: var(--rp-radius-md);">
-                                <div style="display: flex; align-items: center; gap: var(--rp-space-3); overflow: hidden;">
-                                    <svg class="rp-icon" style="color: var(--rp-accent); flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                    </svg>
-                                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                        <div style="font-weight: 600; font-size: var(--rp-text-sm);">@plan.ArtFile.OriginalName</div>
-                                        <div style="font-size: var(--rp-text-xs); color: var(--rp-text-secondary);">@FormatByteSize(plan.ArtFile.SizeBytes)</div>
-                                    </div>
-                                </div>
-                                @if (!isReadOnly)
+                            <div class="rp-field">
+                                <label class="rp-label">Documento PDF da ART</label>
+                                @if (plan.ArtFile is not null)
                                 {
-                                    <div style="display: flex; gap: var(--rp-space-2); flex-shrink: 0;">
-                                        <InputFile id="replace-art-file" class="rp-file-input" OnChange="OnArtFileChange" accept=".pdf,application/pdf" />
-                                        <label class="rp-btn rp-btn--ghost rp-btn--sm" for="replace-art-file">Trocar</label>
-                                        <button class="rp-btn rp-btn--danger-outline rp-btn--sm" type="button" @onclick="RemoveArtFileAsync">Excluir</button>
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--rp-space-3) var(--rp-space-4); background: var(--rp-surface); border: 1px solid var(--rp-border-subtle); border-radius: var(--rp-radius-md);">
+                                        <div style="display: flex; align-items: center; gap: var(--rp-space-3); overflow: hidden;">
+                                            <svg class="rp-icon" style="color: var(--rp-accent); flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                            </svg>
+                                            <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                <div style="font-weight: 600; font-size: var(--rp-text-sm);">@plan.ArtFile.OriginalName</div>
+                                                <div style="font-size: var(--rp-text-xs); color: var(--rp-text-secondary);">@FormatByteSize(plan.ArtFile.SizeBytes)</div>
+                                            </div>
+                                        </div>
+                                        @if (!isReadOnly)
+                                        {
+                                            <div style="display: flex; gap: var(--rp-space-2); flex-shrink: 0;">
+                                                <InputFile id="replace-art-file" class="rp-file-input" OnChange="OnArtFileChange" accept=".pdf,application/pdf" />
+                                                <label class="rp-btn rp-btn--ghost rp-btn--sm" for="replace-art-file">Trocar</label>
+                                                <button class="rp-btn rp-btn--danger-outline rp-btn--sm" type="button" @onclick="RemoveArtFileAsync">Excluir</button>
+                                            </div>
+                                        }
                                     </div>
                                 }
+                                else
+                                {
+                                    @if (!isReadOnly)
+                                    {
+                                        <div style="display: flex; flex-direction: column; gap: var(--rp-space-2);">
+                                            <InputFile id="upload-art-file" class="rp-file-input" OnChange="OnArtFileChange" accept=".pdf,application/pdf" />
+                                            <label class="rp-btn rp-btn--ghost" for="upload-art-file" style="display: inline-flex; align-items: center; justify-content: center; gap: var(--rp-space-2); cursor: pointer;">
+                                                <svg class="rp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+                                                </svg>
+                                                Escolher arquivo PDF da ART
+                                            </label>
+                                            <span class="rp-help">Somente arquivo PDF (máx. 10MB)</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="rp-muted">Nenhum anexo de ART enviado.</span>
+                                    }
+                                }
                             </div>
-                        }
-                        else
-                        {
-                            @if (!isReadOnly)
-                            {
-                                <div style="display: flex; flex-direction: column; gap: var(--rp-space-2);">
-                                    <InputFile id="upload-art-file" class="rp-file-input" OnChange="OnArtFileChange" accept=".pdf,application/pdf" />
-                                    <label class="rp-btn rp-btn--ghost" for="upload-art-file" style="display: inline-flex; align-items: center; justify-content: center; gap: var(--rp-space-2); cursor: pointer;">
-                                        <svg class="rp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
-                                        </svg>
-                                        Escolher arquivo PDF da ART
-                                    </label>
-                                    <span class="rp-help">Somente arquivo PDF (máx. 10MB)</span>
-                                </div>
-                            }
-                            else
-                            {
-                                <span class="rp-muted">Nenhum anexo de ART enviado.</span>
-                            }
-                        }
-                    </div>
-                </div>
-            }
+                        </div>
+                    }
+                </section>
+            </div>
         </RpCard>
     }
     else
@@ -140,25 +145,38 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await using var db = await DbFactory.CreateDbContextAsync();
+
         if (Draft.PlanId == PlanId && Draft.Plan is not null && Draft.IsInitialized)
         {
             plan = Draft.Plan;
             isPersisted = Draft.IsPersisted;
             isReadOnly = Draft.Plan?.Status == "finalized";
-            return;
         }
-
-        await using var db = await DbFactory.CreateDbContextAsync();
-        plan = await db.RiggingPlans.Include(x => x.ArtFile).SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
-        if (plan is not null)
+        else
         {
-            Draft.Plan = plan;
-            Draft.PlanId = PlanId;
-            Draft.IsPersisted = true;
-            Draft.IsInitialized = true;
+            plan = await db.RiggingPlans.Include(x => x.ArtFile).SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+            if (plan is not null)
+            {
+                Draft.Plan = plan;
+                Draft.PlanId = PlanId;
+                Draft.IsPersisted = true;
+                Draft.IsInitialized = true;
+            }
+            else if (Draft.PlanId == PlanId && Draft.Plan is not null)
+            {
+                plan = Draft.Plan;
+                isPersisted = Draft.IsPersisted;
+            }
+            else
+            {
+                Draft.PlanId = PlanId;
+                Draft.Plan ??= new RiggingPlan { Id = PlanId };
+                plan = Draft.Plan;
+                isPersisted = false;
+            }
+            isReadOnly = plan?.Status == "finalized";
         }
-        isPersisted = plan is not null;
-        isReadOnly = plan?.Status == "finalized";
     }
 
     private async Task OnArtFileChange(InputFileChangeEventArgs args)
