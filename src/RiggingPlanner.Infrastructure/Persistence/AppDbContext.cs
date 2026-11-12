@@ -17,6 +17,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<PlanAccessory> PlanAccessories => Set<PlanAccessory>();
     public DbSet<PlanDrawing> PlanDrawings => Set<PlanDrawing>();
     public DbSet<PlanExport> PlanExports => Set<PlanExport>();
+    public DbSet<PlanProcedureSnapshot> PlanProcedureSnapshots => Set<PlanProcedureSnapshot>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -148,6 +149,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(x => x.FileSha256).HasMaxLength(64).IsRequired();
             entity.HasIndex(x => new { x.PlanId, x.ExportedAt });
             entity.HasOne(x => x.Plan).WithMany(x => x.Exports).HasForeignKey(x => x.PlanId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PlanProcedureSnapshot>(entity =>
+        {
+            entity.HasKey(x => x.PlanId);
+            entity.Property(x => x.CraneModelCode).HasMaxLength(100).IsRequired();
+            entity.Property(x => x.Content).IsRequired();
+            entity.Property(x => x.ContentSha256).HasMaxLength(64).IsRequired();
+            entity.HasOne(x => x.Plan)
+                  .WithOne(x => x.ProcedureSnapshot)
+                  .HasForeignKey<PlanProcedureSnapshot>(x => x.PlanId)
+                  .OnDelete(DeleteBehavior.Cascade);
         });
     }
 

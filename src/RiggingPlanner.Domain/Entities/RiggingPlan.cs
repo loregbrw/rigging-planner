@@ -57,6 +57,7 @@ public sealed class RiggingPlan
     public Rigger? Rigger { get; set; }
     public StoredFile? ArtFile { get; set; }
     public EquipmentReport? EquipmentReport { get; set; }
+    public PlanProcedureSnapshot? ProcedureSnapshot { get; set; }
     public ICollection<PlanAccessory> Accessories { get; } = [];
     public ICollection<PlanDrawing> Drawings { get; } = [];
     public ICollection<PlanExport> Exports { get; } = [];
