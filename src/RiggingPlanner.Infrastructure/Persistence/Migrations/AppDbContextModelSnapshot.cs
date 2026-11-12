@@ -90,10 +90,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.Property<int?>("ManufactureYear")
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal?>("NominalCapacity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("TruckModel")
                         .IsRequired()
                         .HasMaxLength(150)

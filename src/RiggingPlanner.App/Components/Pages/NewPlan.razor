@@ -8,7 +8,7 @@
 
 <RpPageHeader
     Title="@PageTitle"
-    Subtitle="Dados de entrada — Preencha os dados sem perder informações entre as etapas">
+    Subtitle="Dados de entrada - Preencha os dados sem perder informações entre as etapas">
     <Actions>
         <RpPlanActions IsNew="@(PlanId is null || isDraftPlan)" IsReadOnly="@isReadOnly" IsSaving="@isSaving"
                        Save="SaveFormAsync" Discard="AskDiscard" />
@@ -122,7 +122,6 @@
             ChassisNumber = form.EquipmentChassisNumber.Trim(),
             LicensePlate = form.EquipmentLicensePlate.Trim().ToUpperInvariant(),
             ManufactureYear = form.EquipmentManufactureYear,
-            NominalCapacity = form.EquipmentNominalCapacity ?? 0,
             EquipmentType = "munck",
             CraneBrand = string.Empty,
             IsActive = true,
@@ -204,7 +203,11 @@
             return;
         }
 
-        plan = await db.RiggingPlans.AsNoTracking().SingleOrDefaultAsync(x => x.Id == PlanId);
+        plan = await db.RiggingPlans.AsNoTracking()
+            .Include(x => x.ArtFile)
+            .Include(x => x.Drawings)
+            .ThenInclude(x => x.File)
+            .SingleOrDefaultAsync(x => x.Id == PlanId);
         if (plan is null)
         {
             errorMessage = "Plano não encontrado.";
@@ -269,7 +272,10 @@
 
             if (PlanId is not null && !isDraftPlan)
             {
-                var existingPlan = await db.RiggingPlans.SingleOrDefaultAsync(x => x.Id == PlanId);
+                var existingPlan = await db.RiggingPlans
+                    .Include(x => x.ArtFile)
+                    .Include(x => x.Drawings)
+                    .SingleOrDefaultAsync(x => x.Id == PlanId);
                 if (existingPlan is null)
                 {
                     errorMessage = "Plano não encontrado.";
@@ -429,7 +435,6 @@ string.Empty;
         form.EquipmentChassisNumber = string.Empty;
         form.EquipmentLicensePlate = string.Empty;
         form.EquipmentManufactureYear = null;
-        form.EquipmentNominalCapacity = null;
         isNewEquipmentSelected = false;
         form.IsNewEquipment = false;
     }
@@ -442,7 +447,6 @@ string.Empty;
         form.EquipmentChassisNumber = equipment.ChassisNumber;
         form.EquipmentLicensePlate = equipment.LicensePlate;
         form.EquipmentManufactureYear = equipment.ManufactureYear;
-        form.EquipmentNominalCapacity = equipment.NominalCapacity;
         isNewEquipmentSelected = false;
         form.IsNewEquipment = false;
     }
@@ -463,7 +467,6 @@ string.Empty;
         form.EquipmentChassisNumber = string.Empty;
         form.EquipmentLicensePlate = string.Empty;
         form.EquipmentManufactureYear = null;
-        form.EquipmentNominalCapacity = null;
         isNewEquipmentSelected = false;
         form.IsNewEquipment = false;
     }
@@ -539,7 +542,6 @@ IReadOnlyCollection<Rigger> riggerOptions)
             plan.ManufactureYear = equipment.ManufactureYear;
             plan.CraneBrand = equipment.CraneBrand;
             plan.CraneModel = equipment.CraneModel;
-            plan.CraneNominalCapacity = equipment.NominalCapacity;
         }
 
         var rigger = plan.RiggerId is null ? null : riggerOptions.FirstOrDefault(x => x.Id == plan.RiggerId);
@@ -568,12 +570,15 @@ IReadOnlyCollection<Rigger> riggerOptions)
     private static void CopyCapacityFields(RiggingPlan? source, RiggingPlan target)
     {
         if (source is null) return;
+        target.CraneNominalCapacity = source.CraneNominalCapacity;
         target.BoomLengthM = source.BoomLengthM;
         target.ExtraLoadKg = source.ExtraLoadKg;
         target.OperatingRadiusM = source.OperatingRadiusM;
         target.LoadCapacityT = source.LoadCapacityT;
         target.QuadrantStart = source.QuadrantStart;
         target.QuadrantEnd = source.QuadrantEnd;
+        target.ArtNumber = source.ArtNumber;
+        target.ArtFileId = source.ArtFileId;
         target.FlatStrapUtilizationPct = source.FlatStrapUtilizationPct;
         target.TubularStrapUtilizationPct = source.TubularStrapUtilizationPct;
         target.WireRopeSlingUtilizationPct = source.WireRopeSlingUtilizationPct;
@@ -605,7 +610,6 @@ IReadOnlyCollection<Rigger> riggerOptions)
         form.EquipmentChassisNumber = linkedEquipment?.ChassisNumber ?? plan.ChassisNumber ?? string.Empty;
         form.EquipmentLicensePlate = linkedEquipment?.LicensePlate ?? plan.LicensePlate ?? string.Empty;
         form.EquipmentManufactureYear = linkedEquipment?.ManufactureYear ?? plan.ManufactureYear;
-        form.EquipmentNominalCapacity = linkedEquipment?.NominalCapacity ?? plan.CraneNominalCapacity;
         isNewEquipmentSelected = plan.EquipmentId is null && !string.IsNullOrWhiteSpace(form.EquipmentModel);
         form.IsNewEquipment = isNewEquipmentSelected;
         form.RiggerId = plan.RiggerId;

@@ -32,7 +32,7 @@ public sealed class PlanDraftState
 
         return string.IsNullOrWhiteSpace(description)
             ? $"Plano {planNumber}"
-            : $"Plano {planNumber} — {description}";
+            : $"Plano {planNumber} - {description}";
     }
 
     public void Reset()
@@ -61,7 +61,6 @@ public sealed class PlanDraftState
         Form.EquipmentChassisNumber = string.Empty;
         Form.EquipmentLicensePlate = string.Empty;
         Form.EquipmentManufactureYear = null;
-        Form.EquipmentNominalCapacity = null;
         Form.IsNewEquipment = false;
         Form.RiggerId = null;
         Form.RiggerFullName = string.Empty;
