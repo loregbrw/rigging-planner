@@ -89,9 +89,9 @@
                     @if (IsExistingEquipment)
                     {
                         <div class="rp-form-grid rp-mt-3">
-                            <div class="rp-field rp-col-4"><label class="rp-label">Caminhão</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentTruckModel" disabled /></div>
-                            <div class="rp-field rp-col-4"><label class="rp-label">Chassi</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentChassisNumber" disabled /></div>
-                            <div class="rp-field rp-col-4"><label class="rp-label">Placa</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentLicensePlate" disabled /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Caminhão</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentTruckModel" disabled /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Chassi</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentChassisNumber" disabled /></div>
+                            <div class="rp-field rp-col-6"><label class="rp-label">Placa</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentLicensePlate" disabled /></div>
                             <div class="rp-field rp-col-6"><label class="rp-label">Ano de fabricação</label><input class="rp-input rp-input--disabled" value="@Model.EquipmentManufactureYear" disabled /></div>
                         </div>
                     }
@@ -99,17 +99,17 @@
                     {
                         <span class="rp-help">O equipamento será criado ao salvar o plano.</span>
                         <div class="rp-form-grid rp-mt-3">
-                            <div class="rp-field rp-col-4">
+                            <div class="rp-field rp-col-6">
                                 <label class="rp-label">Caminhão <span class="rp-required-marker" aria-hidden="true">*</span></label>
                                 <InputText class="rp-input" @bind-Value="Model.EquipmentTruckModel" />
                                 <ValidationMessage For="() => Model.EquipmentTruckModel" />
                             </div>
-                            <div class="rp-field rp-col-4">
+                            <div class="rp-field rp-col-6">
                                 <label class="rp-label">Chassi <span class="rp-required-marker" aria-hidden="true">*</span></label>
                                 <InputText class="rp-input" @bind-Value="Model.EquipmentChassisNumber" />
                                 <ValidationMessage For="() => Model.EquipmentChassisNumber" />
                             </div>
-                            <div class="rp-field rp-col-4">
+                            <div class="rp-field rp-col-6">
                                 <label class="rp-label">Placa <span class="rp-required-marker" aria-hidden="true">*</span></label>
                                 <InputText class="rp-input" @bind-Value="Model.EquipmentLicensePlate" />
                                 <ValidationMessage For="() => Model.EquipmentLicensePlate" />
