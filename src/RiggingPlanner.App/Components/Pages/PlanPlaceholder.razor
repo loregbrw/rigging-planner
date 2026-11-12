@@ -7,8 +7,8 @@
 
 <RpPageHeader Title="@PlanTitle" Subtitle="@($"{PageTitle} — etapa do plano de rigging")">
     <Actions>
-        <RpPlanActions PlanId="@PlanId" IsReadOnly="@isReadOnly" IsSaving="isSaving"
-                       IsNew="@(!isPersisted)" Save="SavePlan" Discard="DiscardChanges" />
+        <RpPlanActions PlanId="@PlanId" IsReadOnly="@isReadOnly" IsSaving="isSaving" IsNew="@(!isPersisted)"
+                       Save="SavePlan" Discard="DiscardChanges" />
     </Actions>
 </RpPageHeader>
 
@@ -25,7 +25,8 @@
                 <section class="rp-client-section" aria-labelledby="art-section-title">
                     <h3 id="art-section-title" class="rp-section-title">ART do Plano de Rigging</h3>
                     <p class="rp-help" style="margin-bottom: var(--rp-space-4);">
-                        Informe o número da ART emitida no CREA e anexe o arquivo PDF correspondente. Este documento integrará o plano de rigging final.
+                        Informe o número da ART emitida no CREA e anexe o arquivo PDF correspondente. Este documento
+                        integrará o plano de rigging final.
                     </p>
 
                     @if (!string.IsNullOrWhiteSpace(errorMessage))
@@ -46,72 +47,184 @@
                                 <label class="rp-label">Documento PDF da ART</label>
                                 @if (plan.ArtFile is not null)
                                 {
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--rp-space-3) var(--rp-space-4); background: var(--rp-surface); border: 1px solid var(--rp-border-subtle); border-radius: var(--rp-radius-md);">
+                                    <div
+                                        style="display: flex; align-items: center; justify-content: space-between; padding: var(--rp-space-3) var(--rp-space-4); background: var(--rp-surface); border: 1px solid var(--rp-border-subtle); border-radius: var(--rp-radius-md);">
                                         <div style="display: flex; align-items: center; gap: var(--rp-space-3); overflow: hidden;">
-                                            <svg class="rp-icon" style="color: var(--rp-accent); flex-shrink: 0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <svg class="rp-icon" style="color: var(--rp-accent); flex-shrink: 0;"
+                                                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                                 <polyline points="14 2 14 8 20 8"></polyline>
                                             </svg>
                                             <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                                <div style="font-weight: 600; font-size: var(--rp-text-sm);">@plan.ArtFile.OriginalName</div>
-                                                <div style="font-size: var(--rp-text-xs); color: var(--rp-text-secondary);">@FormatByteSize(plan.ArtFile.SizeBytes)</div>
-                                            </div>
-                                        </div>
-                                        @if (!isReadOnly)
-                                        {
-                                            <div style="display: flex; gap: var(--rp-space-2); flex-shrink: 0;">
-                                                <InputFile id="replace-art-file" class="rp-file-input" OnChange="OnArtFileChange" accept=".pdf,application/pdf" />
-                                                <label class="rp-btn rp-btn--ghost rp-btn--sm" for="replace-art-file">Trocar</label>
-                                                <button class="rp-btn rp-btn--danger-outline rp-btn--sm" type="button" @onclick="RemoveArtFileAsync">Excluir</button>
+                                                <div style="font-weight: 600; font-size: var(--rp-text-sm);">
+                                                    @plan.ArtFile.OriginalName</div>
+                                                    <div style="font-size: var(--rp-text-xs); color: var(--rp-text-secondary);">
+                                                        @FormatByteSize(plan.ArtFile.SizeBytes)</div>
+                                                    </div>
+                                                </div>
+                                                @if (!isReadOnly)
+                                                {
+                                                    <div style="display: flex; gap: var(--rp-space-2); flex-shrink: 0;">
+                                                        <InputFile id="replace-art-file" class="rp-file-input" OnChange="OnArtFileChange"
+                                                                   accept=".pdf,application/pdf" />
+                                                        <label class="rp-btn rp-btn--ghost rp-btn--sm" for="replace-art-file">Trocar</label>
+                                                        <button class="rp-btn rp-btn--danger-outline rp-btn--sm" type="button"
+                                                                @onclick="RemoveArtFileAsync">Excluir</button>
+                                                    </div>
+                                                }
                                             </div>
                                         }
-                                    </div>
-                                }
                                 else
+                                        {
+                                            @if (!isReadOnly)
+                                            {
+                                                <div style="display: flex; flex-direction: column; gap: var(--rp-space-2);">
+                                                    <InputFile id="upload-art-file" class="rp-file-input" OnChange="OnArtFileChange"
+                                                               accept=".pdf,application/pdf" />
+                                                    <label class="rp-btn rp-btn--ghost-outline" for="upload-art-file"
+                                                           style="display: inline-flex; align-items: center; justify-content: center; gap: var(--rp-space-2); cursor: pointer;">
+                                                        <svg class="rp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                             stroke-width="2">
+                                                            <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+                                                        </svg>
+                                                        Escolher arquivo PDF da ART
+                                                    </label>
+                                                    <span class="rp-help">Somente arquivo PDF (máx. 10MB)</span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="rp-muted">Nenhum anexo de ART enviado.</span>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </section>
+
+                        <section class="rp-client-section" aria-labelledby="drawings-section-title">
+                            <h3 id="drawings-section-title" class="rp-section-title">Desenhos / Imagens do SolidWorks</h3>
+                            <p class="rp-help" style="margin-bottom: var(--rp-space-4);">
+                                Anexe uma ou mais imagens geradas no SolidWorks para ilustrar o projeto. Clique em qualquer
+                                miniatura para ampliá-la em tela cheia.
+                            </p>
+
+                            @if (!string.IsNullOrWhiteSpace(drawingsErrorMessage))
+                            {
+                                <div class="rp-alert rp-alert--danger" style="margin-bottom: var(--rp-space-4);">@drawingsErrorMessage
+                                </div>
+                            }
+                            <div class="rp-field">
+
+                                <label class="rp-label">Imagem</label>
+
+                                @if (plan is not null)
                                 {
-                                    @if (!isReadOnly)
-                                    {
-                                        <div style="display: flex; flex-direction: column; gap: var(--rp-space-2);">
-                                            <InputFile id="upload-art-file" class="rp-file-input" OnChange="OnArtFileChange" accept=".pdf,application/pdf" />
-                                            <label class="rp-btn rp-btn--ghost-outline" for="upload-art-file" style="display: inline-flex; align-items: center; justify-content: center; gap: var(--rp-space-2); cursor: pointer;">
-                                                <svg class="rp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                    <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
-                                                </svg>
-                                                Escolher arquivo PDF da ART
-                                            </label>
-                                            <span class="rp-help">Somente arquivo PDF (máx. 10MB)</span>
+                                    <div style="display: flex; flex-direction: column; gap: var(--rp-space-4);">
+                                        @if (!isReadOnly)
+                                        {
+                                            <div style="display: flex; flex-direction: column; gap: var(--rp-space-2);">
+                                                <InputFile id="upload-drawings" class="rp-file-input" OnChange="OnDrawingsChange" multiple
+                                                           accept="image/*,.png,.jpg,.jpeg,.webp" />
+                                                <label class="rp-btn rp-btn--ghost-outline" for="upload-drawings"
+                                                       style="display: inline-flex; align-items: center; justify-content: center; gap: var(--rp-space-2); cursor: pointer;">
+                                                    <svg class="rp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                         stroke-width="2">
+                                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                                                    </svg>
+                                                    Adicionar imagens do SolidWorks
+                                                </label>
+                                                <span class="rp-help" style="margin-top: var(--rp-space-1);">Selecione um ou vários arquivos
+                                                    de imagem (PNG, JPG, WEBP).</span>
+                                                </div>
+                                            }
+
+                                            @if (plan.Drawings.Count > 0)
+                                            {
+                                                <div class="rp-drawing-grid">
+                                                    @foreach (var drawing in plan.Drawings.OrderBy(x => x.SortOrder))
+                                                    {
+                                                        <div class="rp-drawing-card">
+                                                            <img src="@GetFileAsDataUri(drawing.File)" alt="@drawing.File.OriginalName"
+                                                                 class="rp-drawing-thumb" @onclick="() => OpenPreview(drawing)"
+                                                                 title="Clique para ampliar" />
+                                                            <div class="rp-drawing-footer">
+                                                                <span
+                                                                style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100px;"
+                                                                title="@drawing.File.OriginalName">@drawing.File.OriginalName</span>
+                                                                @if (!isReadOnly)
+                                                                {
+                                                                    <button class="rp-btn rp-btn--danger-outline rp-btn--sm" type="button"
+                                                                            @onclick="() => RemoveDrawingAsync(drawing)"
+                                                                            style="padding: 2px 6px; font-size: 11px;"
+                                                                            title="Excluir imagem">Excluir</button>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="rp-muted">Nenhuma imagem do SolidWorks anexada.</span>
+                                            }
                                         </div>
                                     }
-                                    else
-                                    {
-                                        <span class="rp-muted">Nenhum anexo de ART enviado.</span>
-                                    }
-                                }
-                            </div>
+                                </div>
+                            </section>
                         </div>
+                    </RpCard>
+
+                    @if (previewDrawing is not null)
+                    {
+                        <div class="rp-modal-backdrop" @onclick="ClosePreview">
+                            <div class="rp-modal" @onclick:stopPropagation="true" role="dialog" aria-modal="true"
+                                 aria-labelledby="preview-modal-title">
+                                <div class="rp-modal__header">
+                                    <div>
+                                        <h2 id="preview-modal-title" class="rp-section-title">Visualização —
+                                            @previewDrawing.File.OriginalName</h2>
+                                            <span class="rp-help">@FormatByteSize(previewDrawing.File.SizeBytes)</span>
+                                        </div>
+                                        <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="ClosePreview">✕</button>
+                                    </div>
+                                    <div
+                                        style="display: grid; place-items: center; background: var(--rp-surface-subtle); border-radius: var(--rp-radius-md); padding: var(--rp-space-3); max-height: 60vh; overflow: auto;">
+                                        <img src="@GetFileAsDataUri(previewDrawing.File)" alt="@previewDrawing.File.OriginalName"
+                                             style="max-width: 100%; max-height: 55vh; object-fit: contain; border-radius: var(--rp-radius-sm);" />
+                                    </div>
+                                    <div
+                                        style="display: flex; justify-content: flex-end; gap: var(--rp-space-2); margin-top: var(--rp-space-4);">
+                                        @if (!isReadOnly)
+                                        {
+                                            <button class="rp-btn rp-btn--danger-outline" type="button"
+                                                    @onclick="() => { RemoveDrawingAsync(previewDrawing); ClosePreview(); }">Excluir imagem</button>
+                                        }
+                                        <button class="rp-btn rp-btn--ghost-outline" type="button" @onclick="ClosePreview">Fechar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
                     }
-                </section>
-            </div>
-        </RpCard>
-    }
-    else
-    {
-        <RpCard Title="@PageTitle">
-            <div class="rp-empty">
-                <p class="rp-empty__title">Esta etapa ainda está em preparação</p>
-                <p class="rp-muted">A navegação já está disponível para organizar o fluxo do plano.</p>
-            </div>
-        </RpCard>
-    }
-</div>
+                    else
+                    {
+                        <RpCard Title="@PageTitle">
+                            <div class="rp-empty">
+                                <p class="rp-empty__title">Esta etapa ainda está em preparação</p>
+                                <p class="rp-muted">A navegação já está disponível para organizar o fluxo do plano.</p>
+                            </div>
+                        </RpCard>
+                    }
+                </div>
 
 @code {
     [Parameter] public Guid PlanId { get; set; }
-
-    private readonly string[] steps = ["Dados de entrada", "Capacidade de Carga", "Anexos", "Preview", "Exportação"];
-    private IReadOnlyList<string> stepLinks => [$"new-plan/{PlanId}", $"new-plan/{PlanId}/capacity", $"new-plan/{PlanId}/attachments", $"new-plan/{PlanId}/preview", $"new-plan/{PlanId}/export"];
     [Parameter] public string Stage { get; set; } = "attachments";
-    private string CurrentSegment => Stage.ToLowerInvariant();
+
+    private string CurrentSegment => string.IsNullOrWhiteSpace(Stage) ? "attachments" : Stage.ToLowerInvariant();
+    private readonly string[] steps = ["Dados de entrada", "Capacidade de Carga", "Anexos", "Preview", "Exportação"];
+    private string[] stepLinks => [$"new-plan/{PlanId}", $"new-plan/{PlanId}/capacity", $"new-plan/{PlanId}/attachments",
+$"new-plan/{PlanId}/preview", $"new-plan/{PlanId}/export"];
     private int CurrentStep => CurrentSegment switch
     {
         "attachments" => 2,
@@ -126,14 +239,18 @@
         "export" => "Exportação",
         _ => "Etapa do plano"
     };
-    private string? PreviousUrl => CurrentStep == 2 ? $"new-plan/{PlanId}/capacity" : CurrentStep == 3 ? $"new-plan/{PlanId}/attachments" : $"new-plan/{PlanId}/preview";
-    private string? NextUrl => CurrentStep == 2 ? $"new-plan/{PlanId}/preview" : CurrentStep == 3 ? $"new-plan/{PlanId}/export" : null;
+    private string? PreviousUrl => CurrentStep == 2 ? $"new-plan/{PlanId}/capacity" : CurrentStep == 3 ?
+$"new-plan/{PlanId}/attachments" : $"new-plan/{PlanId}/preview";
+    private string? NextUrl => CurrentStep == 2 ? $"new-plan/{PlanId}/preview" : CurrentStep == 3 ?
+$"new-plan/{PlanId}/export" : null;
     private RiggingPlan? plan;
     private string PlanTitle => Draft.GetPageTitle(plan);
     private bool isPersisted;
     private bool isReadOnly;
     private bool isSaving;
     private string? errorMessage;
+    private string? drawingsErrorMessage;
+    private PlanDrawing? previewDrawing;
 
     private void SavePlan() => Navigation.NavigateTo($"/new-plan/{PlanId}?save=true");
     private void DiscardChanges()
@@ -155,7 +272,12 @@
         }
         else
         {
-            plan = await db.RiggingPlans.Include(x => x.ArtFile).SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+            plan = await db.RiggingPlans
+                .Include(x => x.ArtFile)
+                .Include(x => x.Drawings)
+                .ThenInclude(x => x.File)
+                .SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+
             if (plan is not null)
             {
                 Draft.Plan = plan;
@@ -177,6 +299,143 @@
             }
             isReadOnly = plan?.Status == "finalized";
         }
+    }
+
+    private void OpenPreview(PlanDrawing drawing) => previewDrawing = drawing;
+    private void ClosePreview() => previewDrawing = null;
+
+    private async Task OnDrawingsChange(InputFileChangeEventArgs args)
+    {
+        if (plan is null || isReadOnly) return;
+        var browserFiles = args.GetMultipleFiles(20);
+        if (browserFiles.Count == 0) return;
+
+        try
+        {
+            drawingsErrorMessage = null;
+            await using var db = await DbFactory.CreateDbContextAsync();
+
+            foreach (var browserFile in browserFiles)
+            {
+                if (!browserFile.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) &&
+                    !IsImageExtension(browserFile.Name))
+                {
+                    drawingsErrorMessage = "Por favor, anexe somente arquivos de imagem (PNG, JPG, WEBP, etc.).";
+                    continue;
+                }
+
+                var storedFile = await SaveDrawingFileAsync(browserFile);
+                db.StoredFiles.Add(storedFile);
+
+                var drawing = new PlanDrawing
+                {
+                    Id = Guid.NewGuid(),
+                    PlanId = plan.Id,
+                    FileId = storedFile.Id,
+                    SortOrder = plan.Drawings.Count,
+                    File = storedFile
+                };
+
+                db.PlanDrawings.Add(drawing);
+                plan.Drawings.Add(drawing);
+            }
+
+            if (isPersisted)
+            {
+                // Ensure plan exists in DB if persisted
+            }
+
+            await db.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            drawingsErrorMessage = $"Erro ao anexar imagens: {ex.Message}";
+        }
+    }
+
+    private async Task RemoveDrawingAsync(PlanDrawing drawing)
+    {
+        if (plan is null || isReadOnly) return;
+        plan.Drawings.Remove(drawing);
+
+        await using var db = await DbFactory.CreateDbContextAsync();
+        if (isPersisted)
+        {
+            var dbDrawing = await db.PlanDrawings.Include(x => x.File).SingleOrDefaultAsync(x => x.Id == drawing.Id);
+            if (dbDrawing is not null)
+            {
+                db.PlanDrawings.Remove(dbDrawing);
+                db.StoredFiles.Remove(dbDrawing.File);
+                await db.SaveChangesAsync();
+            }
+        }
+        else
+        {
+            await db.SaveChangesAsync();
+        }
+    }
+
+    private static bool IsImageExtension(string fileName)
+    {
+        var ext = Path.GetExtension(fileName);
+        return ext.Equals(".png", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".webp", StringComparison.OrdinalIgnoreCase) ||
+               ext.Equals(".bmp", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task<StoredFile> SaveDrawingFileAsync(IBrowserFile browserFile)
+    {
+        var fileId = Guid.NewGuid();
+        var extension = Path.GetExtension(browserFile.Name);
+        var folder = Path.Combine(FileSystem.AppDataDirectory, "rigging-plan-drawings");
+        Directory.CreateDirectory(folder);
+        var relativePath = Path.Combine("rigging-plan-drawings", fileId + extension);
+        var absolutePath = Path.Combine(FileSystem.AppDataDirectory, relativePath);
+
+        await using var input = browserFile.OpenReadStream(20 * 1024 * 1024);
+        await using var output = File.Create(absolutePath);
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        var buffer = new byte[81920];
+        int read;
+        long size = 0;
+        while ((read = await input.ReadAsync(buffer)) > 0)
+        {
+            await output.WriteAsync(buffer.AsMemory(0, read));
+            sha256.TransformBlock(buffer, 0, read, null, 0);
+            size += read;
+        }
+        sha256.TransformFinalBlock([], 0, 0);
+        var hash = Convert.ToHexString(sha256.Hash ?? []).ToLowerInvariant();
+
+        return new StoredFile
+        {
+            Id = fileId,
+            RelativePath = relativePath,
+            OriginalName = browserFile.Name,
+            ContentType = string.IsNullOrWhiteSpace(browserFile.ContentType) ? "image/png" : browserFile.ContentType,
+            SizeBytes = size,
+            Sha256 = hash,
+            CreatedAt = DateTime.Now
+        };
+    }
+
+    private static string GetFileAsDataUri(StoredFile? file)
+    {
+        if (file is null) return string.Empty;
+        try
+        {
+            var absolutePath = Path.Combine(FileSystem.AppDataDirectory, file.RelativePath);
+            if (File.Exists(absolutePath))
+            {
+                var bytes = File.ReadAllBytes(absolutePath);
+                var mime = string.IsNullOrWhiteSpace(file.ContentType) ? "image/png" : file.ContentType;
+                return $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
+            }
+        }
+        catch { }
+        return string.Empty;
     }
 
     private async Task OnArtFileChange(InputFileChangeEventArgs args)

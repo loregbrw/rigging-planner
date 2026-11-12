@@ -433,7 +433,11 @@ $"new-plan/{PlanId}/attachments", $"new-plan/{PlanId}/preview", $"new-plan/{Plan
         }
         else
         {
-            plan = await db.RiggingPlans.SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+            plan = await db.RiggingPlans
+                .Include(x => x.ArtFile)
+                .Include(x => x.Drawings)
+                .ThenInclude(x => x.File)
+                .SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
             if (plan is not null)
             {
                 Draft.Plan = plan;
