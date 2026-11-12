@@ -11,16 +11,24 @@ public class DatabaseMigrationTests : IDisposable
     [Fact]
     public void Migrate_OnNewDatabase_AppliesAllMigrations()
     {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite($"Data Source={databasePath};Pooling=False")
-            .Options;
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
 
-        using var context = new AppDbContext(options);
-        context.Database.Migrate();
+            using var context = new AppDbContext(options);
+            context.Database.Migrate();
 
-        Assert.True(context.Database.CanConnect());
-        Assert.NotEmpty(context.Database.GetAppliedMigrations());
-        Assert.Empty(context.Database.GetPendingMigrations());
+            Assert.True(context.Database.CanConnect());
+            Assert.NotEmpty(context.Database.GetAppliedMigrations());
+            Assert.Empty(context.Database.GetPendingMigrations());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"ERROR: {ex}");
+            throw;
+        }
     }
 
     [Fact]
@@ -164,6 +172,6 @@ public class DatabaseMigrationTests : IDisposable
 
     public void Dispose()
     {
-        File.Delete(databasePath);
+        try { File.Delete(databasePath); } catch {}
     }
 }
