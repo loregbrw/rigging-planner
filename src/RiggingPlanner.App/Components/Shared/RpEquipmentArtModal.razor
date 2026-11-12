@@ -78,26 +78,25 @@
                         <input id="modal-art-to" type="date" class="rp-input" @bind="draft.ValidTo" />
                     </div>
                     <div class="rp-field rp-col-12">
-                        <label class="rp-label" for="modal-art-file">Anexo PDF do laudo <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                        <InputFile id="modal-art-file" class="rp-file-input" OnChange="OnFileChange" accept=".pdf,application/pdf" />
-                        <label class="rp-btn rp-btn--ghost-outline" for="modal-art-file" style="display: inline-flex; align-items: center; justify-content: center; gap: var(--rp-space-2); cursor: pointer; width: 100%;">
-                            <svg class="rp-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
-                            </svg>
-                            @(draft.ExistingFileName is not null || draft.File is not null ? "Substituir arquivo PDF do laudo" : "Escolher arquivo PDF do laudo")
-                        </label>
-                        <span class="rp-help">@(draft.File?.Name ?? draft.ExistingFileName ?? "Nenhum arquivo selecionado (obrigatório PDF)")</span>
+                        <label class="rp-label">Anexo PDF do laudo técnico de segurança <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                        <RpFileAttachmentBox InputId="modal-art-file"
+                                             FileName="@(draft.File?.Name ?? draft.ExistingFileName)"
+                                             FileSize="@draft.File?.Size"
+                                             ButtonLabel="Escolher arquivo PDF do laudo"
+                                             HelpText="Somente arquivo PDF"
+                                             OnChange="OnFileChange"
+                                             OnRemove="@(() => { draft.File = null; draft.ExistingFileName = null; })" />
                     </div>
                 </div>
 
                 <div class="rp-form-actions" style="margin-top: var(--rp-space-4);">
-                    <button class="rp-btn rp-btn--primary" type="button" @onclick="SaveDraftAsync" disabled="@isBusy">
-                        @(editingItem is null ? "Adicionar laudo" : "Salvar alterações do laudo")
-                    </button>
                     @if (editingItem is not null)
                     {
                         <button class="rp-btn rp-btn--ghost" type="button" @onclick="CancelEdit">Cancelar edição</button>
                     }
+                    <button class="rp-btn rp-btn--primary" type="button" @onclick="SaveDraftAsync" disabled="@isBusy">
+                        @(editingItem is null ? "Adicionar laudo" : "Salvar alterações do laudo")
+                    </button>
                 </div>
             </div>
 
@@ -251,7 +250,7 @@
         if (string.IsNullOrWhiteSpace(draft.ArtNumber)) return "Informe o número da ART.";
         if (draft.ValidFrom is not null && draft.ValidTo is not null && draft.ValidTo < draft.ValidFrom)
             return "A previsão de término deve ser posterior à data de início.";
-        if (editingItem is null && draft.File is null) return "Anexe o arquivo PDF da ART.";
+        if (draft.File is null && string.IsNullOrWhiteSpace(draft.ExistingFileName)) return "Anexe o arquivo PDF da ART.";
         if (draft.File is not null && !IsPdf(draft.File)) return "Anexe somente arquivos PDF.";
         return null;
     }
