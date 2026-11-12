@@ -113,13 +113,13 @@
 - [x] Finalização de plano com confirmação e bloqueio de edição
 - [x] Separação visual de ativos/inativos, reativação e exclusão definitiva protegida para responsáveis, equipamentos e acessórios
 - [x] Confirmações de exclusão posicionadas junto ao registro selecionado, inclusive no administrador de tags
-- [x] Confirmação ao tentar sair da página de novo plano ou edição com alterações não salvas
-- [x] Título da página de plano com número e descrição para planos existentes
+- [x] Confirmação ao tentar sair da página de novo plano ou edição com alterações não salvas (`RpPlanLeaveGuard`)
+- [x] Título da página de plano com número e descrição para planos existentes (ex.: `Plano 2611001 — Içamento Chiller`)
+- [x] Anexos do plano: upload, substituição e exclusão do PDF da ART do plano, e upload, galeria, visualização em tela cheia (lightbox) e exclusão de desenhos técnicos do SolidWorks (imagens)
 
 ### Modelado, mas ainda sem fluxo completo na interface
 - [ ] Pastas de um nível
 - [ ] Seleção de laudo de equipamento por validade no plano
-- [ ] Arquivos armazenados, desenhos anexados e ART do plano
 - [ ] Histórico de exportações
 - [ ] Lixeira e exclusão definitiva de planos
 
@@ -129,7 +129,7 @@
 |---|---|---|
 | 1 | Cadastro independente de clientes | Implementado: tela de clientes, seleção no plano e cadastro rápido durante o preenchimento |
 | 2 | Pastas e organização | Entidade prevista; sem tela ou operações |
-| 3 | Laudos e anexos | ART do equipamento já possui cadastro e armazenamento; seleção do laudo no plano continua pendente |
+| 3 | Laudos e anexos | ART do plano, desenhos do SolidWorks e ART do equipamento implementados; seleção de laudo no plano continua pendente |
 | 4 | Preview | Ainda não implementado |
 | 5 | Exportação em PDF | Ainda não implementada |
 | 6 | Lixeira de planos | Ainda não implementada |

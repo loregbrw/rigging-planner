@@ -200,7 +200,7 @@ Infrastructure — EF Core + SQLite, armazenamento de anexos, geração/junção
 Dependências: `App → Application, Infrastructure` (raiz de composição); `Infrastructure → Application`; `Application → Domain`. O `Domain` não depende de nada.
 
 ### 11.3 Componentes
-- **App (UI):** Razor Components num WebView nativo (via .NET MAUI). Telas atuais: lista de planos, novo/editar plano, capacidade de carga, acessórios com administração de tags, equipamentos com ART, riggers e clientes. Pastas, lixeira de planos, anexos do plano, preview, exportação e seleção de laudos no plano ainda não têm UI.
+- **App (UI):** Razor Components num WebView nativo (via .NET MAUI). Telas atuais: lista de planos, novo/editar plano, capacidade de carga, acessórios com administração de tags, equipamentos com ART, riggers, clientes e anexos do plano (ART e desenhos do SolidWorks). Pastas, lixeira de planos, preview, exportação e seleção de laudos no plano ainda não têm UI.
 - **Domain:** cadastro único de dados do plano (guindaste, carga, acessórios, cliente, planejador/RT), numeração sequencial de planos (reinicia a cada mês, pela data do plano), cálculos simples de exibição, regras de consistência de dados e estado do plano (rascunho/finalizado).
 - **Application:** a solução ainda não possui uma camada de casos de uso completa; os fluxos atuais são executados pelos componentes Razor usando `IDbContextFactory`. A camada permanece prevista para centralizar regras futuras.
 - **Infrastructure:** SQLite com EF Core (`AppDbContext` e migrations em `Persistence/`; dados de entrada, cadastros, planos, numeração e entidades previstas para pastas, anexos e exportações). Armazenamento de anexos e geração/junção do PDF final ainda são funcionalidades planejadas.
@@ -304,7 +304,7 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 | **Responsável (Rigger)** | Tela de responsáveis, com cadastro rápido também disponível na tela do plano | O nome de exibição possui autocomplete; responsáveis existentes preenchem nome completo, RPP e CREA; novos responsáveis exigem esses dados; todos são copiados para o plano |
 | **Acessórios** | Tela de acessórios (nome, peso unitário e uma tag opcional) | Tags são selecionadas por autocomplete, podem ser criadas no próprio campo e administradas separadamente; acessórios ativos são escolhidos na capacidade, com quantidade; nome e peso unitário são copiados |
 | **ART do plano** | Não há cadastro: é anexada ao plano | PDF anexado e número da ART digitado uma vez no plano (reaproveitado nas outras páginas) |
-| **Desenhos (SolidWorks)** | Modelado nas entidades, mas sem tela implementada | Quantidade livre e ordenação são requisitos planejados |
+| **Desenhos (SolidWorks)** | Anexados diretamente na terceira etapa do plano | Quantidade livre de imagens, galeria com miniaturas, visualização em tela cheia (lightbox) e exclusão implementadas |
 | **Carga, local, data, configuração do guindaste, resultados** | Digitados no plano a cada trabalho | Gravados no plano; totais e taxa do guindaste calculados na exibição |
 | **Número do plano** | Gerado pelo sistema ao criar o plano | Mês e ano vêm da data do plano; muda se a data passar para outro mês (só em rascunho, com aviso se já exportado) |
 | **Finalização** | Ação na lista de planos, com confirmação | Implementado: plano finalizado fica somente para leitura e recebe `FinalizedAt`; não existe reabertura |
