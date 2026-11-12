@@ -8,7 +8,7 @@
 
 <RpPageHeader
     Title="@PageTitle"
-    Subtitle="Dados de entrada - Preencha os dados sem perder informações entre as etapas">
+    Subtitle="Dados de entrada — Preencha os dados sem perder informações entre as etapas">
     <Actions>
         <RpPlanActions IsNew="@(PlanId is null || isDraftPlan)" IsReadOnly="@isReadOnly" IsSaving="@isSaving"
                        Save="SaveFormAsync" Discard="AskDiscard" />
@@ -203,11 +203,7 @@
             return;
         }
 
-        plan = await db.RiggingPlans.AsNoTracking()
-            .Include(x => x.ArtFile)
-            .Include(x => x.Drawings)
-            .ThenInclude(x => x.File)
-            .SingleOrDefaultAsync(x => x.Id == PlanId);
+        plan = await db.RiggingPlans.AsNoTracking().SingleOrDefaultAsync(x => x.Id == PlanId);
         if (plan is null)
         {
             errorMessage = "Plano não encontrado.";
@@ -272,10 +268,7 @@
 
             if (PlanId is not null && !isDraftPlan)
             {
-                var existingPlan = await db.RiggingPlans
-                    .Include(x => x.ArtFile)
-                    .Include(x => x.Drawings)
-                    .SingleOrDefaultAsync(x => x.Id == PlanId);
+                var existingPlan = await db.RiggingPlans.SingleOrDefaultAsync(x => x.Id == PlanId);
                 if (existingPlan is null)
                 {
                     errorMessage = "Plano não encontrado.";
@@ -577,8 +570,6 @@ IReadOnlyCollection<Rigger> riggerOptions)
         target.LoadCapacityT = source.LoadCapacityT;
         target.QuadrantStart = source.QuadrantStart;
         target.QuadrantEnd = source.QuadrantEnd;
-        target.ArtNumber = source.ArtNumber;
-        target.ArtFileId = source.ArtFileId;
         target.FlatStrapUtilizationPct = source.FlatStrapUtilizationPct;
         target.TubularStrapUtilizationPct = source.TubularStrapUtilizationPct;
         target.WireRopeSlingUtilizationPct = source.WireRopeSlingUtilizationPct;
