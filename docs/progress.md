@@ -4,6 +4,14 @@
 
 ## Etapas realizadas
 
+### Atualização — Definição documental do Procedimento Operacional (somente documentação, sem código)
+- [x] Definido que o procedimento operacional **não tem cadastro**: texto padrão único embutido no app, sem edição e sem versões (`project-brief.md` §6.4).
+- [x] Campos variáveis mapeados para dados que já existem no plano (`operation_name`, `art_number`, `plan_number`) e regra do código do modelo derivado de `crane_model`.
+- [x] Definido snapshot do procedimento na finalização (`plan_procedure_snapshots`) e regra de imutabilidade do plano finalizado também fora da UI.
+- [x] Definido histórico de alterações do plano (`plan_change_log`, somente inclusão) (`project-brief.md` §6.5).
+- [x] Criado `docs/procedure-spec.md` com o texto de referência do procedimento e `agent-guide.md` §4.7 com as regras para agentes.
+- [ ] Implementação (entidades, migration, geração do procedimento, snapshot, histórico e imutabilidade) ainda não iniciada; pendências em `project-brief.md` §16.
+
 ### Atualização — Acessórios dinâmicos por plano, edição inline e tabelas cinza
 - [x] Remoção do catálogo global de acessórios e da tela de administração de acessórios; lingadas/amarras e dispositivos/balancins passaram a ser dinâmicos por plano.
 - [x] Suporte completo a adição, edição inline e remoção de itens diretamente na tela de capacidade de carga (`Capacity.razor`).
@@ -134,6 +142,7 @@
 | 5 | Exportação em PDF | Ainda não implementada |
 | 6 | Lixeira de planos | Ainda não implementada |
 | 7 | Instalador | Ainda não validado/entregue |
+| 8 | Procedimento operacional, snapshot na finalização, imutabilidade e histórico de alterações | Definido na documentação (brief §6.4 e §6.5); não implementado |
 
 O histórico de eventos, alertas de desgaste de acessórios e interpolação de capacidade permanecem fora da implementação atual; interpolação e backup local continuam fora do escopo definido.
 

@@ -96,6 +96,7 @@ Emitida no portal do CREA-PR; o plano só é válido com a RT recolhida, feita p
 **4. Procedimento operacional**
 Cinco seções fixas: 1. Isolamento da área, 2. Patolamento do guindaste (o título traz o modelo, ex.: MD45007), 3. Posicionamento do veículo de carga, 4. Içamento da carga, 5. Descarga da carga — cada uma com objetivo, passos e referências a NRs. O cabeçalho de cada página traz o nome da operação (ex.: "Içamento Chiller"), o número da ART e o número do rigging; o rodapé traz o endereço e o CNPJ da empresa. **Só mudam** o modelo do guindaste, o nome da operação e os dois números do cabeçalho.
 O texto é **padrão e único para todos os guindastes**, sem controle de versões (decisão de 27/10/2026); fica no sistema, não no banco de dados.
+A estrutura do cadastro (não há cadastro), os dados variáveis e o armazenamento estão definidos na Seção 6.4.
 
 **5. Laudo técnico de segurança**
 Referente ao guindaste/caminhão específico (ex.: Palfinger MD 45.007 sobre Volvo/VM 270 6X2R). Traz dados da empresa, dados do equipamento, **validade do laudo** (início e fim), lista de trabalhadores autorizados, itens inspecionados e observações. Tem ART própria (distinta da ART do rigging), no mesmo PDF. O laudo e a ART cobrem o **conjunto caminhão + guindaste** e valem por um período, sendo reaproveitados em vários planos; por isso são **cadastrados uma única vez por equipamento** (Seção 12), com validade e número da ART, e apenas vinculados aos planos. Os dados do equipamento repetem os da página 1 do plano.
@@ -108,6 +109,46 @@ Documento em Word com o desenho da carga içada, os ângulos, os pontos de fixa�
 - **Arredondamentos:** carga bruta = 3450 + 46,62 + 250 = 3746,62 kg, exibida como "3747" (kg) e "3,75" (t); taxa de utilização 47,1% (3746,62 ÷ 7950). **Padrão adotado (27/10/2026):** a conversão kg → t é feita pelo sistema; carga bruta em kg sem casas decimais e em t com duas casas (3746,62 → 3747 kg → 3,75 t); taxas de utilização com uma casa decimal (47,1%); totais da lingada com duas casas (46,62 kg), como no exemplo. O arredondamento vale só para a exibição: os valores guardados e usados nas contas não são arredondados.
 - **Rótulo repetido:** na tabela de dispositivos/balancim, o total aparece com o rótulo "PESO TOTAL DA LINGADA / AMARRAÇÃO", igual ao da tabela de lingada. Manter fiel ou corrigir? (Seção 16)
 - **Esforço nas sapatas × resistência do terreno (decidido):** esforço nas sapatas é em **kgf**; resistência mínima do terreno é em **kgf/cm²**. No carimbo do exemplo o valor 3,17 aparece como "esforço nas sapatas" em toneladas; como o carimbo vem "assado" na imagem do SolidWorks, o sistema não o altera — a divergência deve ser avisada ao engenheiro.
+
+### 6.4 Procedimento operacional — cadastro, dados e armazenamento (decisões de 12/11/2026)
+
+**Conclusão: o procedimento não terá cadastro.** Mantém-se a decisão de 27/10/2026: o texto é padrão e único, embutido no aplicativo. Não haverá tela, tabela de textos, edição pelo usuário nem versões do texto. Motivos: (i) a empresa informou um texto único para todos os guindastes; (ii) o procedimento não exige nenhum dado de entrada novo, pois os campos variáveis já existem no plano; (iii) permitir edição pelo usuário criaria planos com textos diferentes entre si sem requisito documentado, contra a restrição crítica da Seção 14; (iv) é a opção mais simples. O texto de referência está em `docs/procedure-spec.md`; alterá-lo exige uma nova versão do app e a atualização desse arquivo.
+
+**Dados variáveis (nenhum campo novo no plano nem no cadastro de equipamentos):**
+
+| Onde aparece | Valor | Origem |
+|---|---|---|
+| Cabeçalho de cada página: nome da operação | `operation_name` | Digitado no plano |
+| Cabeçalho de cada página: "ART" | `art_number` | Digitado no plano |
+| Cabeçalho de cada página: "RIGGING" | `plan_number` | Gerado pelo sistema |
+| Título da seção 2 (ex.: "MD45007") | Código do modelo | Derivado de `crane_model` do plano (cópia do equipamento), **na exibição** |
+
+**Código do modelo.** Regra: pegar o **modelo** do guindaste, sem a marca, e remover espaços e pontos (exemplo comprovado pelo PDF de exemplo: "MD 45.007" → "MD45007"). A regra depende de marca e modelo serem guardados em campos separados (`crane_brand` e `crane_model`, como previstos na Seção 11.4). **A verificar no código atual:** se o cadastro de equipamentos grava hoje a marca junto do modelo (ex.: "Palfinger MD 45.007" em um único campo, como aparece na listagem), é preciso separar os dois campos no cadastro. Isso é um ajuste de dados, não um requisito novo. Não usar heurística do tipo "descartar a primeira palavra". A regra deve ter teste automatizado com o exemplo comprovado e com os modelos citados na Seção 7 (MD55, DM130, MD300L), cujo formato de cadastro ainda precisa ser conferido. O preview mostra o título já resolvido, para o engenheiro conferir antes de finalizar.
+
+**Valores ausentes.** O número da ART pode estar vazio (decisão do usuário: a exportação é liberada). Qualquer valor ausente no cabeçalho ou no título é exibido como "-", a mesma convenção da folha-resumo.
+
+**Formato (adotado por simplicidade, ajustável quando houver os templates originais).** Reproduzir o exemplo: 5 seções na ordem fixa, cabeçalho com logotipo, "Procedimento", nome da operação, ART e RIGGING, e rodapé com endereço, CNPJ e numeração das páginas do procedimento (1, 2, como no exemplo). O texto foi tomado como definitivo para todos os modelos por decisão de 12/11/2026, sem confirmação do engenheiro.
+
+**Armazenamento.**
+- **Rascunho:** nada do procedimento é gravado. Preview e exportação montam o conteúdo na hora, a partir do texto embutido e dos campos do plano.
+- **Finalização:** na mesma transação que grava `finalized_at`, o sistema grava um **snapshot do procedimento** (`plan_procedure_snapshots`, 1:1 com o plano) com o conteúdo completo exatamente como será impresso, incluindo o código do modelo já resolvido e os textos fixos de cabeçalho e rodapé. Toda exportação de plano finalizado usa o snapshot, nunca o texto embutido atual. Assim, uma nova versão do app com o texto alterado não muda planos finalizados.
+- **Por que snapshot e não um número de versão do texto:** mantém a decisão "sem controle de versões" e o princípio do plano autossuficiente (Seção 11.4). O texto é curto (2 páginas) e o custo de guardá-lo é desprezível.
+- Nome da operação, número da ART e número do plano não são duplicados no snapshot: já estão no plano, que é imutável após a finalização.
+- É a **única exceção deliberada** ao princípio "nada derivado é gravado": o snapshot é uma cópia congelada de conteúdo fixo, não um cálculo.
+
+### 6.5 Plano finalizado: imutabilidade e histórico de alterações (decisões de 12/11/2026)
+
+Requisito do usuário: depois de finalizado, **nada pode ser perdido ou alterado**; e qualquer alteração feita em um plano deve ter histórico (log ou interface).
+
+**Imutabilidade.** Em um plano finalizado nenhum dado pode ser alterado: campos do plano, itens de lingada e dispositivos, desenhos, ART anexada e snapshot do procedimento. Hoje a regra é aplicada pela interface (telas somente leitura). Como o requisito é absoluto, a regra deve valer também na camada de domínio/persistência, que deve rejeitar escritas em plano finalizado e em seus itens e anexos, e não apenas bloquear telas. Continua não existindo reabertura.
+
+**Histórico de alterações (`plan_change_log`).**
+- Registro **obrigatório** e **somente de inclusão**: entradas não são editadas nem apagadas pela interface.
+- Gravado no próprio salvamento do plano (que já é uma transação única), com uma entrada por campo ou item alterado e um `save_id` que agrupa as entradas de um mesmo salvamento. O primeiro salvamento de um plano novo gera a entrada de criação; um rascunho nunca salvo não gera registro.
+- Eventos: criação do plano, alteração de campo, inclusão/alteração/remoção de item de lingada ou dispositivo, inclusão/substituição/remoção de anexo (ART e desenhos) e finalização.
+- Guarda somente dados digitados (valor anterior e novo, como texto); nada calculado.
+- Escopo: apenas o plano, seus itens e anexos. Alterações em cadastros (clientes, equipamentos, riggers, acessórios) já não afetam planos existentes e não entram nesse log.
+- Visualização: o log persistido atende ao requisito. Uma tela somente leitura de histórico no plano é desejável; seu conteúdo e local ficam como pendência (Seção 16).
 
 ## 7. Requisitos da Solução
 *(Descritos pelo engenheiro na reunião.)*
@@ -172,7 +213,7 @@ Antes: aplicação web com autenticação por e-mail. **Agora:** aplicação **d
 | Persistência | **SQLite** local com **EF Core + migrations** |
 | Banco de dados | Arquivo único em `%LOCALAPPDATA%\RiggingPlanner\rigging-planner.db`; `IDbContextFactory` (contexto curto por operação); migrations aplicadas ao abrir o app |
 | Anexos | **Arquivos gravados em disco** (pasta própria do app); o banco guarda apenas o caminho e os metadados de cada arquivo |
-| Dados fixos | Dados da empresa (logo, endereço, CNPJ, IE) e texto do procedimento ficam **dentro do aplicativo** (recursos/arquivo de configuração embutidos), não no banco; só mudam com uma nova versão do app |
+| Dados fixos | Dados da empresa (logo, endereço, CNPJ, IE) e texto do procedimento ficam **dentro do aplicativo** (recursos/arquivo de configuração embutidos), não no banco; só mudam com uma nova versão do app. Ao finalizar o plano, o conteúdo do procedimento usado é copiado para o plano (Seção 6.4) |
 | Cálculos | Contas simples (somas, conversão kg → t, taxa de utilização do guindaste) feitas só na **exibição**; nada derivado é gravado no banco |
 | Arquitetura | Arquitetura limpa, **simples** (sem overengineering): `Domain`, `Application`, `Infrastructure`, `App` |
 | Estilo visual | **Claymorphism**, com azul como cor central; CSS próprio, sem biblioteca de componentes |
@@ -215,6 +256,8 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **Arquivos em disco:** o banco guarda só caminho e metadados, todos em uma única tabela de arquivos.
 - **Números de plano nunca são reutilizados**, nem os de planos excluídos.
 - **Dados fixos fora do banco:** dados da empresa e texto do procedimento ficam embutidos no aplicativo.
+- **Plano finalizado é imutável e auditável:** nada do plano pode ser alterado ou perdido após a finalização, e as alterações feitas antes dela ficam registradas em histórico (Seção 6.5).
+- **Exceção ao "nada derivado é gravado":** o snapshot do procedimento, gravado na finalização, é cópia congelada de conteúdo fixo, não cálculo (Seção 6.4).
 
 **Cadastros**
 
@@ -260,6 +303,13 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 | `plan_drawings` | `id` PK; `plan_id` FK; `file_id` FK; `sort_order` (únicos por plano) |
 | `plan_exports` | `id` PK; `plan_id` FK; `exported_at`; `file_path`; `file_sha256`; `was_final` |
 
+**Congelamento e histórico (definidos em 12/11/2026; ainda não modelados no código)**
+
+| Tabela | Colunas |
+|---|---|
+| `plan_procedure_snapshots` (1 por plano finalizado) | `plan_id` PK/FK; `crane_model_code` (código resolvido do título da seção 2); `content` (conteúdo completo do procedimento como impresso, incluindo cabeçalho e rodapé fixos); `content_sha256`; `created_at` |
+| `plan_change_log` (somente inclusão) | `id` PK; `plan_id` FK; `save_id` (agrupa as entradas de um mesmo salvamento); `changed_at`; `change_type` (criação, campo alterado, item incluído/alterado/removido, anexo incluído/substituído/removido, finalização); `target` (campo, item ou anexo afetado); `old_value` (nulo); `new_value` (nulo) |
+
 **Relacionamentos e cardinalidades**
 
 | Relação | Cardinalidade | Ao excluir |
@@ -274,12 +324,14 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 | Plano → ART (`art_file_id`) | 1 : 1 | Arquivo apagado com o plano |
 | Acessório → Eventos | 1 : N | Apagados com o acessório (que não pode ser excluído se estiver em uso) |
 | Laudo / Desenho / ART → Arquivo | N : 1 | O arquivo do laudo não é apagado com o plano |
+| Plano → Snapshot do procedimento (`plan_procedure_snapshots`) | 1 : 0..1 (criado na finalização) | Comportamento na exclusão definitiva do plano pendente (Seção 16) |
+| Plano → Histórico (`plan_change_log`) | 1 : N | Comportamento na exclusão definitiva do plano pendente (Seção 16) |
 
 ## 12. Funcionalidades
 > Pensadas como um **editor de documentos estruturado com limitações de edição**, específico para planos de rigging — não um editor genérico de Word/Excel.
 
 - **Planos e pastas:** atualmente há uma lista única de planos, com criação, abertura e edição de rascunhos. Pastas de um nível ainda não possuem tela ou operações. Não há função de duplicar plano.
-- **Finalizar plano:** enquanto não finalizado, o plano pode ser editado. A finalização com confirmação está implementada e torna o plano somente leitura; não existe reabertura pela UI atual.
+- **Finalizar plano:** enquanto não finalizado, o plano pode ser editado. A finalização com confirmação está implementada e torna o plano somente leitura; não existe reabertura pela UI atual. Na finalização, o conteúdo do procedimento é congelado no plano (Seção 6.4) e nenhum dado do plano pode mais ser alterado (Seção 6.5).
 - **Lixeira:** planejada para planos excluídos; ainda não há ação de exclusão, restauração ou exclusão definitiva de planos.
 - **Dados de entrada:** identificação da operação, local, data do plano, cliente (com autocomplete e CNPJ), carga (descrição, dimensões e peso), responsável (nome, RPP e CREA) e observações.
 - **Responsáveis (riggers):** cadastro (nome completo, nome de exibição, RPP, CREA), apresentado na interface como Responsável, escolhido no plano e cadastrável ali mesmo.
@@ -290,6 +342,8 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **Cadastro de acessórios:** implementado com nome, peso unitário, uma tag opcional, busca/filtro, edição, ativação/inativação, reativação e exclusão definitiva protegida. Histórico de eventos e alertas de desgaste/descarte permanecem planejados.
 - **Anexos do plano:** imagens das folhas do SolidWorks (PNG ou outros formatos de imagem; quantidade livre, ordem definida pelo usuário) e PDF da ART do plano; o número da ART é digitado uma vez no plano e reaproveitado nas demais páginas (leitura automática do PDF fica como evolução futura).
 - **Dados congelados no plano:** ao escolher cliente, equipamento, acessórios etc., os valores são copiados para o plano. Alterar um cadastro depois **não altera planos já criados**; no máximo o sistema informa ou avisa que o cadastro mudou.
+- **Procedimento operacional:** sem cadastro e sem edição pelo usuário; o texto padrão é embutido no app e preenchido com nome da operação, ART, número do plano e código do modelo do guindaste (Seção 6.4). Gerado pelo sistema no preview e na exportação; congelado no plano na finalização.
+- **Histórico de alterações do plano:** log somente de inclusão, gravado a cada salvamento (Seção 6.5). Planejado; ainda não modelado.
 - **Preview** do plano completo antes de finalizar — planejado, ainda não implementado.
 - **Exportação em PDF:** requisito planejado. Geração, escolha da pasta, junção dos documentos e histórico de exportações ainda não estão disponíveis.
 - **Numeração sequencial automática** dos planos (AAMMNNN), reiniciando a cada mês pela data do plano. Enquanto o plano for rascunho, mudar a data para outro mês gera um novo número (com aviso se o plano já foi exportado).
@@ -310,6 +364,8 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 | **Finalização** | Ação na lista de planos, com confirmação | Implementado: plano finalizado fica somente para leitura e recebe `FinalizedAt`; não existe reabertura |
 | **Exclusão** | Ainda não existe ação de exclusão de planos na UI | Lixeira e exclusão definitiva de planos são funcionalidades planejadas |
 | **Exportação** | Ainda não existe tela de exportação | Geração do PDF, escolha da pasta e histórico são funcionalidades planejadas |
+| **Procedimento operacional** | Não há cadastro: texto padrão embutido no app (`docs/procedure-spec.md`) | Preenchido com `operation_name`, `art_number`, `plan_number` e código do modelo derivado de `crane_model`; valores ausentes aparecem como "-"; congelado em `plan_procedure_snapshots` na finalização |
+| **Histórico de alterações** | Automático, a cada salvamento do plano | Registrado em `plan_change_log`; entradas não podem ser editadas nem apagadas |
 | **Cadastros em uso** | Telas de clientes, riggers, equipamentos e acessórios | Implementado: ativos/inativos, reativação e exclusão definitiva protegida contra vínculos em planos em andamento |
 
 ## 13. Organização dos Planos
@@ -319,6 +375,8 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 
 ## 14. Restrições Críticas
 - Em hipótese alguma podem ocorrer alterações de dados ou inversão de valores/informações, pois isso pode gerar acidentes graves em campo.
+- Plano finalizado: nenhum dado do plano, de seus itens, anexos ou do conteúdo do procedimento pode ser alterado ou perdido; a regra deve ser garantida também fora da interface (Seção 6.5).
+- Toda alteração em um plano deve ficar registrada em histórico (Seção 6.5).
 
 ## 15. Glossário / Termos Técnicos
 
@@ -358,6 +416,15 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - Sair da edição/criação de um plano sem salvar exige confirmação informando que as alterações serão perdidas. A navegação entre as 5 etapas internas é livre pois o rascunho fica preservado em memória.
 - O título do cabeçalho nas etapas do plano exibe o número e a descrição do plano (ex.: `Plano 2611001 — Içamento Chiller`) para planos existentes, e "Novo plano" para rascunhos não persistidos.
 
+### Decisões de 12/11/2026 (documentadas; ainda não refletidas no código)
+
+- O procedimento operacional não tem cadastro: texto padrão único, embutido no app, sem edição pelo usuário e sem versões (Seção 6.4).
+- Campos variáveis do procedimento vêm do plano: `operation_name`, `art_number`, `plan_number` e código do modelo derivado de `crane_model` (remover espaços e pontos do modelo, sem a marca).
+- Na finalização, o conteúdo do procedimento é gravado em `plan_procedure_snapshots`; exportações de plano finalizado usam sempre o snapshot.
+- ART não informada não bloqueia a exportação; valores ausentes no cabeçalho e no título aparecem como "-".
+- O texto do PDF de exemplo é o definitivo para todos os modelos (`docs/procedure-spec.md`); formato simples conforme o exemplo, numeração de páginas do procedimento própria (1, 2).
+- Plano finalizado é imutável também na camada de domínio/persistência, e toda alteração de plano é registrada em `plan_change_log` (Seção 6.5).
+
 ### Pendências que ainda dependem de decisão ou implementação
 
 1. Regras de pastas e comportamento ao excluir uma pasta.
@@ -367,6 +434,13 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 5. Templates originais, margens e formatação exata do PDF final.
 6. Regras futuras de desgaste, revisão e alertas de acessórios; a UI atual não implementa histórico de eventos nem alertas.
 7. Interpolação de capacidade e backup local continuam fora do escopo atual.
+8. Verificar no código se `crane_brand` e `crane_model` já são campos separados no cadastro de equipamentos; se não forem, separar (Seção 6.4).
+9. Planos já finalizados antes da criação de `plan_procedure_snapshots`: preencher o snapshot com o texto vigente na entrega da funcionalidade. Como a exportação ainda não existe, nenhum procedimento foi emitido com outro texto, mas isso precisa ser confirmado.
+10. Outros conteúdos fixos embutidos no app (logotipo, rótulos da folha-resumo, dados da empresa na folha-resumo) têm o mesmo risco do texto do procedimento: definir na feature de exportação se também entram no congelamento da finalização.
+11. Se um plano finalizado pode ir para a lixeira ou ser excluído definitivamente, e o que acontece com o histórico e o snapshot nesse caso. O requisito "nada pode ser perdido" conflita com a exclusão definitiva de planos finalizados.
+12. Escopo da tela de histórico (se haverá, onde fica e o que exibe) e se desenhos e ART anexados entram com detalhe de arquivo no log.
+13. Confirmação do texto definitivo do procedimento e do formato com o engenheiro, quando possível (hoje adotado sem confirmação).
+
 
 ## 17. Cronograma / Sprints
 - **Metodologia:** Scrum, com planejamento acompanhado via GitHub Projects.
@@ -387,3 +461,4 @@ Dependências: `App → Application, Infrastructure` (raiz de composição); `In
 - **02/11/2026:** brief alinhado ao estado real do repositório: implementados planos em rascunho/finalizados, capacidade, acessórios com uma tag, tags administráveis, riggers, equipamentos e ciclo de vida de cadastros; entidades sem UI foram marcadas como modeladas ou planejadas; dúvidas já decididas foram removidas da lista de pendências.
 - **02/11/2026 (cadastro de clientes):** adicionados cadastro independente de clientes, ciclo de vida de ativos/inativos, seleção no plano e cadastro rápido durante o preenchimento; o plano mantém o snapshot do nome e CNPJ.
 - **03/11/2026 (rigger no plano):** a seção de rigger do plano passou a usar seletor interativo, permitindo selecionar um cadastro ativo ou criar nome completo, nome de exibição, RPP e CREA durante o preenchimento; o plano mantém o snapshot desses dados.
+- **12/11/2026 (procedimento operacional):** definido que o procedimento não tem cadastro (texto padrão embutido, sem edição e sem versões); campos variáveis vêm do plano e o código do modelo é derivado de `crane_model`; snapshot do procedimento gravado na finalização; ART ausente não bloqueia a exportação; plano finalizado imutável também fora da UI e histórico de alterações obrigatório (Seções 6.4 e 6.5, tabelas `plan_procedure_snapshots` e `plan_change_log` em 11.4, decisões e pendências em 16). Criado `docs/procedure-spec.md` com o texto de referência.
