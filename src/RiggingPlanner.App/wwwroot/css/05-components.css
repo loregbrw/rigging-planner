@@ -238,6 +238,7 @@
     @media (max-width: 900px) { .rp-capacity-sections { grid-template-columns: 1fr; } }
     .rp-input-with-unit { position: relative; display: flex; align-items: center; width: 100%; }
     .rp-input-with-unit .rp-input { padding-right: 2.75rem; width: 100%; }
+    .rp-input-with-unit--wide .rp-input { padding-right: 4.75rem; }
     .rp-input-unit { position: absolute; right: 0.75rem; color: var(--rp-text-secondary); font-size: 0.85rem; font-weight: 600; pointer-events: none; user-select: none; }
     .rp-capacity-section {
         display: flex;
@@ -251,8 +252,6 @@
     }
     .rp-capacity-section > .rp-section-title { color: var(--rp-primary-800); }
     .rp-capacity-section .rp-form-grid {
-        display: grid;
-        grid-template-columns: 1fr;
         gap: var(--rp-space-3);
     }
     @media (max-width: 760px) { .rp-summary-grid { grid-template-columns: 1fr; } }
