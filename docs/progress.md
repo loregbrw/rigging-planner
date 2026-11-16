@@ -4,13 +4,21 @@
 
 ## Etapas realizadas
 
+### Atualização — Procedimento operacional: geração e snapshot
+- [x] Texto padrão do procedimento estruturado em `OperationalProcedureService`, com 5 seções fixas divididas em 2 páginas e cabeçalho/rodapé por página (`docs/procedure-spec.md`).
+- [x] Campos variáveis preenchidos a partir do plano (`operation_name`, `art_number`, `plan_number`) e código do modelo derivado de `crane_model`; a marca (`crane_brand`) é removida quando aparece junto do modelo; valores ausentes exibidos como `-`.
+- [x] Snapshot do procedimento criado na mesma transação da finalização do plano (`PlanProcedureSnapshots`), com código do modelo, conteúdo e hash SHA-256.
+- [x] `CreateSnapshot` e `ResolveContent` prontos para reutilização pelo preview e pela exportação (plano finalizado sempre usa o snapshot).
+- [x] Testes de derivação do código do modelo, estrutura das seções, valores ausentes, snapshot e persistência do snapshot.
+- [ ] Preview e exportação do procedimento continuam dependentes das etapas 4 e 5 do wizard.
+
 ### Atualização — Definição documental do Procedimento Operacional (somente documentação, sem código)
 - [x] Definido que o procedimento operacional **não tem cadastro**: texto padrão único embutido no app, sem edição e sem versões (`project-brief.md` §6.4).
 - [x] Campos variáveis mapeados para dados que já existem no plano (`operation_name`, `art_number`, `plan_number`) e regra do código do modelo derivado de `crane_model`.
 - [x] Definido snapshot do procedimento na finalização (`plan_procedure_snapshots`) e regra de imutabilidade do plano finalizado também fora da UI.
 - [x] Definido histórico de alterações do plano (`plan_change_log`, somente inclusão) (`project-brief.md` §6.5).
 - [x] Criado `docs/procedure-spec.md` com o texto de referência do procedimento e `agent-guide.md` §4.7 com as regras para agentes.
-- [ ] Implementação (entidades, migration, geração do procedimento, snapshot, histórico e imutabilidade) ainda não iniciada; pendências em `project-brief.md` §16.
+- [x] Implementação inicial concluída: entidades, migration, geração do procedimento, snapshot na finalização e testes (ver seção acima).
 
 ### Atualização — Acessórios dinâmicos por plano, edição inline e tabelas cinza
 - [x] Remoção do catálogo global de acessórios e da tela de administração de acessórios; lingadas/amarras e dispositivos/balancins passaram a ser dinâmicos por plano.
@@ -124,6 +132,7 @@
 - [x] Confirmação ao tentar sair da página de novo plano ou edição com alterações não salvas (`RpPlanLeaveGuard`)
 - [x] Título da página de plano com número e descrição para planos existentes (ex.: `Plano 2611001 — Içamento Chiller`)
 - [x] Anexos do plano: upload, substituição e exclusão do PDF da ART do plano, e upload, galeria, visualização em tela cheia (lightbox) e exclusão de desenhos técnicos do SolidWorks (imagens)
+- [x] Procedimento operacional gerado a partir do plano; componente de visualização pronto para ser exibido no Preview; snapshot congelado na finalização do plano
 
 ### Modelado, mas ainda sem fluxo completo na interface
 - [ ] Pastas de um nível
@@ -142,7 +151,7 @@
 | 5 | Exportação em PDF | Ainda não implementada |
 | 6 | Lixeira de planos | Ainda não implementada |
 | 7 | Instalador | Ainda não validado/entregue |
-| 8 | Procedimento operacional, snapshot na finalização, imutabilidade e histórico de alterações | Definido na documentação (brief §6.4 e §6.5); não implementado |
+| 8 | Procedimento operacional, snapshot na finalização, imutabilidade e histórico de alterações | Geração, snapshot na finalização e componente de visualização prontos para o Preview; preview/exportação, imutabilidade fora da UI e histórico pendentes |
 
 O histórico de eventos, alertas de desgaste de acessórios e interpolação de capacidade permanecem fora da implementação atual; interpolação e backup local continuam fora do escopo definido.
 
