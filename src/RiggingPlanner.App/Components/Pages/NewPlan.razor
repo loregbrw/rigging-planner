@@ -1,25 +1,20 @@
 @page "/new-plan"
 @page "/new-plan/{PlanId:guid}"
 @using Microsoft.AspNetCore.Components
-@using Microsoft.JSInterop
 @inject IDbContextFactory<AppDbContext> DbFactory
 @inject NavigationManager Navigation
-@inject IJSRuntime JS
 
-<RpPageHeader
-    Title="@PageTitle"
-    Subtitle="Dados de entrada - Preencha os dados sem perder informações entre as etapas">
-    <Actions>
-        <RpPlanActions IsNew="@(PlanId is null || isDraftPlan)" IsReadOnly="@isReadOnly" IsSaving="@isSaving"
-                       Save="SaveFormAsync" Discard="AskDiscard" />
-    </Actions>
-</RpPageHeader>
-
-<RpPlanLeaveGuard PlanId="@WorkflowPlanId" IsReadOnly="@isReadOnly" IsSaving="@isSaving" />
-
-<div class="rp-stack">
-    <RpStepper Steps="steps" Links="stepLinks" Current="0" />
-    <RpPlanNavigation PreviousUrl="@null" NextUrl="@($"new-plan/{WorkflowPlanId}/capacity")" />
+<RpPlanStepLayout Title="@PageTitle"
+                  Subtitle="Dados de entrada - Preencha os dados sem perder informações entre as etapas"
+                  PlanId="@PlanId"
+                  WorkflowPlanId="@WorkflowPlanId"
+                  IsNewEntry="@(PlanId is null)"
+                  IsNew="@(PlanId is null || isDraftPlan)"
+                  CurrentStep="@PlanStepCatalog.Entry"
+                  IsReadOnly="@isReadOnly"
+                  IsSaving="@isSaving"
+                  Save="SaveFormAsync"
+                  Discard="AskDiscard">
     <RpPlanInputForm Model="form" IsReadOnly="isReadOnly" IsSaving="isSaving" ErrorMessage="@errorMessage"
                      ErrorMessageChanged="@(e => errorMessage = e)"
                      EquipmentOptions="equipmentOptions" EquipmentSuggestions="EquipmentSuggestions" SelectedEquipment="SelectedEquipment"
@@ -34,20 +29,15 @@
                      IsNewRiggerSelected="isNewRiggerSelected" IsExistingRigger="IsExistingRigger" HasExactRigger="HasExactRigger"
                      OnRiggerNameInput="OnRiggerNameInput" OnRiggerSelect="SelectRigger" OnRiggerCreate="CreateRiggerFromInput"
                      OnRiggerRemove="RemoveSelectedRigger" @ref="inputForm" />
-</div>
+</RpPlanStepLayout>
 
 @code {
-    private readonly string[] steps = ["Dados de entrada", "Capacidade de Carga", "Anexos", "Preview", "Exportação"];
     [Parameter] public Guid? PlanId { get; set; }
     [SupplyParameterFromQuery(Name = "save")]
     public bool SaveRequested { get; set; }
     [Inject] private PlanDraftState Draft { get; set; } = null!;
     private PlanFormModel form => Draft.Form;
     private RpPlanInputForm? inputForm;
-    private IReadOnlyList<string> stepLinks =>
-        [$"new-plan{(PlanId is null ? string.Empty : $"/{WorkflowPlanId}")}",
-         $"new-plan/{WorkflowPlanId}/capacity", $"new-plan/{WorkflowPlanId}/attachments",
-         $"new-plan/{WorkflowPlanId}/preview", $"new-plan/{WorkflowPlanId}/export"];
     private List<Equipment> equipmentOptions = [];
     private List<Rigger> riggerOptions = [];
     private List<Client> clientOptions = [];
@@ -203,11 +193,7 @@
             return;
         }
 
-        plan = await db.RiggingPlans.AsNoTracking()
-            .Include(x => x.ArtFile)
-            .Include(x => x.Drawings)
-            .ThenInclude(x => x.File)
-            .SingleOrDefaultAsync(x => x.Id == PlanId);
+        plan = await PlanWorkflowLoader.LoadAsync(db, Draft, PlanId.Value, includeAccessories: true);
         if (plan is null)
         {
             errorMessage = "Plano não encontrado.";
@@ -238,14 +224,6 @@
         }
 
         LoadFormFromPlan(plan);
-        Draft.Plan = plan;
-        Draft.PlanId = plan.Id;
-        Draft.IsPersisted = true;
-        Draft.IsInitialized = true;
-
-        var dbAccessories = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
-        Draft.Accessories.Clear();
-        Draft.Accessories.AddRange(dbAccessories);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

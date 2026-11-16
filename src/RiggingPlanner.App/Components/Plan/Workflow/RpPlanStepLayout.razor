@@ -1,0 +1,36 @@
+<RpPageHeader Title="@Title" Subtitle="@Subtitle">
+    <Actions>
+        <RpPlanActions PlanId="@PlanId" IsNew="@IsNew" IsReadOnly="@IsReadOnly" IsSaving="@IsSaving"
+                       Save="Save" Discard="Discard" />
+    </Actions>
+</RpPageHeader>
+
+<RpPlanLeaveGuard PlanId="@PlanId" IsReadOnly="@IsReadOnly" IsSaving="@IsSaving" />
+
+<div class="rp-stack">
+    @if (ShowNavigation)
+    {
+        <RpStepper Steps="PlanStepCatalog.Steps"
+                   Links="PlanStepCatalog.GetLinks(WorkflowPlanId, IsNewEntry)"
+                   Current="CurrentStep" />
+        <RpPlanNavigation PreviousUrl="PlanStepCatalog.GetPreviousUrl(CurrentStep, WorkflowPlanId)"
+                          NextUrl="PlanStepCatalog.GetNextUrl(CurrentStep, WorkflowPlanId)" />
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public Guid? PlanId { get; set; }
+    [Parameter] public Guid WorkflowPlanId { get; set; }
+    [Parameter] public bool IsNewEntry { get; set; }
+    [Parameter] public bool IsNew { get; set; }
+    [Parameter] public int CurrentStep { get; set; }
+    [Parameter] public bool ShowNavigation { get; set; } = true;
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public bool IsSaving { get; set; }
+    [Parameter] public EventCallback Save { get; set; }
+    [Parameter] public EventCallback Discard { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

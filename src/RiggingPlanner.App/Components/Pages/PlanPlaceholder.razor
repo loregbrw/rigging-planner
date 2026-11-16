@@ -5,19 +5,16 @@
 @using RiggingPlanner.App.Components.Shared
 @using Microsoft.AspNetCore.Components.Forms
 
-<RpPageHeader Title="@PlanTitle" Subtitle="@($"{PageTitle} - etapa do plano de rigging")">
-    <Actions>
-        <RpPlanActions PlanId="@PlanId" IsReadOnly="@isReadOnly" IsSaving="isSaving" IsNew="@(!isPersisted)"
-                       Save="SavePlan" Discard="DiscardChanges" />
-    </Actions>
-</RpPageHeader>
-
-<RpPlanLeaveGuard PlanId="@PlanId" IsReadOnly="@isReadOnly" IsSaving="isSaving" />
-
-<div class="rp-stack">
-    <RpStepper Steps="steps" Links="stepLinks" Current="CurrentStep" />
-    <RpPlanNavigation PreviousUrl="@PreviousUrl" NextUrl="@NextUrl" />
-
+<RpPlanStepLayout Title="@PlanTitle"
+                  Subtitle="@($"{PageTitle} - etapa do plano de rigging")"
+                  PlanId="@PlanId"
+                  WorkflowPlanId="@PlanId"
+                  IsNew="@(!isPersisted)"
+                  CurrentStep="@PlanStepCatalog.GetIndex(CurrentSegment)"
+                  IsReadOnly="@isReadOnly"
+                  IsSaving="@isSaving"
+                  Save="SavePlan"
+                  Discard="DiscardChanges">
     @if (CurrentSegment == "attachments")
     {
         <RpCard Title="Anexos">
@@ -171,34 +168,14 @@
                             </div>
                         </RpCard>
                     }
-                </div>
+</RpPlanStepLayout>
 
 @code {
     [Parameter] public Guid PlanId { get; set; }
     [Parameter] public string Stage { get; set; } = "attachments";
 
     private string CurrentSegment => string.IsNullOrWhiteSpace(Stage) ? "attachments" : Stage.ToLowerInvariant();
-    private readonly string[] steps = ["Dados de entrada", "Capacidade de Carga", "Anexos", "Preview", "Exportação"];
-    private string[] stepLinks => [$"new-plan/{PlanId}", $"new-plan/{PlanId}/capacity", $"new-plan/{PlanId}/attachments",
-$"new-plan/{PlanId}/preview", $"new-plan/{PlanId}/export"];
-    private int CurrentStep => CurrentSegment switch
-    {
-        "attachments" => 2,
-        "preview" => 3,
-        "export" => 4,
-        _ => 2
-    };
-    private string PageTitle => CurrentSegment switch
-    {
-        "attachments" => "Anexos",
-        "preview" => "Preview",
-        "export" => "Exportação",
-        _ => "Etapa do plano"
-    };
-    private string? PreviousUrl => CurrentStep == 2 ? $"new-plan/{PlanId}/capacity" : CurrentStep == 3 ?
-$"new-plan/{PlanId}/attachments" : $"new-plan/{PlanId}/preview";
-    private string? NextUrl => CurrentStep == 2 ? $"new-plan/{PlanId}/preview" : CurrentStep == 3 ?
-$"new-plan/{PlanId}/export" : null;
+    private string PageTitle => PlanStepCatalog.GetTitle(CurrentSegment);
     private RiggingPlan? plan;
     private string PlanTitle => Draft.GetPageTitle(plan);
     private bool isPersisted;
@@ -220,41 +197,17 @@ $"new-plan/{PlanId}/export" : null;
     {
         await using var db = await DbFactory.CreateDbContextAsync();
 
-        if (Draft.PlanId == PlanId && Draft.Plan is not null && Draft.IsInitialized)
-        {
-            plan = Draft.Plan;
-            isPersisted = Draft.IsPersisted;
-            isReadOnly = Draft.Plan?.Status == "finalized";
-        }
-        else
-        {
-            plan = await db.RiggingPlans
-                .Include(x => x.ArtFile)
-                .Include(x => x.Drawings)
-                .ThenInclude(x => x.File)
-                .SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
+        plan = await PlanWorkflowLoader.LoadAsync(db, Draft, PlanId, useDraftFallback: true);
 
-            if (plan is not null)
-            {
-                Draft.Plan = plan;
-                Draft.PlanId = PlanId;
-                Draft.IsPersisted = true;
-                Draft.IsInitialized = true;
-            }
-            else if (Draft.PlanId == PlanId && Draft.Plan is not null)
-            {
-                plan = Draft.Plan;
-                isPersisted = Draft.IsPersisted;
-            }
-            else
-            {
-                Draft.PlanId = PlanId;
-                Draft.Plan ??= new RiggingPlan { Id = PlanId };
-                plan = Draft.Plan;
-                isPersisted = false;
-            }
-            isReadOnly = plan?.Status == "finalized";
+        if (plan is null)
+        {
+            Draft.PlanId = PlanId;
+            Draft.Plan ??= new RiggingPlan { Id = PlanId };
+            plan = Draft.Plan;
         }
+
+        isPersisted = Draft.IsPersisted;
+        isReadOnly = plan?.Status == "finalized";
     }
 
     private void OpenPreview(PlanDrawing drawing) => previewDrawing = drawing;

@@ -4,29 +4,27 @@
 @inject IDbContextFactory<AppDbContext> DbFactory
 @inject NavigationManager Navigation
 
-<RpPageHeader Title="@PageTitle"
-              Subtitle="Capacidade de carga - Registre os valores do engenheiro e confira os totais calculados">
-    <Actions>
-        <RpPlanActions PlanId="@PlanId" IsNew="@IsDraft" IsReadOnly="@isReadOnly" IsSaving="false" Save="SavePlanAsync"
-                       Discard="DiscardChanges" />
-    </Actions>
-</RpPageHeader>
-
-<RpPlanLeaveGuard PlanId="@PlanId" IsReadOnly="@isReadOnly" IsSaving="false" />
-
-@if (isLoading)
-{
-    <p class="rp-muted">Carregando planilha...</p>
-}
-else if (plan is null)
-{
-    <div class="rp-alert rp-alert--danger">Plano não encontrado.</div>
-}
-else
-{
-    <div class="rp-stack">
-        <RpStepper Steps="steps" Links="stepLinks" Current="1" />
-        <RpPlanNavigation PreviousUrl="@($"new-plan/{PlanId}")" NextUrl="@($"new-plan/{PlanId}/attachments")" />
+<RpPlanStepLayout Title="@PageTitle"
+                  Subtitle="Capacidade de carga - Registre os valores do engenheiro e confira os totais calculados"
+                  PlanId="@PlanId"
+                  WorkflowPlanId="@PlanId"
+                  IsNew="@IsDraft"
+                  CurrentStep="@PlanStepCatalog.Capacity"
+                  ShowNavigation="@(!isLoading && plan is not null)"
+                  IsReadOnly="@isReadOnly"
+                  IsSaving="false"
+                  Save="SavePlanAsync"
+                  Discard="DiscardChanges">
+    @if (isLoading)
+    {
+        <p class="rp-muted">Carregando planilha...</p>
+    }
+    else if (plan is null)
+    {
+        <div class="rp-alert rp-alert--danger">Plano não encontrado.</div>
+    }
+    else
+    {
         @if (errorMessage is not null)
         {
             <div class="rp-alert rp-alert--danger">@errorMessage</div>
@@ -450,15 +448,14 @@ else
                     </section>
 
                 </div>
-                            </fieldset>
-                        </RpCard>
-                    </div>
-                }
+            </fieldset>
+        </RpCard>
+    }
+</RpPlanStepLayout>
 
 @code {
     [Parameter] public Guid PlanId { get; set; }
     private bool IsDraft => Draft.PlanId == PlanId && Draft.Plan is not null && !Draft.IsPersisted;
-    private bool planWasLoadedFromDatabase;
     private RiggingPlan? plan;
     private List<PlanAccessory> items => Draft.Accessories;
     private LingadaForm lingadaForm = new();
@@ -477,49 +474,19 @@ else
     private decimal grossWeight => (plan?.WeightKg ?? 0) + lingadaTotal + deviceTotal + (plan?.ExtraLoadKg ?? 0);
     private decimal grossWeightTons => grossWeight / 1000;
     private decimal? utilization => plan?.LoadCapacityT is > 0 ? grossWeightTons / plan.LoadCapacityT.Value * 100 : null;
-    private readonly string[] steps = ["Dados de entrada", "Capacidade de Carga", "Anexos", "Preview", "Exportação"];
-    private IReadOnlyList<string> stepLinks => [$"new-plan/{PlanId}", $"new-plan/{PlanId}/capacity",
-$"new-plan/{PlanId}/attachments", $"new-plan/{PlanId}/preview", $"new-plan/{PlanId}/export"];
     private string PageTitle => Draft.GetPageTitle(plan);
 
     protected override async Task OnInitializedAsync()
     {
         await using var db = await DbFactory.CreateDbContextAsync();
 
-        if (Draft.PlanId == PlanId && Draft.Plan is not null && Draft.IsInitialized)
+        var hasDraft = Draft.PlanId == PlanId && Draft.Plan is not null && Draft.IsInitialized;
+        plan = await PlanWorkflowLoader.LoadAsync(db, Draft, PlanId, includeAccessories: true);
+        isReadOnly = plan?.Status == "finalized";
+
+        if (hasDraft && plan is not null)
         {
-            plan = Draft.Plan;
             SyncEntryFormIntoDraftPlan();
-            isReadOnly = plan.Status == "finalized";
-
-            if (Draft.IsPersisted && Draft.Accessories.Count == 0)
-            {
-                var dbAccessories = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
-                if (dbAccessories.Count > 0)
-                {
-                    Draft.Accessories.AddRange(dbAccessories);
-                }
-            }
-        }
-        else
-        {
-            plan = await db.RiggingPlans
-                .Include(x => x.ArtFile)
-                .Include(x => x.Drawings)
-                .ThenInclude(x => x.File)
-                .SingleOrDefaultAsync(x => x.Id == PlanId && x.DeletedAt == null);
-            if (plan is not null)
-            {
-                Draft.Plan = plan;
-                Draft.PlanId = PlanId;
-                Draft.IsPersisted = true;
-                Draft.IsInitialized = true;
-
-                var dbAccessories = await db.PlanAccessories.Where(x => x.PlanId == PlanId).OrderBy(x => x.SortOrder).ToListAsync();
-                Draft.Accessories.Clear();
-                Draft.Accessories.AddRange(dbAccessories);
-            }
-            isReadOnly = plan?.Status == "finalized";
         }
 
         isLoading = false;
