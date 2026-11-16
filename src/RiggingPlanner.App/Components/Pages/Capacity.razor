@@ -484,41 +484,12 @@
         plan = await PlanWorkflowLoader.LoadAsync(db, Draft, PlanId, includeAccessories: true);
         isReadOnly = plan?.Status == "finalized";
 
-        if (hasDraft && plan is not null)
+        if (hasDraft && plan is not null && !string.IsNullOrWhiteSpace(Draft.Form.OperationName))
         {
-            SyncEntryFormIntoDraftPlan();
+            PlanFormMapper.ApplyToDraftPlan(Draft.Form, plan);
         }
 
         isLoading = false;
-    }
-
-    private void SyncEntryFormIntoDraftPlan()
-    {
-        if (plan is null || string.IsNullOrWhiteSpace(Draft.Form.OperationName)) return;
-
-        var form = Draft.Form;
-        plan.OperationName = form.OperationName.Trim();
-        plan.Location = form.Location.Trim();
-        plan.PlanDate = form.PlanDate;
-        plan.ClientId = form.ClientId;
-        plan.ClientName = form.ClientName?.Trim();
-        plan.ClientCnpj = form.ClientCnpj;
-        plan.LoadDescription = form.LoadDescription.Trim();
-        plan.LengthM = form.LengthM;
-        plan.WidthM = form.WidthM;
-        plan.HeightM = form.HeightM;
-        plan.WeightKg = form.WeightKg;
-        plan.EquipmentId = form.EquipmentId;
-        plan.CraneModel = form.EquipmentModel;
-        plan.TruckModel = form.EquipmentTruckModel;
-        plan.ChassisNumber = form.EquipmentChassisNumber;
-        plan.LicensePlate = form.EquipmentLicensePlate;
-        plan.ManufactureYear = form.EquipmentManufactureYear;
-        plan.RiggerId = form.RiggerId;
-        plan.RiggerName = form.RiggerDisplayName.Trim();
-        plan.RiggerRpp = form.RiggerRppNumber.Trim();
-        plan.RiggerCrea = string.IsNullOrWhiteSpace(form.RiggerCreaNumber) ? null : form.RiggerCreaNumber.Trim();
-        plan.Observations = string.IsNullOrWhiteSpace(form.Observations) ? null : form.Observations.Trim();
     }
 
     private async Task SavePlanAsync()

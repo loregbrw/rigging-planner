@@ -1,0 +1,57 @@
+<section class="rp-client-section rp-col-12" aria-labelledby="crane-info-title">
+    <h3 id="crane-info-title" class="rp-section-title">
+        Informações do guindaste <span class="rp-required-marker" aria-hidden="true">*</span>
+    </h3>
+    <div class="rp-field">
+        <label class="rp-label" for="crane-model">Modelo</label>
+        <RpTagPicker TItem="Equipment" InputId="crane-model"
+                     InputValue="@Form.EquipmentModel" Suggestions="State.EquipmentSuggestions"
+                     SelectedItem="@(State.SelectedEquipment ?? (State.IsNewEquipmentSelected ? new Equipment { CraneModel = Form.EquipmentModel } : null))"
+                     ItemText="@(equipment => equipment.CraneModel)"
+                     CanCreate="@(!string.IsNullOrWhiteSpace(Form.EquipmentModel) && !State.HasExactEquipment)"
+                     CreateLabel="@($"Criar equipamento “{Form.EquipmentModel?.Trim()}”")"
+                     OnInput="State.OnEquipmentModelInput" OnSelect="State.SelectEquipment"
+                     OnCreate="State.CreateEquipmentFromInput" OnRemove="State.RemoveSelectedEquipment" />
+        <ValidationMessage For="() => Form.EquipmentModel" />
+        <span class="rp-help">Selecione um equipamento existente ou crie um novo.</span>
+    </div>
+    @if (State.IsExistingEquipment)
+    {
+        <div class="rp-form-grid rp-mt-3">
+            <div class="rp-field rp-col-6"><label class="rp-label">Caminhão</label><input class="rp-input rp-input--disabled" value="@Form.EquipmentTruckModel" disabled /></div>
+            <div class="rp-field rp-col-6"><label class="rp-label">Chassi</label><input class="rp-input rp-input--disabled" value="@Form.EquipmentChassisNumber" disabled /></div>
+            <div class="rp-field rp-col-6"><label class="rp-label">Placa</label><input class="rp-input rp-input--disabled" value="@Form.EquipmentLicensePlate" disabled /></div>
+            <div class="rp-field rp-col-6"><label class="rp-label">Ano de fabricação</label><input class="rp-input rp-input--disabled" value="@Form.EquipmentManufactureYear" disabled /></div>
+        </div>
+    }
+    else if (State.IsNewEquipmentSelected)
+    {
+        <span class="rp-help">O equipamento será criado ao salvar o plano.</span>
+        <div class="rp-form-grid rp-mt-3">
+            <div class="rp-field rp-col-6">
+                <label class="rp-label">Caminhão <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                <InputText class="rp-input" @bind-Value="Form.EquipmentTruckModel" />
+                <ValidationMessage For="() => Form.EquipmentTruckModel" />
+            </div>
+            <div class="rp-field rp-col-6">
+                <label class="rp-label">Chassi <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                <InputText class="rp-input" @bind-Value="Form.EquipmentChassisNumber" />
+                <ValidationMessage For="() => Form.EquipmentChassisNumber" />
+            </div>
+            <div class="rp-field rp-col-6">
+                <label class="rp-label">Placa <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                <InputText class="rp-input" @bind-Value="Form.EquipmentLicensePlate" />
+                <ValidationMessage For="() => Form.EquipmentLicensePlate" />
+            </div>
+            <div class="rp-field rp-col-6">
+                <label class="rp-label">Ano de fabricação</label>
+                <InputNumber class="rp-input rp-input--num" @bind-Value="Form.EquipmentManufactureYear" />
+            </div>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public PlanEntryState State { get; set; } = null!;
+    private PlanFormModel Form => State.Form;
+}

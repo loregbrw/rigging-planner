@@ -1,0 +1,60 @@
+<section class="rp-client-section rp-col-12" aria-labelledby="rigger-section-title">
+    <h3 id="rigger-section-title" class="rp-section-title">
+        Responsável Técnico <span class="rp-required-marker" aria-hidden="true">*</span>
+    </h3>
+    <div class="rp-field">
+        <label class="rp-label" for="rigger-name">Nome de exibição</label>
+        <RpTagPicker TItem="Rigger" InputId="rigger-name" InputValue="@Form.RiggerDisplayName"
+                     Suggestions="State.RiggerSuggestions"
+                     SelectedItem="@(State.SelectedRigger ?? (State.IsNewRiggerSelected ? new Rigger { DisplayName = Form.RiggerDisplayName } : null))"
+                     ItemText="@(rigger => $"{rigger.DisplayName} - RPP {rigger.RppNumber}")"
+                     CanCreate="@(!string.IsNullOrWhiteSpace(Form.RiggerDisplayName) && !State.HasExactRigger)"
+                     CreateLabel="@($"Criar responsável “{Form.RiggerDisplayName?.Trim()}”")"
+                     OnInput="State.OnRiggerNameInput" OnSelect="State.SelectRigger"
+                     OnCreate="State.CreateRiggerFromInput" OnRemove="State.RemoveSelectedRigger" />
+        <ValidationMessage For="() => Form.RiggerDisplayName" />
+        <span class="rp-help">Selecione um cadastro existente ou crie um responsável novo.</span>
+    </div>
+    @if (State.IsExistingRigger)
+    {
+        <div class="rp-form-grid rp-mt-3">
+            <div class="rp-field rp-col-4">
+                <label class="rp-label">Nome completo</label>
+                <input class="rp-input rp-input--disabled" value="@Form.RiggerFullName" disabled />
+            </div>
+            <div class="rp-field rp-col-4">
+                <label class="rp-label">RPP</label>
+                <input class="rp-input rp-input--disabled" value="@Form.RiggerRppNumber" disabled />
+            </div>
+            <div class="rp-field rp-col-4">
+                <label class="rp-label">CREA</label>
+                <input class="rp-input rp-input--disabled" value="@Form.RiggerCreaNumber" disabled />
+            </div>
+        </div>
+    }
+    else if (State.IsNewRiggerSelected)
+    {
+        <div class="rp-form-grid rp-mt-3">
+            <div class="rp-field rp-col-4">
+                <label class="rp-label">Nome completo <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                <InputText class="rp-input" @bind-Value="Form.RiggerFullName" />
+                <ValidationMessage For="() => Form.RiggerFullName" />
+            </div>
+            <div class="rp-field rp-col-4">
+                <label class="rp-label">RPP <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                <InputText class="rp-input" @bind-Value="Form.RiggerRppNumber" />
+                <ValidationMessage For="() => Form.RiggerRppNumber" />
+            </div>
+            <div class="rp-field rp-col-4">
+                <label class="rp-label">CREA</label>
+                <InputText class="rp-input" @bind-Value="Form.RiggerCreaNumber" />
+                <ValidationMessage For="() => Form.RiggerCreaNumber" />
+            </div>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public PlanEntryState State { get; set; } = null!;
+    private PlanFormModel Form => State.Form;
+}

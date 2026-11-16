@@ -1,0 +1,25 @@
+<div class="rp-field rp-col-12">
+    <label class="rp-label" for="operation">
+        Descrição da operação <span class="rp-required-marker" aria-hidden="true">*</span>
+    </label>
+    <InputText id="operation" class="rp-input" @bind-Value="Form.OperationName" />
+    <ValidationMessage For="() => Form.OperationName" />
+</div>
+<div class="rp-field rp-col-6">
+    <label class="rp-label" for="location">
+        Local <span class="rp-required-marker" aria-hidden="true">*</span>
+    </label>
+    <InputText id="location" class="rp-input" @bind-Value="Form.Location" />
+    <ValidationMessage For="() => Form.Location" />
+</div>
+<div class="rp-field rp-col-6">
+    <label class="rp-label" for="plan-date">
+        Data do plano <span class="rp-required-marker" aria-hidden="true">*</span>
+    </label>
+    <InputDate id="plan-date" class="rp-input" @bind-Value="Form.PlanDate" />
+    <ValidationMessage For="() => Form.PlanDate" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PlanFormModel Form { get; set; } = new();
+}
