@@ -58,8 +58,42 @@ public class DatabaseMigrationTests : IDisposable
 
         using (var context = new AppDbContext(options))
         {
-            var plan = context.RiggingPlans.Single();
+            var plan = context.RiggingPlans.Single(x => x.PlanNumber == "2611002");
             Assert.Equal(75.50m, plan.CraneNominalCapacity);
+        }
+    }
+
+    [Fact]
+    public void PersistsOperationalQuadrants()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite($"Data Source={databasePath};Pooling=False")
+            .Options;
+
+        using (var context = new AppDbContext(options))
+        {
+            context.Database.Migrate();
+
+            var plan = new RiggingPlan
+            {
+                PlanNumber = "2611003",
+                PlanDate = new DateTime(2026, 11, 10),
+                Location = "Curitiba",
+                OperationName = "Teste Quadrantes",
+                LoadDescription = "Carga",
+                QuadrantStart = "LATERAL",
+                QuadrantEnd = "360 GRAUS"
+            };
+
+            context.RiggingPlans.Add(plan);
+            context.SaveChanges();
+        }
+
+        using (var context = new AppDbContext(options))
+        {
+            var plan = context.RiggingPlans.Single(x => x.PlanNumber == "2611003");
+            Assert.Equal("LATERAL", plan.QuadrantStart);
+            Assert.Equal("360 GRAUS", plan.QuadrantEnd);
         }
     }
 
@@ -167,6 +201,46 @@ public class DatabaseMigrationTests : IDisposable
             Assert.Equal("DWG-001", device.DrawingRef);
             Assert.Equal(1m, device.Quantity);
             Assert.Equal(250m, device.UnitWeightKg);
+        }
+    }
+
+    [Fact]
+    public void PersistsOperationalProcedureSnapshot()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite($"Data Source={databasePath};Pooling=False")
+            .Options;
+
+        Guid planId;
+        using (var context = new AppDbContext(options))
+        {
+            context.Database.Migrate();
+
+            var plan = new RiggingPlan
+            {
+                Id = Guid.NewGuid(),
+                PlanNumber = "2611004",
+                PlanDate = new DateTime(2026, 11, 10),
+                Location = "Curitiba",
+                OperationName = "Teste Procedimento",
+                LoadDescription = "Carga",
+                CraneModel = "MD 45.007"
+            };
+            planId = plan.Id;
+
+            context.RiggingPlans.Add(plan);
+            context.PlanProcedureSnapshots.Add(
+                RiggingPlanner.Domain.Services.OperationalProcedureService.CreateSnapshot(plan));
+            context.SaveChanges();
+        }
+
+        using (var context = new AppDbContext(options))
+        {
+            var snapshot = context.PlanProcedureSnapshots.Single(x => x.PlanId == planId);
+
+            Assert.Equal("MD45007", snapshot.CraneModelCode);
+            Assert.Contains("Teste Procedimento", snapshot.Content);
+            Assert.Equal(64, snapshot.ContentSha256.Length);
         }
     }
 

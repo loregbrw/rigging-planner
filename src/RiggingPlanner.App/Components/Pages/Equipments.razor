@@ -7,7 +7,7 @@
 <RpPageHeader Title="Equipamentos" Subtitle="Cadastre os equipamentos e gerencie suas ARTs e laudos de conformidade" />
 
 <div class="rp-stack">
-    <RpCard Title="@(editingId is null ? "Novo equipamento (com ART inicial obrigatória)" : $"Editando equipamento — {form.CraneModel}")">
+    <RpCard Title="@(editingId is null ? "Novo equipamento" : $"Editando equipamento - {form.CraneModel}")">
         @if (message is not null)
         {
             <div class="rp-alert @(isError ? "rp-alert--danger" : "rp-alert--success")">@message</div>
@@ -24,45 +24,44 @@
 
             @if (editingId is null)
             {
-                <div class="rp-card" style="margin-top: var(--rp-space-4); padding: var(--rp-space-4); background: var(--rp-surface-muted);">
-                    <h3 class="rp-section-title" style="font-size: 1.05rem; margin-bottom: var(--rp-space-2);">ART Inicial Obrigatória</h3>
-                    <p class="rp-help" style="margin-bottom: var(--rp-space-3);">Todo equipamento precisa de pelo menos uma ART válida com anexo PDF para ser cadastrado.</p>
+                <section class="rp-client-section" aria-labelledby="initial-report-title" style="margin-top: var(--rp-space-4);">
+                    <h3 id="initial-report-title" class="rp-section-title">Laudo Técnico de Segurança Inicial</h3>
+                    <p class="rp-help">Todo equipamento precisa de pelo menos um laudo técnico de segurança válido (com dados da ART) e anexo PDF para ser cadastrado.</p>
                     <div class="rp-form-grid">
                         <div class="rp-field rp-col-4">
                             <label class="rp-label" for="new-art-number">Número da ART <span class="rp-required-marker" aria-hidden="true">*</span></label>
                             <InputText id="new-art-number" class="rp-input" @bind-Value="initialArtNumber" placeholder="Ex: 2026/123456" />
                         </div>
                         <div class="rp-field rp-col-4">
-                            <label class="rp-label" for="new-art-from">Data de início</label>
+                            <label class="rp-label" for="new-art-from">Data de início da ART</label>
                             <InputDate id="new-art-from" class="rp-input" @bind-Value="initialArtValidFrom" />
                         </div>
                         <div class="rp-field rp-col-4">
-                            <label class="rp-label" for="new-art-to">Previsão de término</label>
+                            <label class="rp-label" for="new-art-to">Previsão de término da ART</label>
                             <InputDate id="new-art-to" class="rp-input" @bind-Value="initialArtValidTo" />
                         </div>
                         <div class="rp-field rp-col-12">
-                            <label class="rp-label" for="new-art-file">Anexo PDF da ART <span class="rp-required-marker" aria-hidden="true">*</span></label>
-                            <InputFile id="new-art-file" class="rp-file-input" OnChange="OnInitialFileChange" accept=".pdf,application/pdf" />
-                            <label class="rp-btn rp-btn--ghost rp-file-button" for="new-art-file">
-                                <svg class="rp-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
-                                </svg>
-                                @(initialArtFile is not null ? "Arquivo selecionado: " + initialArtFile.Name : "Escolher arquivo PDF")
-                            </label>
-                            <span class="rp-help">@(initialArtFile?.Name ?? "Nenhum arquivo PDF selecionado")</span>
+                            <label class="rp-label">Anexo PDF do laudo técnico de segurança <span class="rp-required-marker" aria-hidden="true">*</span></label>
+                            <RpFileAttachmentBox InputId="new-art-file"
+                                                 FileName="@initialArtFile?.Name"
+                                                 FileSize="@initialArtFile?.Size"
+                                                 ButtonLabel="Escolher arquivo PDF do laudo"
+                                                 HelpText="Somente arquivo PDF"
+                                                 OnChange="OnInitialFileChange"
+                                                 OnRemove="@(() => initialArtFile = null)" />
                         </div>
                     </div>
-                </div>
+                </section>
             }
             else
             {
                 <div class="rp-card" style="margin-top: var(--rp-space-4); padding: var(--rp-space-4); background: var(--rp-surface-muted); display: flex; align-items: center; justify-content: space-between; gap: var(--rp-space-4);">
                     <div>
-                        <h3 class="rp-section-title" style="font-size: 1rem; margin-bottom: var(--rp-space-1);">Gestão de ARTs e Laudos</h3>
-                        <p class="rp-help">Para adicionar novas ARTs, substituir arquivos ou gerenciar o histórico deste equipamento, utilize o gerenciador dedicado.</p>
+                        <h3 class="rp-section-title" style="font-size: 1rem; margin-bottom: var(--rp-space-1);">Gestão de Laudos Técnicos de Segurança</h3>
+                        <p class="rp-help">Para adicionar novos laudos, substituir arquivos ou gerenciar o histórico deste equipamento, utilize o gerenciador dedicado.</p>
                     </div>
                     <button class="rp-btn rp-btn--ghost" type="button" @onclick="OpenArtModalForEditing">
-                        Gerenciar ARTs deste equipamento
+                        Gerenciar laudos
                     </button>
                 </div>
             }
@@ -78,11 +77,11 @@
     </RpCard>
 
     <RpCard Title="Equipamentos ativos">
-        <p class="rp-help" style="margin-bottom: var(--rp-space-3);">Clique no status da ART na tabela para gerenciar, adicionar ou substituir documentos PDF instantaneamente.</p>
+        <p class="rp-help" style="margin-bottom: var(--rp-space-3);">Clique no status do laudo na tabela para gerenciar, adicionar ou substituir documentos PDF instantaneamente.</p>
         <div class="rp-table-wrap">
             <table class="rp-table">
                 <thead>
-                    <tr><th>Modelo</th><th>Caminhão</th><th>Chassi</th><th>Placas</th><th>Ano</th><th>ARTs (Clique para gerenciar)</th><th></th></tr>
+                    <tr><th>Modelo</th><th>Caminhão</th><th>Chassi</th><th>Placas</th><th>Ano</th><th>Laudos de Segurança (ARTs)</th><th></th></tr>
                 </thead>
                 <tbody>
                     @foreach (var equipment in activeEquipments)
@@ -303,7 +302,7 @@
         var count = equipment.Reports.Count;
         if (count == 0)
         {
-            builder.AddContent(0, new MarkupString("<span class=\"rp-badge rp-badge--muted\">Sem ARTs — Clique para adicionar</span>"));
+            builder.AddContent(0, new MarkupString("<span class=\"rp-badge rp-badge--muted\">Sem ARTs - Clique para adicionar</span>"));
             return;
         }
 
@@ -312,7 +311,7 @@
 
         builder.OpenElement(1, "span");
         builder.AddAttribute(2, "class", $"rp-badge {(currentCount > 0 ? "rp-badge--success" : "rp-badge--muted")}");
-        builder.AddContent(3, $"{count} ART{(count == 1 ? string.Empty : "s")} ({currentCount} válida{(currentCount == 1 ? string.Empty : "s")}) — {latest?.ArtNumber}");
+        builder.AddContent(3, $"{count} ART{(count == 1 ? string.Empty : "s")} ({currentCount} válida{(currentCount == 1 ? string.Empty : "s")}) - {latest?.ArtNumber}");
         builder.CloseElement();
     };
 

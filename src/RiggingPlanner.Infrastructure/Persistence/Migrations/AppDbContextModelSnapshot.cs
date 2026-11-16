@@ -276,6 +276,33 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.ToTable("PlanNumberCounters");
                 });
 
+            modelBuilder.Entity("RiggingPlanner.Domain.Entities.PlanProcedureSnapshot", b =>
+                {
+                    b.Property<Guid>("PlanId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContentSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CraneModelCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PlanId");
+
+                    b.ToTable("PlanProcedureSnapshots");
+                });
+
             modelBuilder.Entity("RiggingPlanner.Domain.Entities.Rigger", b =>
                 {
                     b.Property<Guid>("Id")
@@ -644,6 +671,17 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.Navigation("Plan");
                 });
 
+            modelBuilder.Entity("RiggingPlanner.Domain.Entities.PlanProcedureSnapshot", b =>
+                {
+                    b.HasOne("RiggingPlanner.Domain.Entities.RiggingPlan", "Plan")
+                        .WithOne("ProcedureSnapshot")
+                        .HasForeignKey("RiggingPlanner.Domain.Entities.PlanProcedureSnapshot", "PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
+                });
+
             modelBuilder.Entity("RiggingPlanner.Domain.Entities.RiggingPlan", b =>
                 {
                     b.HasOne("RiggingPlanner.Domain.Entities.StoredFile", "ArtFile")
@@ -723,6 +761,8 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.Navigation("Drawings");
 
                     b.Navigation("Exports");
+
+                    b.Navigation("ProcedureSnapshot");
                 });
 
             modelBuilder.Entity("RiggingPlanner.Domain.Entities.StoredFile", b =>

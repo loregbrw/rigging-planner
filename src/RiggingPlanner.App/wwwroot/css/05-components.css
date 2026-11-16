@@ -112,6 +112,27 @@
         color: var(--rp-text);
         text-decoration: none;
     }
+    .rp-btn--ghost-outline {
+        border-color: var(--rp-border-default);
+        background: transparent;
+        color: var(--rp-text);
+        box-shadow: none;
+    }
+    .rp-btn--ghost-outline:hover,
+    .rp-btn--ghost-outline:focus-visible {
+        border-color: var(--rp-border-default);
+        background: var(--rp-hover-bg);
+        color: var(--rp-text);
+        text-decoration: none;
+        box-shadow: none;
+    }
+    a.rp-btn--ghost-outline,
+    a.rp-btn--ghost-outline:hover,
+    a.rp-btn--ghost-outline:focus,
+    a.rp-btn--ghost-outline:visited {
+        color: var(--rp-text);
+        text-decoration: none;
+    }
     .rp-btn--sm { min-height: 32px; padding-inline: var(--rp-space-3); font-size: var(--rp-text-sm); }
 
     .rp-field { display: grid; gap: var(--rp-space-1); align-content: start; }
@@ -238,6 +259,7 @@
     @media (max-width: 900px) { .rp-capacity-sections { grid-template-columns: 1fr; } }
     .rp-input-with-unit { position: relative; display: flex; align-items: center; width: 100%; }
     .rp-input-with-unit .rp-input { padding-right: 2.75rem; width: 100%; }
+    .rp-input-with-unit--wide .rp-input { padding-right: 4.75rem; }
     .rp-input-unit { position: absolute; right: 0.75rem; color: var(--rp-text-secondary); font-size: 0.85rem; font-weight: 600; pointer-events: none; user-select: none; }
     .rp-capacity-section {
         display: flex;
@@ -251,8 +273,6 @@
     }
     .rp-capacity-section > .rp-section-title { color: var(--rp-primary-800); }
     .rp-capacity-section .rp-form-grid {
-        display: grid;
-        grid-template-columns: 1fr;
         gap: var(--rp-space-3);
     }
     @media (max-width: 760px) { .rp-summary-grid { grid-template-columns: 1fr; } }
@@ -274,6 +294,104 @@
         font-weight: var(--rp-weight-bold);
     }
     .rp-step__label { overflow: hidden; font-weight: var(--rp-weight-semibold); text-overflow: ellipsis; white-space: nowrap; }
+
+    .rp-procedure { display: grid; gap: var(--rp-space-5); }
+    .rp-procedure-page {
+        display: grid;
+        gap: var(--rp-space-4);
+        padding: var(--rp-space-5);
+        border: 1px solid var(--rp-border-subtle);
+        border-radius: var(--rp-radius-lg);
+        background: var(--rp-surface);
+        box-shadow: var(--rp-shadow-xs);
+    }
+    .rp-procedure-page__header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--rp-space-4);
+        padding-bottom: var(--rp-space-3);
+        border-bottom: 2px solid var(--rp-primary-200);
+    }
+    .rp-procedure-page__brand { display: grid; gap: var(--rp-space-2); }
+    .rp-procedure-page__logo { width: min(200px, 100%); height: auto; }
+    .rp-procedure-page__title { color: var(--rp-primary-800); font-size: var(--rp-text-lg); text-transform: uppercase; letter-spacing: .05em; }
+    .rp-procedure-page__meta { display: grid; gap: var(--rp-space-1); margin: 0; text-align: right; }
+    .rp-procedure-page__meta div { display: flex; justify-content: flex-end; gap: var(--rp-space-2); }
+    .rp-procedure-page__meta dt { color: var(--rp-text-secondary); font-size: var(--rp-text-xs); font-weight: var(--rp-weight-semibold); text-transform: uppercase; }
+    .rp-procedure-page__meta dd { margin: 0; font-size: var(--rp-text-sm); font-weight: var(--rp-weight-semibold); font-variant-numeric: tabular-nums; }
+    .rp-procedure-page__body { display: grid; gap: var(--rp-space-5); }
+    .rp-procedure-section { display: grid; gap: var(--rp-space-1); }
+    .rp-procedure-section__title { margin: 0; color: var(--rp-primary-800); font-size: var(--rp-text-md); text-transform: uppercase; letter-spacing: .03em; }
+    .rp-procedure-section__objective { margin: 0; font-size: var(--rp-text-sm); }
+    .rp-procedure-section__label { margin: var(--rp-space-1) 0 0; color: var(--rp-text-secondary); font-size: var(--rp-text-xs); font-weight: var(--rp-weight-semibold); text-transform: uppercase; letter-spacing: .04em; }
+    .rp-procedure-section__list { margin: 0; padding-left: var(--rp-space-5); color: var(--rp-text); font-size: var(--rp-text-sm); }
+    .rp-procedure-page__footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--rp-space-2);
+        padding-top: var(--rp-space-3);
+        border-top: 1px solid var(--rp-border-subtle);
+        color: var(--rp-text-secondary);
+        font-size: var(--rp-text-xs);
+    }
+    .rp-procedure-snapshot {
+        margin: 0;
+        padding: var(--rp-space-4);
+        border: 1px solid var(--rp-border-subtle);
+        border-radius: var(--rp-radius-md);
+        background: var(--rp-surface-subtle);
+        color: var(--rp-text);
+        font-family: var(--rp-font-mono);
+        font-size: var(--rp-text-xs);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+    @media (max-width: 760px) {
+        .rp-procedure-page__header { flex-direction: column; }
+        .rp-procedure-page__meta { text-align: left; }
+        .rp-procedure-page__meta div { justify-content: flex-start; }
+    }
+
+    .rp-drawing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: var(--rp-space-4);
+        margin-top: var(--rp-space-3);
+    }
+    .rp-drawing-card {
+        position: relative;
+        border: 1px solid var(--rp-border-subtle);
+        border-radius: var(--rp-radius-md);
+        background: var(--rp-surface);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .rp-drawing-card:hover {
+        border-color: var(--rp-accent);
+        box-shadow: var(--rp-shadow-sm);
+    }
+    .rp-drawing-thumb {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        cursor: pointer;
+        background: var(--rp-surface-subtle);
+    }
+    .rp-drawing-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--rp-space-2) var(--rp-space-3);
+        font-size: var(--rp-text-xs);
+        color: var(--rp-text-secondary);
+        background: var(--rp-surface-subtle);
+        border-top: 1px solid var(--rp-border-subtle);
+    }
     .rp-step.is-complete .rp-step__dot, .rp-step[aria-current="step"] .rp-step__dot { border-color: var(--rp-accent); color: var(--rp-accent); }
     .rp-step.is-complete .rp-step__dot { background: var(--rp-accent); color: #fff; }
     .rp-step.is-complete:not(:last-child)::after { background: var(--rp-accent); }
