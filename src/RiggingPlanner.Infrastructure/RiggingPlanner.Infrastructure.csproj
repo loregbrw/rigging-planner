@@ -6,6 +6,7 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
+        <PackageReference Include="QuestPDF" Version="2026.9.2" />
         <ProjectReference Include="..\RiggingPlanner.Application\RiggingPlanner.Application.csproj" />
     </ItemGroup>
 
@@ -14,5 +15,11 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Pdf\Fonts\Carlito-Regular.ttf" />
+        <EmbeddedResource Include="Pdf\Fonts\Carlito-Bold.ttf" />
+        <EmbeddedResource Include="Pdf\Fonts\OFL.txt" />
+    </ItemGroup>
 
 </Project>
