@@ -120,25 +120,29 @@
 - [x] Cadastro e seleção de equipamentos ativos, com cópia dos dados para o plano
 - [x] Cadastro e seleção de responsáveis ativos, com cópia de nome, RPP e CREA para o plano
 - [x] Cadastro rápido de responsável durante o preenchimento do plano, com snapshot dos dados no plano
-- [x] Cadastro de acessórios com nome, peso unitário e uma tag opcional
-- [x] Tags normalizadas, autocomplete com criação, seleção por teclado, chips coloridos e administração
-- [x] Pesquisa automática de acessórios por nome ou tag e filtro por tag
-- [x] Tela de capacidade com seleção/criação de guindaste, configuração, acessórios cadastrados ou itens avulsos, quantidade, peso unitário e seções de lingada/dispositivo
+- [x] Itens de lingada/dispositivo dinâmicos por plano (`PlanAccessory`), com adição, edição inline e remoção na etapa de Capacidade
+- [x] Tela de capacidade com seleção/criação de guindaste, configuração, composição de carga e itens de lingada/dispositivo, quantidade, peso unitário e seções de lingada/dispositivo
 - [x] Totais de itens, carga bruta, conversão kg/t e taxa de utilização calculados na exibição
 - [x] Campos decimais com entrada pt-BR por meio de `RpDecimalInput`
-- [x] Finalização de plano com confirmação e bloqueio de edição
-- [x] Separação visual de ativos/inativos, reativação e exclusão definitiva protegida para responsáveis, equipamentos e acessórios
+- [x] Separação visual de ativos/inativos, reativação e exclusão definitiva protegida para clientes, equipamentos e responsáveis
 - [x] Confirmações de exclusão posicionadas junto ao registro selecionado, inclusive no administrador de tags
 - [x] Confirmação ao tentar sair da página de novo plano ou edição com alterações não salvas (`RpPlanLeaveGuard`)
 - [x] Título da página de plano com número e descrição para planos existentes (ex.: `Plano 2611001 — Içamento Chiller`)
 - [x] Anexos do plano: upload, substituição e exclusão do PDF da ART do plano, e upload, galeria, visualização em tela cheia (lightbox) e exclusão de desenhos técnicos do SolidWorks (imagens)
-- [x] Procedimento operacional gerado a partir do plano; componente de visualização pronto para ser exibido no Preview; snapshot congelado na finalização do plano
+- [x] Procedimento operacional gerado a partir do plano; componente de visualização pronto para o Preview; snapshots com hash SHA-256 prontos (a criação na transação de finalização ainda não está integrada ao fluxo)
 
 ### Modelado, mas ainda sem fluxo completo na interface
+### Finalização e preview/exportação (ainda não implementados):
+- [ ] Ação de finalização (`Status = "finalized"`, `FinalizedAt`) e congelamento do snapshot na finalização.
+- [ ] Etapa 4 — Preview: visualizador das páginas do plano em A4 (hoje é placeholder).
+- [ ] Etapa 5 — Exportação: geração do PDF final e histórico (`PlanExport`).
+
+### Modelado, mas ainda sem fluxo completo na interface:
 - [ ] Pastas de um nível
 - [ ] Seleção de laudo de equipamento por validade no plano
 - [ ] Histórico de exportações
 - [ ] Lixeira e exclusão definitiva de planos
+- [ ] Histórico de alterações do plano (`plan_change_log`)
 
 ### Próximas etapas
 
@@ -151,9 +155,9 @@
 | 5 | Exportação em PDF | Ainda não implementada |
 | 6 | Lixeira de planos | Ainda não implementada |
 | 7 | Instalador | Ainda não validado/entregue |
-| 8 | Procedimento operacional, snapshot na finalização, imutabilidade e histórico de alterações | Geração, snapshot na finalização e componente de visualização prontos para o Preview; preview/exportação, imutabilidade fora da UI e histórico pendentes |
+| 8 | Procedimento operacional, snapshot na finalização, imutabilidade e histórico de alterações | Geração e componente de visualização prontos para o Preview; finalização com snapshot, preview/exportação, imutabilidade fora da UI e histórico pendentes |
 
-O histórico de eventos, alertas de desgaste de acessórios e interpolação de capacidade permanecem fora da implementação atual; interpolação e backup local continuam fora do escopo definido.
+O histórico de eventos e alertas de desgaste/descarte de itens de acesso permanecem fora da implementação atual; a interpolação de capacidade e o backup local continuam fora do escopo definido.
 
 ## Fora do escopo por enquanto
 Interpolação de capacidade, backup do banco, exportação em DOCX.

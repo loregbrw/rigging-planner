@@ -28,10 +28,10 @@ Cada afirmação importante está classificada:
 | F2 | **Blazor Hybrid (.NET MAUI)**, **.NET 10**, UI 100% **pt-BR**. | Brief §10 |
 | F3 | **CSS próprio, sem biblioteca de componentes.** | Brief §10 |
 | F4 | Arquitetura `Domain / Application / Infrastructure / App`; as telas Razor ficam no projeto `App`. | Brief §10–11 |
-| F5 | Telas previstas: lista de planos (com pastas de **um nível**), novo plano em **5 etapas** (dados de entrada, capacidade de carga, anexos, preview, exportação) e cadastro de acessórios. | Brief §11.3, §12 |
+| F5 | Telas previstas: lista de planos (com pastas de **um nível**), novo plano em **5 etapas** (dados de entrada, capacidade de carga, anexos, preview, exportação) e cadastro de clientes, equipamentos, riggers e itens de lingada/dispositivo. | Brief §11.3, §12 |
 | F6 | "Capacidade de carga" é uma **interface tipo planilha**, com os mesmos grupos de campos da folha-resumo do plano. | Brief §12, §6.2 |
 | F7 | Anexos: imagens (PNG ou outro formato) e PDFs (ART e laudo). A saída é **somente PDF**. | Brief §6.1, §8, §12 |
-| F8 | Cadastro de acessórios tem **histórico** e **alertas de desgaste/descarte**. | Brief §9 (item 8), §12 |
+| F8 | Itens de acessórios (cintas, manilhas, laços, balancins) têm **histórico** e **alertas de desgaste/descarte**. | Brief §9 (item 8), §12 |
 | F9 | **Restrição crítica:** nenhum dado pode ser alterado, invertido ou perdido entre etapas. | Brief §14 |
 | F10 | Os protótipos de tela são **só inspiração**; o brief prevalece. | Brief (topo), §18 |
 | F11 | O brief (§10) pede estilo **Claymorphism com azul central**. | Brief §10 |
@@ -45,7 +45,7 @@ Cada afirmação importante está classificada:
 | Conflito | Tratamento |
 |---|---|
 | **Claymorphism (brief §10) × glassmorphism (pedido atual).** | **[DECISÃO]** Seguir o pedido atual (glass sutil), mantendo do "clay" apenas os cantos generosos e as sombras macias. **Atualize o brief §10 e o histórico §19** para evitar que o documento "fonte da verdade" contradiga o código. |
-| Pedido fala em "sistema de **gestão empresarial**", mas o brief descreve uma ferramenta de **planejamento de rigging de uso individual**. | **[PREMISSA]** Desenhei só para os módulos documentados (planos, pastas, acessórios, anexos, preview, exportação). Os componentes são genéricos e servem para módulos futuros, mas **não inventei telas** de financeiro, estoque ou usuários. |
+| Pedido fala em "sistema de **gestão empresarial**", mas o brief descreve uma ferramenta de **planejamento de rigging de uso individual**. | **[PREMISSA]** Desenhei só para os módulos documentados (planos, pastas, itens de lingada/dispositivo, anexos, preview, exportação). Os componentes são genéricos e servem para módulos futuros, mas **não inventei telas** de financeiro, estoque ou usuários. |
 
 ### 1.3 Lacunas analisadas
 
@@ -439,7 +439,7 @@ Regras:
 | 3. Anexos | 3 zonas: desenhos (imagens), ART do plano (PDF), laudo (PDF) | `rp-dropzone`, `rp-attachment-list` |
 | 4. Preview | Visualizador de folhas A4 com zoom | `rp-doc-preview`, `rp-doc-page` |
 | 5. Exportação | Lista ordenada das partes do PDF + ação principal | `rp-parts`, `rp-alert`, `rp-progress` |
-| **Cadastros** (clientes, equipamentos, riggers e acessórios) | Tabelas separadas por ativos/inativos, formulário de cadastro/edição e confirmação de exclusão protegida | `rp-table`, `rp-badge`, `rp-form-grid`, `rp-alert`, `rp-btn` |
+| **Cadastros** (clientes, equipamentos, riggers) | Tabelas separadas por ativos/inativos, formulário de cadastro/edição e confirmação de exclusão protegida | `rp-table`, `rp-badge`, `rp-form-grid`, `rp-alert`, `rp-btn` |
 | **Cliente no plano** | Mesmo seletor interativo de tags, com chip, setas, Enter, criação e remoção; cliente existente preenche o CNPJ bloqueado; nome e CNPJ ocupam colunas lado a lado | `rp-tag-picker`, `rp-autocomplete`, `rp-input`, `rp-help` |
 | **Responsável no plano** | Seção própria com seletor interativo de tags, chip, setas, Enter, criação e remoção; responsável existente preenche nome completo, RPP e CREA bloqueados; novo responsável informa esses dados no próprio formulário | `rp-tag-picker`, `rp-autocomplete`, `rp-input`, `rp-help` |
 
@@ -454,7 +454,7 @@ Regras:
 └───────────┴───────────────────────────────────────────┘
 ```
 - **A topbar e o rodapé do wizard rolam "por cima" do conteúdo** (por isso o glass tem o que desfocar).
-- Navegação principal: **Planos**, **Novo plano** e os cadastros de **clientes, acessórios, equipamentos e riggers**. Itens como "Configurações" **não** estão no brief **[PENDENTE]**.
+- Navegação principal: **Planos**, **Novo plano** e os cadastros de **clientes, equipamentos e riggers**. Itens como "Configurações" **não** estão no brief **[PENDENTE]**.
 - **Breadcrumb** na topbar: `Planos / <Pasta> / Plano 2607036`.
 - Tela de planos: ação primária **"Novo plano"** sempre no canto superior direito do `rp-page-header`.
 - **Pastas de um único nível** (F5): lista simples, sem árvore recursiva.
