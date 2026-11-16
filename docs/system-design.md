@@ -134,7 +134,7 @@ Regras:
 
 ### 3.5 Estado de edição do plano
 - **[DECISÃO]** A navegação entre as cinco etapas não persiste alterações intermediárias.
-- **[DECISÃO]** `PlanDraftState`, registrado como serviço scoped, mantém em memória os dados de entrada, os parâmetros de capacidade e os itens da planilha durante a edição.
+- **[DECISÃO]** `PlanDraftState`, registrado como serviço scoped, mantém em memória os dados de entrada, os parâmetros de capacidade, os itens da planilha e os metadados dos anexos durante a edição; os arquivos de anexo ficam em staging em disco até o salvamento.
 - **[DECISÃO]** As ações globais de salvar e descartar ficam no cabeçalho de todas as etapas. Salvar retorna ao fluxo da primeira etapa, executa a validação obrigatória e persiste o plano completo em uma transação; descartar limpa o estado e solicita confirmação.
 - **[RESTRIÇÃO]** Campos obrigatórios não bloqueiam a troca de etapa; são verificados somente no salvamento explícito.
 - **[DECISÃO]** Os dados da carga pertencem exclusivamente ao plano em edição. A seção registra descrição, comprimento, largura, altura e peso, sem entidade ou seletor para reutilização entre planos.

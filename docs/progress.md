@@ -128,7 +128,7 @@
 - [x] Confirmações de exclusão posicionadas junto ao registro selecionado, inclusive no administrador de tags
 - [x] Confirmação ao tentar sair da página de novo plano ou edição com alterações não salvas (`RpPlanLeaveGuard`)
 - [x] Título da página de plano com número e descrição para planos existentes (ex.: `Plano 2611001 — Içamento Chiller`)
-- [x] Anexos do plano: upload, substituição e exclusão do PDF da ART do plano, e upload, galeria, visualização em tela cheia (lightbox) e exclusão de desenhos técnicos do SolidWorks (imagens)
+- [x] Anexos do plano: upload, substituição e exclusão do PDF da ART do plano, e upload, galeria, visualização em tela cheia (lightbox) e exclusão de desenhos técnicos do SolidWorks (imagens); arquivos ficam em staging e são persistidos no "Salvar"
 - [x] Procedimento operacional gerado a partir do plano; componente de visualização pronto para o Preview; snapshots com hash SHA-256 prontos (a criação na transação de finalização ainda não está integrada ao fluxo)
 
 ### Modelado, mas ainda sem fluxo completo na interface

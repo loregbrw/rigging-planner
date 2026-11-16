@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using RiggingPlanner.App.Components.Plan.Attachments;
 using RiggingPlanner.App.Components.Plan.Shared;
 using RiggingPlanner.App.Components.Shared;
 using RiggingPlanner.Domain.Entities;
@@ -13,59 +14,72 @@ public static class PlanEntryPersistence
     {
         var form = draft.Form;
         await using var transaction = await db.Database.BeginTransactionAsync();
+        var attachmentResult = new AttachmentSaveResult();
 
-        var client = await ResolveClientAsync(db, form);
-        var equipment = await ResolveEquipmentAsync(db, form, state);
-        var rigger = await ResolveRiggerAsync(db, form, state);
-
-        if (planId is not null && !isDraftPlan)
+        try
         {
-            var existingPlan = await db.RiggingPlans
-                .Include(x => x.ArtFile)
-                .Include(x => x.Drawings)
-                .SingleOrDefaultAsync(x => x.Id == planId);
-            if (existingPlan is null)
+            var client = await ResolveClientAsync(db, form);
+            var equipment = await ResolveEquipmentAsync(db, form, state);
+            var rigger = await ResolveRiggerAsync(db, form, state);
+
+            if (planId is not null && !isDraftPlan)
             {
-                return "Plano não encontrado.";
+                var existingPlan = await db.RiggingPlans
+                    .Include(x => x.ArtFile)
+                    .Include(x => x.Drawings)
+                    .SingleOrDefaultAsync(x => x.Id == planId);
+                if (existingPlan is null)
+                {
+                    return "Plano não encontrado.";
+                }
+
+                PlanFormMapper.ApplyToSavedPlan(form, existingPlan, client, equipment, rigger);
+                CopyCapacityFields(draft.Plan, existingPlan);
+                ApplyReferences(existingPlan, state.EquipmentOptions, state.RiggerOptions);
+                existingPlan.UpdatedAt = DateTime.Now;
+                await db.SaveChangesAsync();
+                await SaveAccessoriesAsync(db, draft, existingPlan.Id);
+                await AttachmentPersistence.ApplyAsync(db, draft, existingPlan.Id, attachmentResult);
+                await transaction.CommitAsync();
+                attachmentResult.DeleteRemovedFiles();
+                return null;
             }
 
-            PlanFormMapper.ApplyToSavedPlan(form, existingPlan, client, equipment, rigger);
-            CopyCapacityFields(draft.Plan, existingPlan);
-            ApplyReferences(existingPlan, state.EquipmentOptions, state.RiggerOptions);
-            existingPlan.UpdatedAt = DateTime.Now;
+            var yearMonth = form.PlanDate.ToString("yyMM");
+            var counter = await db.PlanNumberCounters.SingleOrDefaultAsync(x => x.YearMonth == yearMonth);
+            if (counter is null)
+            {
+                counter = new PlanNumberCounter { YearMonth = yearMonth, LastSequence = 0 };
+                db.PlanNumberCounters.Add(counter);
+            }
+            counter.LastSequence++;
+
+            var newPlan = new RiggingPlan
+            {
+                Id = Guid.NewGuid(),
+                PlanNumber = $"{yearMonth}{counter.LastSequence:000}",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                Client = client,
+                Rigger = rigger
+            };
+            PlanFormMapper.ApplyToSavedPlan(form, newPlan, client, equipment, rigger, formatCnpj: false);
+            CopyCapacityFields(draft.Plan, newPlan);
+            ApplyReferences(newPlan, state.EquipmentOptions, state.RiggerOptions);
+            db.RiggingPlans.Add(newPlan);
+
             await db.SaveChangesAsync();
-            await SaveAccessoriesAsync(db, draft, existingPlan.Id);
+            await SaveAccessoriesAsync(db, draft, newPlan.Id);
+            await AttachmentPersistence.ApplyAsync(db, draft, newPlan.Id, attachmentResult);
             await transaction.CommitAsync();
+            attachmentResult.DeleteRemovedFiles();
             return null;
         }
-
-        var yearMonth = form.PlanDate.ToString("yyMM");
-        var counter = await db.PlanNumberCounters.SingleOrDefaultAsync(x => x.YearMonth == yearMonth);
-        if (counter is null)
+        catch
         {
-            counter = new PlanNumberCounter { YearMonth = yearMonth, LastSequence = 0 };
-            db.PlanNumberCounters.Add(counter);
+            attachmentResult.DeleteCreatedFiles();
+            throw;
         }
-        counter.LastSequence++;
-
-        var newPlan = new RiggingPlan
-        {
-            Id = Guid.NewGuid(),
-            PlanNumber = $"{yearMonth}{counter.LastSequence:000}",
-            CreatedAt = DateTime.Now,
-            UpdatedAt = DateTime.Now,
-            Client = client,
-            Rigger = rigger
-        };
-        PlanFormMapper.ApplyToSavedPlan(form, newPlan, client, equipment, rigger, formatCnpj: false);
-        CopyCapacityFields(draft.Plan, newPlan);
-        ApplyReferences(newPlan, state.EquipmentOptions, state.RiggerOptions);
-        db.RiggingPlans.Add(newPlan);
-
-        await db.SaveChangesAsync();
-        await SaveAccessoriesAsync(db, draft, newPlan.Id);
-        await transaction.CommitAsync();
-        return null;
     }
 
     private static async Task<Client?> ResolveClientAsync(AppDbContext db, PlanFormModel form)
@@ -229,7 +243,6 @@ public static class PlanEntryPersistence
         target.QuadrantStart = source.QuadrantStart;
         target.QuadrantEnd = source.QuadrantEnd;
         target.ArtNumber = source.ArtNumber;
-        target.ArtFileId = source.ArtFileId;
         target.FlatStrapUtilizationPct = source.FlatStrapUtilizationPct;
         target.TubularStrapUtilizationPct = source.TubularStrapUtilizationPct;
         target.WireRopeSlingUtilizationPct = source.WireRopeSlingUtilizationPct;

@@ -1,22 +1,20 @@
 using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.EntityFrameworkCore;
+using RiggingPlanner.App.Components.Shared;
 using RiggingPlanner.Domain.Entities;
-using RiggingPlanner.Infrastructure.Persistence;
 
 namespace RiggingPlanner.App.Components.Plan.Attachments;
 
 public sealed class AttachmentsState
 {
-    private readonly IDbContextFactory<AppDbContext> dbFactory;
+    private readonly PlanDraftState draft;
 
-    public AttachmentsState(IDbContextFactory<AppDbContext> dbFactory)
+    public AttachmentsState(PlanDraftState draft)
     {
-        this.dbFactory = dbFactory;
+        this.draft = draft;
     }
 
     public Action? Changed { get; set; }
     public RiggingPlan? Plan { get; set; }
-    public bool IsPersisted { get; set; }
     public bool IsReadOnly { get; set; }
     public string? ArtErrorMessage { get; set; }
     public string? DrawingsErrorMessage { get; set; }
@@ -51,23 +49,10 @@ public sealed class AttachmentsState
         try
         {
             ArtErrorMessage = null;
-            var storedFile = await SaveFileAsync(browserFile);
-
-            await using var db = await dbFactory.CreateDbContextAsync();
-            db.StoredFiles.Add(storedFile);
+            var storedFile = await SaveStagedFileAsync(browserFile, 10 * 1024 * 1024, "application/pdf");
+            AttachmentDraftState.TryDeleteStagedFile(Plan.ArtFile);
             Plan.ArtFileId = storedFile.Id;
             Plan.ArtFile = storedFile;
-
-            if (IsPersisted)
-            {
-                var dbPlan = await db.RiggingPlans.FindAsync(Plan.Id);
-                if (dbPlan is not null)
-                {
-                    dbPlan.ArtFileId = storedFile.Id;
-                    dbPlan.ArtNumber = Plan.ArtNumber;
-                }
-            }
-            await db.SaveChangesAsync();
         }
         catch (Exception ex)
         {
@@ -79,27 +64,15 @@ public sealed class AttachmentsState
         }
     }
 
-    public async Task RemoveArtFileAsync()
+    public Task RemoveArtFileAsync()
     {
-        if (Plan is null || IsReadOnly) return;
+        if (Plan is null || IsReadOnly) return Task.CompletedTask;
+
+        AttachmentDraftState.TryDeleteStagedFile(Plan.ArtFile);
         Plan.ArtFileId = null;
         Plan.ArtFile = null;
-
-        await using var db = await dbFactory.CreateDbContextAsync();
-        if (IsPersisted)
-        {
-            var dbPlan = await db.RiggingPlans.FindAsync(Plan.Id);
-            if (dbPlan is not null)
-            {
-                dbPlan.ArtFileId = null;
-                await db.SaveChangesAsync();
-            }
-        }
-        else
-        {
-            await db.SaveChangesAsync();
-        }
         NotifyChanged();
+        return Task.CompletedTask;
     }
 
     public async Task OnDrawingsChangeAsync(InputFileChangeEventArgs args)
@@ -111,7 +84,6 @@ public sealed class AttachmentsState
         try
         {
             DrawingsErrorMessage = null;
-            await using var db = await dbFactory.CreateDbContextAsync();
 
             foreach (var browserFile in browserFiles)
             {
@@ -122,23 +94,18 @@ public sealed class AttachmentsState
                     continue;
                 }
 
-                var storedFile = await SaveDrawingFileAsync(browserFile);
-                db.StoredFiles.Add(storedFile);
-
+                var storedFile = await SaveStagedFileAsync(browserFile, 20 * 1024 * 1024, "image/png");
                 var drawing = new PlanDrawing
                 {
                     Id = Guid.NewGuid(),
                     PlanId = Plan.Id,
                     FileId = storedFile.Id,
-                    SortOrder = Plan.Drawings.Count,
+                    SortOrder = NextSortOrder(),
                     File = storedFile
                 };
 
-                db.PlanDrawings.Add(drawing);
                 Plan.Drawings.Add(drawing);
             }
-
-            await db.SaveChangesAsync();
         }
         catch (Exception ex)
         {
@@ -150,27 +117,20 @@ public sealed class AttachmentsState
         }
     }
 
-    public async Task RemoveDrawingAsync(PlanDrawing drawing)
+    public Task RemoveDrawingAsync(PlanDrawing drawing)
     {
-        if (Plan is null || IsReadOnly) return;
-        Plan.Drawings.Remove(drawing);
+        if (Plan is null || IsReadOnly) return Task.CompletedTask;
 
-        await using var db = await dbFactory.CreateDbContextAsync();
-        if (IsPersisted)
+        Plan.Drawings.Remove(drawing);
+        AttachmentDraftState.TryDeleteStagedFile(drawing.File);
+
+        if (PreviewDrawing?.Id == drawing.Id)
         {
-            var dbDrawing = await db.PlanDrawings.Include(x => x.File).SingleOrDefaultAsync(x => x.Id == drawing.Id);
-            if (dbDrawing is not null)
-            {
-                db.PlanDrawings.Remove(dbDrawing);
-                db.StoredFiles.Remove(dbDrawing.File);
-                await db.SaveChangesAsync();
-            }
+            PreviewDrawing = null;
         }
-        else
-        {
-            await db.SaveChangesAsync();
-        }
+
         NotifyChanged();
+        return Task.CompletedTask;
     }
 
     public static string GetFileAsDataUri(StoredFile? file)
@@ -199,6 +159,9 @@ public sealed class AttachmentsState
 
     private void NotifyChanged() => Changed?.Invoke();
 
+    private int NextSortOrder()
+        => Plan is null || Plan.Drawings.Count == 0 ? 0 : Plan.Drawings.Max(x => x.SortOrder) + 1;
+
     private static bool IsImageExtension(string fileName)
     {
         var ext = Path.GetExtension(fileName);
@@ -209,75 +172,40 @@ public sealed class AttachmentsState
                ext.Equals(".bmp", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static async Task<StoredFile> SaveDrawingFileAsync(IBrowserFile browserFile)
+    private async Task<StoredFile> SaveStagedFileAsync(IBrowserFile browserFile, long maxSize, string fallbackContentType)
     {
+        var directory = draft.Attachments.EnsureStagingDirectory();
         var fileId = Guid.NewGuid();
         var extension = Path.GetExtension(browserFile.Name);
-        var folder = Path.Combine(FileSystem.AppDataDirectory, "rigging-plan-drawings");
-        Directory.CreateDirectory(folder);
-        var relativePath = Path.Combine("rigging-plan-drawings", fileId + extension);
-        var absolutePath = Path.Combine(FileSystem.AppDataDirectory, relativePath);
+        var fileName = fileId + extension;
+        var absolutePath = Path.Combine(directory, fileName);
 
-        await using var input = browserFile.OpenReadStream(20 * 1024 * 1024);
-        await using var output = File.Create(absolutePath);
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
-        var buffer = new byte[81920];
-        int read;
-        long size = 0;
-        while ((read = await input.ReadAsync(buffer)) > 0)
+        await using (var input = browserFile.OpenReadStream(maxSize))
+        await using (var output = File.Create(absolutePath))
         {
-            await output.WriteAsync(buffer.AsMemory(0, read));
-            sha256.TransformBlock(buffer, 0, read, null, 0);
-            size += read;
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var buffer = new byte[81920];
+            int read;
+            long size = 0;
+            while ((read = await input.ReadAsync(buffer)) > 0)
+            {
+                await output.WriteAsync(buffer.AsMemory(0, read));
+                sha256.TransformBlock(buffer, 0, read, null, 0);
+                size += read;
+            }
+            sha256.TransformFinalBlock([], 0, 0);
+            var hash = Convert.ToHexString(sha256.Hash ?? []).ToLowerInvariant();
+
+            return new StoredFile
+            {
+                Id = fileId,
+                RelativePath = draft.Attachments.ToRelativeStagingPath(fileName),
+                OriginalName = browserFile.Name,
+                ContentType = string.IsNullOrWhiteSpace(browserFile.ContentType) ? fallbackContentType : browserFile.ContentType,
+                SizeBytes = size,
+                Sha256 = hash,
+                CreatedAt = DateTime.Now
+            };
         }
-        sha256.TransformFinalBlock([], 0, 0);
-        var hash = Convert.ToHexString(sha256.Hash ?? []).ToLowerInvariant();
-
-        return new StoredFile
-        {
-            Id = fileId,
-            RelativePath = relativePath,
-            OriginalName = browserFile.Name,
-            ContentType = string.IsNullOrWhiteSpace(browserFile.ContentType) ? "image/png" : browserFile.ContentType,
-            SizeBytes = size,
-            Sha256 = hash,
-            CreatedAt = DateTime.Now
-        };
-    }
-
-    private static async Task<StoredFile> SaveFileAsync(IBrowserFile browserFile)
-    {
-        var fileId = Guid.NewGuid();
-        var extension = Path.GetExtension(browserFile.Name);
-        var folder = Path.Combine(FileSystem.AppDataDirectory, "rigging-plan-art");
-        Directory.CreateDirectory(folder);
-        var relativePath = Path.Combine("rigging-plan-art", fileId + extension);
-        var absolutePath = Path.Combine(FileSystem.AppDataDirectory, relativePath);
-
-        await using var input = browserFile.OpenReadStream(10 * 1024 * 1024);
-        await using var output = File.Create(absolutePath);
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
-        var buffer = new byte[81920];
-        int read;
-        long size = 0;
-        while ((read = await input.ReadAsync(buffer)) > 0)
-        {
-            await output.WriteAsync(buffer.AsMemory(0, read));
-            sha256.TransformBlock(buffer, 0, read, null, 0);
-            size += read;
-        }
-        sha256.TransformFinalBlock([], 0, 0);
-        var hash = Convert.ToHexString(sha256.Hash ?? []).ToLowerInvariant();
-
-        return new StoredFile
-        {
-            Id = fileId,
-            RelativePath = relativePath,
-            OriginalName = browserFile.Name,
-            ContentType = browserFile.ContentType,
-            SizeBytes = size,
-            Sha256 = hash,
-            CreatedAt = DateTime.Now
-        };
     }
 }

@@ -33,6 +33,7 @@ public static class PlanWorkflowLoader
 
         if (plan is not null)
         {
+            draft.Attachments.Reset();
             draft.Plan = plan;
             draft.PlanId = planId;
             draft.IsPersisted = true;

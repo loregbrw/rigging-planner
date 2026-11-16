@@ -26,18 +26,16 @@
 
 @code {
     [Parameter, EditorRequired] public RiggingPlan Plan { get; set; } = null!;
-    [Parameter] public bool IsPersisted { get; set; }
     [Parameter] public bool IsReadOnly { get; set; }
 
-    [Inject] private IDbContextFactory<AppDbContext> DbFactory { get; set; } = null!;
+    [Inject] private PlanDraftState Draft { get; set; } = null!;
 
     private AttachmentsState State = null!;
 
     protected override void OnParametersSet()
     {
-        State ??= new AttachmentsState(DbFactory) { Changed = StateHasChanged };
+        State ??= new AttachmentsState(Draft) { Changed = StateHasChanged };
         State.Plan = Plan;
-        State.IsPersisted = IsPersisted;
         State.IsReadOnly = IsReadOnly;
     }
 
