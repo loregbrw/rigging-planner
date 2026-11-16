@@ -1,0 +1,73 @@
+<section class="rp-capacity-section" aria-labelledby="operational-results-section">
+    <h3 id="operational-results-section" class="rp-section-title">Resumo dos cálculos</h3>
+    <div class="rp-form-grid">
+        <div class="rp-field rp-col-4">
+            <label class="rp-label">Capacidade de carga do guindaste</label>
+            <div class="rp-input-with-unit">
+                <input class="rp-input rp-input--disabled rp-input--num" value="@(Plan.LoadCapacityT?.ToString("N2") ?? "0,00")" disabled />
+                <span class="rp-input-unit">t</span>
+            </div>
+        </div>
+        <div class="rp-field rp-col-4">
+            <label class="rp-label">Taxa de utilização do guindaste</label>
+            <div class="rp-input-with-unit">
+                <input class="rp-input rp-input--disabled rp-input--num" value="@(Utilization?.ToString("N1") ?? "0,0")" disabled />
+                <span class="rp-input-unit">%</span>
+            </div>
+        </div>
+        <div class="rp-field rp-col-4">
+            <label class="rp-label">Taxa de utilização da cinta plana</label>
+            <div class="rp-input-with-unit">
+                <RpDecimalInput class="rp-input rp-input--num" @bind-Value="Plan.FlatStrapUtilizationPct" />
+                <span class="rp-input-unit">%</span>
+            </div>
+        </div>
+        <div class="rp-field rp-col-4">
+            <label class="rp-label">Taxa de utilização da cinta tubular</label>
+            <div class="rp-input-with-unit">
+                <RpDecimalInput class="rp-input rp-input--num" @bind-Value="Plan.TubularStrapUtilizationPct" />
+                <span class="rp-input-unit">%</span>
+            </div>
+        </div>
+        <div class="rp-field rp-col-4">
+            <label class="rp-label">Taxa de utilização de cabo de aço</label>
+            <div class="rp-input-with-unit">
+                <RpDecimalInput class="rp-input rp-input--num" @bind-Value="Plan.WireRopeSlingUtilizationPct" />
+                <span class="rp-input-unit">%</span>
+            </div>
+        </div>
+        <div class="rp-field rp-col-4">
+            <label class="rp-label">Taxa de utilização da manilha</label>
+            <div class="rp-input-with-unit">
+                <RpDecimalInput class="rp-input rp-input--num" @bind-Value="Plan.ShackleUtilizationPct" />
+                <span class="rp-input-unit">%</span>
+            </div>
+        </div>
+        <div class="rp-field rp-col-4">
+            <label class="rp-label">Esforço nas sapatas</label>
+            <div class="rp-input-with-unit">
+                <RpDecimalInput class="rp-input rp-input--num" @bind-Value="Plan.FootingForceKgf" />
+                <span class="rp-input-unit">kgf</span>
+            </div>
+        </div>
+        <div class="rp-field rp-col-4">
+            <label class="rp-label">Resistência mínima do terreno</label>
+            <div class="rp-input-with-unit rp-input-with-unit--wide">
+                <RpDecimalInput class="rp-input rp-input--num" @bind-Value="Plan.MinGroundResistanceKgfCm2" />
+                <span class="rp-input-unit">kgf/cm²</span>
+            </div>
+        </div>
+        <div class="rp-field rp-col-4">
+            <label class="rp-label">Velocidade máxima do vento</label>
+            <div class="rp-input-with-unit">
+                <RpDecimalInput class="rp-input rp-input--num" @bind-Value="Plan.MaxWindSpeedMs" />
+                <span class="rp-input-unit">m/s</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public RiggingPlan Plan { get; set; } = null!;
+    [Parameter] public decimal? Utilization { get; set; }
+}
