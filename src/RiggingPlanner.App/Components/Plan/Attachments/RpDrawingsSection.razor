@@ -1,0 +1,78 @@
+<section class="rp-client-section" aria-labelledby="drawings-section-title">
+    <h3 id="drawings-section-title" class="rp-section-title">Desenhos / Imagens do SolidWorks</h3>
+    <p class="rp-help" style="margin-bottom: var(--rp-space-4);">
+        Anexe uma ou mais imagens geradas no SolidWorks para ilustrar o projeto. Clique em qualquer
+        miniatura para ampliá-la em tela cheia.
+    </p>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="rp-alert rp-alert--danger" style="margin-bottom: var(--rp-space-4);">@ErrorMessage</div>
+    }
+
+    <div class="rp-field">
+        <label class="rp-label">Imagem</label>
+
+        <div style="display: flex; flex-direction: column; gap: var(--rp-space-4);">
+            @if (!IsReadOnly)
+            {
+                <div style="display: flex; flex-direction: column; gap: var(--rp-space-2);">
+                    <InputFile id="upload-drawings" class="rp-file-input" OnChange="OnChange" multiple
+                               accept="image/*,.png,.jpg,.jpeg,.webp" />
+                    <label class="rp-btn rp-btn--ghost-outline" for="upload-drawings"
+                           style="display: inline-flex; align-items: center; justify-content: center; gap: var(--rp-space-2); cursor: pointer;">
+                        <svg class="rp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                        </svg>
+                        Adicionar imagens do SolidWorks
+                    </label>
+                    <span class="rp-help" style="margin-top: var(--rp-space-1);">Selecione um ou vários arquivos
+                        de imagem (PNG, JPG, WEBP).</span>
+                </div>
+            }
+
+            @if (Plan.Drawings.Count > 0)
+            {
+                <div class="rp-drawing-grid">
+                    @foreach (var drawing in Plan.Drawings.OrderBy(x => x.SortOrder))
+                    {
+                        <div class="rp-drawing-card">
+                            <img src="@AttachmentsState.GetFileAsDataUri(drawing.File)" alt="@drawing.File.OriginalName"
+                                 class="rp-drawing-thumb" @onclick="() => PreviewAsync(drawing)"
+                                 title="Clique para ampliar" />
+                            <div class="rp-drawing-footer">
+                                <span
+                                style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100px;"
+                                title="@drawing.File.OriginalName">@drawing.File.OriginalName</span>
+                                @if (!IsReadOnly)
+                                {
+                                    <button class="rp-btn rp-btn--danger-outline rp-btn--sm" type="button"
+                                            @onclick="() => RemoveAsync(drawing)"
+                                            style="padding: 2px 6px; font-size: 11px;"
+                                            title="Excluir imagem">Excluir</button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <span class="rp-muted">Nenhuma imagem do SolidWorks anexada.</span>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public RiggingPlan Plan { get; set; } = null!;
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public EventCallback<InputFileChangeEventArgs> OnChange { get; set; }
+    [Parameter] public EventCallback<PlanDrawing> OnRemove { get; set; }
+    [Parameter] public EventCallback<PlanDrawing> OnPreview { get; set; }
+
+    private Task PreviewAsync(PlanDrawing drawing) => OnPreview.InvokeAsync(drawing);
+    private Task RemoveAsync(PlanDrawing drawing) => OnRemove.InvokeAsync(drawing);
+}

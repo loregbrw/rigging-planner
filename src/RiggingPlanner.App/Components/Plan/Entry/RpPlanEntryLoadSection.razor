@@ -1,0 +1,32 @@
+<section class="rp-client-section rp-col-12" aria-labelledby="load-section-title">
+    <h3 id="load-section-title" class="rp-section-title">Dados da carga</h3>
+    <div class="rp-form-grid">
+        <div class="rp-field rp-col-12">
+            <label class="rp-label" for="load">
+                Descrição da carga<span class="rp-required-marker" aria-hidden="true">*</span>
+            </label>
+            <InputText id="load" class="rp-input" @bind-Value="Form.LoadDescription" />
+            <ValidationMessage For="() => Form.LoadDescription" />
+        </div>
+        <div class="rp-field rp-col-3">
+            <label class="rp-label" for="length">Comprimento (m)</label>
+            <RpDecimalInput id="length" class="rp-input rp-input--num" @bind-Value="Form.LengthM" />
+        </div>
+        <div class="rp-field rp-col-3">
+            <label class="rp-label" for="width">Largura (m)</label>
+            <RpDecimalInput id="width" class="rp-input rp-input--num" @bind-Value="Form.WidthM" />
+        </div>
+        <div class="rp-field rp-col-3">
+            <label class="rp-label" for="height">Altura (m)</label>
+            <RpDecimalInput id="height" class="rp-input rp-input--num" @bind-Value="Form.HeightM" />
+        </div>
+        <div class="rp-field rp-col-3">
+            <label class="rp-label" for="weight">Peso (kg)</label>
+            <RpDecimalInput id="weight" class="rp-input rp-input--num" @bind-Value="Form.WeightKg" />
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public PlanFormModel Form { get; set; } = new();
+}

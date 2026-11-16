@@ -1,0 +1,44 @@
+<section class="rp-capacity-section" aria-labelledby="crane-config-section">
+    <h3 id="crane-config-section" class="rp-section-title">Configurações do guindaste</h3>
+    <div class="rp-form-grid" style="grid-template-columns: 1fr;">
+        <div class="rp-field">
+            <label class="rp-label">Capacidade nominal</label>
+            <div class="rp-input-with-unit">
+                <RpDecimalInput class="rp-input rp-input--num"
+                                @bind-Value="Plan.CraneNominalCapacity" @bind-Value:after="NotifyChanged" />
+                <span class="rp-input-unit">t</span>
+            </div>
+        </div>
+        <div class="rp-field">
+            <label class="rp-label">Comprimento da lança</label>
+            <div class="rp-input-with-unit">
+                <RpDecimalInput class="rp-input rp-input--num" @bind-Value="Plan.BoomLengthM"
+                                @bind-Value:after="NotifyChanged" />
+                <span class="rp-input-unit">m</span>
+            </div>
+        </div>
+        <div class="rp-field">
+            <label class="rp-label">Raio de operação</label>
+            <div class="rp-input-with-unit">
+                <RpDecimalInput class="rp-input rp-input--num"
+                                @bind-Value="Plan.OperatingRadiusM" @bind-Value:after="NotifyChanged" />
+                <span class="rp-input-unit">m</span>
+            </div>
+        </div>
+        <div class="rp-field">
+            <label class="rp-label">Capacidade de carga</label>
+            <div class="rp-input-with-unit">
+                <RpDecimalInput class="rp-input rp-input--num" @bind-Value="Plan.LoadCapacityT"
+                                @bind-Value:after="NotifyChanged" />
+                <span class="rp-input-unit">t</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public RiggingPlan Plan { get; set; } = null!;
+    [Parameter] public Action? Changed { get; set; }
+
+    private void NotifyChanged() => Changed?.Invoke();
+}

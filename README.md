@@ -33,7 +33,7 @@ dotnet ef migrations add NomeDaMigration --project src/RiggingPlanner.Infrastruc
 src/
   RiggingPlanner.Domain/          entidades e regras de negócio
   RiggingPlanner.Application/     casos de uso e interfaces
-  RiggingPlanner.Infrastructure/  EF Core + SQLite, arquivos, PDF
+  RiggingPlanner.Infrastructure/  EF Core + SQLite, arquivos em disco, anexos
   RiggingPlanner.App/             interface (Blazor Hybrid / .NET MAUI)
 tests/
   RiggingPlanner.Domain.Tests/    testes xUnit

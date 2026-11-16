@@ -1,6 +1,5 @@
 @page "/"
 @inject IDbContextFactory<AppDbContext> DbFactory
-@using RiggingPlanner.Domain.Services
 
 @if (isLoading)
 {
@@ -15,10 +14,6 @@ else
     </RpPageHeader>
 
     <RpCard Title="Planos de rigging">
-        @if (errorMessage is not null)
-        {
-            <div class="rp-alert rp-alert--danger">@errorMessage</div>
-        }
         @if (plans.Count == 0)
         {
             <div class="rp-empty">
@@ -45,24 +40,8 @@ else
                                 <td><span class="rp-badge @(plan.Status == "finalized" ? "rp-badge--success" : "rp-badge--primary")">@(plan.Status == "finalized" ? "Finalizado" : "Rascunho")</span></td>
                                 <td class="rp-row-actions">
                                     <a class="rp-btn rp-btn--ghost rp-btn--sm" href="@($"new-plan/{plan.Id}")">@(plan.Status == "finalized" ? "Visualizar" : "Abrir")</a>
-                                    @if (plan.Status != "finalized")
-                                    {
-                                        <button class="rp-btn rp-btn--primary rp-btn--sm" type="button" @onclick="() => AskFinalize(plan)">Finalizar</button>
-                                    }
                                 </td>
                             </tr>
-                            @if (finalizeId == plan.Id)
-                            {
-                                <tr>
-                                    <td colspan="6">
-                                        <div class="rp-alert rp-alert--danger rp-confirm">
-                                            <span>Depois de finalizado, o plano não poderá mais ser alterado. O procedimento operacional será congelado no plano.</span>
-                                            <button class="rp-btn rp-btn--primary rp-btn--sm" type="button" @onclick="() => FinalizeAsync(plan)">Confirmar</button>
-                                            <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button" @onclick="CancelFinalize">Cancelar</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
                         }
                     </tbody>
                 </table>
@@ -74,8 +53,6 @@ else
 @code {
     private List<RiggingPlan> plans = [];
     private bool isLoading = true;
-    private Guid? finalizeId;
-    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -91,49 +68,5 @@ else
             .ThenByDescending(plan => plan.PlanNumber)
             .ToListAsync();
         isLoading = false;
-    }
-
-    private void AskFinalize(RiggingPlan plan) => finalizeId = plan.Id;
-    private void CancelFinalize() => finalizeId = null;
-
-    private async Task FinalizeAsync(RiggingPlan plan)
-    {
-        errorMessage = null;
-        try
-        {
-            await using var db = await DbFactory.CreateDbContextAsync();
-            await using var transaction = await db.Database.BeginTransactionAsync();
-
-            var stored = await db.RiggingPlans
-                .Include(x => x.ProcedureSnapshot)
-                .SingleOrDefaultAsync(x => x.Id == plan.Id && x.DeletedAt == null);
-
-            if (stored is null || stored.Status == "finalized")
-            {
-                CancelFinalize();
-                return;
-            }
-
-            var finalizedAt = DateTime.Now;
-            stored.Status = "finalized";
-            stored.FinalizedAt = finalizedAt;
-            stored.UpdatedAt = finalizedAt;
-
-            if (stored.ProcedureSnapshot is null)
-            {
-                db.PlanProcedureSnapshots.Add(
-                    OperationalProcedureService.CreateSnapshot(stored, finalizedAt));
-            }
-
-            await db.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            CancelFinalize();
-            await LoadPlansAsync();
-        }
-        catch (Exception exception)
-        {
-            errorMessage = $"Não foi possível finalizar o plano: {exception.Message}";
-        }
     }
 }

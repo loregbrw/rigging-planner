@@ -37,6 +37,35 @@ public sealed class PlanFormModel : IValidatableObject
     public string RiggerCreaNumber { get; set; } = string.Empty;
     public bool IsNewRigger { get; set; }
 
+    public void Reset()
+    {
+        OperationName = string.Empty;
+        Location = string.Empty;
+        PlanDate = DateTime.Today;
+        ClientId = null;
+        ClientName = null;
+        ClientCnpj = string.Empty;
+        LoadDescription = string.Empty;
+        WeightKg = null;
+        LengthM = null;
+        WidthM = null;
+        HeightM = null;
+        Observations = null;
+        EquipmentId = null;
+        EquipmentModel = string.Empty;
+        EquipmentTruckModel = string.Empty;
+        EquipmentChassisNumber = string.Empty;
+        EquipmentLicensePlate = string.Empty;
+        EquipmentManufactureYear = null;
+        IsNewEquipment = false;
+        RiggerId = null;
+        RiggerFullName = string.Empty;
+        RiggerDisplayName = string.Empty;
+        RiggerRppNumber = string.Empty;
+        RiggerCreaNumber = string.Empty;
+        IsNewRigger = false;
+    }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (PlanDate == default)
@@ -48,7 +77,7 @@ public sealed class PlanFormModel : IValidatableObject
         {
             yield return new ValidationResult("Selecione ou informe um cliente.", [nameof(ClientName)]);
         }
-        else if (ClientId is null && !IsValidCnpj(ClientCnpj))
+        else if (ClientId is null && !CnpjFormatter.IsValid(ClientCnpj))
         {
             yield return new ValidationResult(
                 "Informe um CNPJ válido para o novo cliente.",
@@ -90,17 +119,5 @@ public sealed class PlanFormModel : IValidatableObject
                 yield return new ValidationResult("Informe o RPP do novo responsável.", [nameof(RiggerRppNumber)]);
             }
         }
-    }
-
-    private static bool IsValidCnpj(string? value)
-    {
-        var normalized = new string((value ?? string.Empty)
-            .ToUpperInvariant()
-            .Where(char.IsLetterOrDigit)
-            .ToArray());
-
-        if (normalized.Length != 14) return false;
-        return normalized.Take(12).All(char.IsLetterOrDigit)
-            && normalized.Skip(12).All(char.IsDigit);
     }
 }

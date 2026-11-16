@@ -1,0 +1,40 @@
+<section class="rp-client-section" aria-labelledby="art-section-title">
+    <h3 id="art-section-title" class="rp-section-title">ART do Plano de Rigging</h3>
+    <p class="rp-help" style="margin-bottom: var(--rp-space-4);">
+        Informe o número da ART emitida no CREA e anexe o arquivo PDF correspondente. Este documento
+        integrará o plano de rigging final.
+    </p>
+
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="rp-alert rp-alert--danger" style="margin-bottom: var(--rp-space-4);">@ErrorMessage</div>
+    }
+
+    <div class="rp-form-grid" style="display:flex; flex-direction: column; gap: var(--rp-space-4);">
+        <div class="rp-field">
+            <label class="rp-label" for="art-number-input">Número da ART</label>
+            <input id="art-number-input" class="rp-input" @bind="Plan.ArtNumber" disabled="@IsReadOnly" />
+            <span class="rp-help">Ex: 0000000000000</span>
+        </div>
+
+        <div class="rp-field">
+            <label class="rp-label">Documento PDF da ART</label>
+            <RpFileAttachmentBox InputId="upload-art-file"
+                                 FileName="@Plan.ArtFile?.OriginalName"
+                                 FileSize="@Plan.ArtFile?.SizeBytes"
+                                 IsReadOnly="@IsReadOnly"
+                                 ButtonLabel="Escolher arquivo PDF da ART"
+                                 HelpText="Somente arquivo PDF (máx. 10MB)"
+                                 OnChange="OnChange"
+                                 OnRemove="OnRemove" />
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public RiggingPlan Plan { get; set; } = null!;
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public EventCallback<InputFileChangeEventArgs> OnChange { get; set; }
+    [Parameter] public EventCallback OnRemove { get; set; }
+}

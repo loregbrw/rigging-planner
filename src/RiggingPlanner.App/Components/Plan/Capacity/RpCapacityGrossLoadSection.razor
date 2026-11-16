@@ -1,0 +1,58 @@
+<section class="rp-capacity-section" aria-labelledby="gross-load-section">
+    <h3 id="gross-load-section" class="rp-section-title">Composição de carga bruta</h3>
+    <div class="rp-form-grid" style="grid-template-columns: 1fr;">
+        <div class="rp-field">
+            <label class="rp-label">Carga líquida</label>
+            <div class="rp-input-with-unit">
+                <input class="rp-input rp-input--disabled rp-input--num"
+                       value="@(Plan.WeightKg?.ToString("N2") ?? "0,00")" disabled />
+                <span class="rp-input-unit">kg</span>
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--rp-space-3);">
+            <div class="rp-field" style="margin: 0;">
+                <label class="rp-label">Lingadas / Amarras</label>
+                <div class="rp-input-with-unit">
+                    <input class="rp-input rp-input--disabled rp-input--num"
+                           value="@LingadaTotal.ToString("N2")" disabled />
+                    <span class="rp-input-unit">kg</span>
+                </div>
+            </div>
+            <div class="rp-field" style="margin: 0;">
+                <label class="rp-label">Dispositivos / Balancim</label>
+                <div class="rp-input-with-unit">
+                    <input class="rp-input rp-input--disabled rp-input--num"
+                           value="@DeviceTotal.ToString("N2")" disabled />
+                    <span class="rp-input-unit">kg</span>
+                </div>
+            </div>
+        </div>
+        <div class="rp-field">
+            <label class="rp-label">Cargas extras</label>
+            <div class="rp-input-with-unit">
+                <RpDecimalInput class="rp-input rp-input--num" @bind-Value="Plan.ExtraLoadKg"
+                                @bind-Value:after="NotifyChanged" />
+                <span class="rp-input-unit">kg</span>
+            </div>
+        </div>
+        <div class="rp-field">
+            <label class="rp-label">Carga bruta total</label>
+            <div class="rp-input-with-unit">
+                <input class="rp-input rp-input--disabled rp-input--num"
+                       style="background: var(--rp-primary-50); border-color: var(--rp-primary-100); color: var(--rp-primary-800); font-weight: 700;"
+                       value="@GrossWeight.ToString("N2")" disabled />
+                <span class="rp-input-unit">kg</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public RiggingPlan Plan { get; set; } = null!;
+    [Parameter] public decimal LingadaTotal { get; set; }
+    [Parameter] public decimal DeviceTotal { get; set; }
+    [Parameter] public decimal GrossWeight { get; set; }
+    [Parameter] public Action? Changed { get; set; }
+
+    private void NotifyChanged() => Changed?.Invoke();
+}

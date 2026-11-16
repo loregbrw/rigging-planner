@@ -1,0 +1,42 @@
+<section class="rp-client-section rp-col-12" aria-labelledby="client-section-title">
+    <h3 id="client-section-title" class="rp-section-title">
+        Cliente / Contratante <span class="rp-required-marker" aria-hidden="true">*</span>
+    </h3>
+    <div class="rp-client-fields">
+        <div class="rp-field">
+            <label class="rp-label" for="client-name">Nome / Razão social</label>
+            <RpTagPicker TItem="Client" InputId="client-name"
+                         InputValue="@(Form.ClientName ?? string.Empty)" Suggestions="State.ClientSuggestions"
+                         SelectedItem="@(State.SelectedClient ?? (State.IsNewClientSelected ? new Client { Name = Form.ClientName ?? string.Empty } : null))"
+                         ItemText="@(client => client.Name)"
+                         CanCreate="@(!string.IsNullOrWhiteSpace(Form.ClientName) && !State.HasExactClient)"
+                         CreateLabel="@($"Criar cliente “{Form.ClientName?.Trim()}”")"
+                         OnInput="State.OnClientNameInput" OnSelect="State.SelectClient"
+                         OnCreate="State.CreateClientFromInput" OnRemove="State.RemoveSelectedClient" />
+            <ValidationMessage For="() => Form.ClientName" />
+            <span class="rp-help">Selecione um cadastro existente ou crie um cliente novo.</span>
+        </div>
+        <div class="rp-field">
+            <label class="rp-label" for="cnpj">CNPJ</label>
+            <input id="cnpj" class="rp-input @(State.IsExistingClient ? "rp-input--disabled" : string.Empty)"
+                   inputmode="text" maxlength="18" placeholder="00.000.000/0000-00"
+                   disabled="@State.IsExistingClient" value="@Form.ClientCnpj"
+                   @oninput="State.OnClientCnpjInput"
+                   title="@(State.IsExistingClient ? "CNPJ preenchido pelo cadastro e não editável" : "Informe o CNPJ do novo cliente")" />
+            <ValidationMessage For="() => Form.ClientCnpj" />
+            @if (State.IsExistingClient)
+            {
+                <span class="rp-help rp-help--disabled">CNPJ do cadastro selecionado - não editável.</span>
+            }
+            else
+            {
+                <span class="rp-help">Obrigatório para novo cliente.</span>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public PlanEntryState State { get; set; } = null!;
+    private PlanFormModel Form => State.Form;
+}

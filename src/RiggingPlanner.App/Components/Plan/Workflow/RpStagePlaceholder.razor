@@ -1,0 +1,10 @@
+<RpCard Title="@Title">
+    <div class="rp-empty">
+        <p class="rp-empty__title">Esta etapa ainda está em preparação</p>
+        <p class="rp-muted">A navegação já está disponível para organizar o fluxo do plano.</p>
+    </div>
+</RpCard>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+}

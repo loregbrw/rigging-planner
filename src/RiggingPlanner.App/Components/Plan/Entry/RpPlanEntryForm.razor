@@ -1,0 +1,68 @@
+<RpCard Title="Dados de entrada">
+    @if (IsReadOnly)
+    {
+        <div class="rp-alert rp-alert--info">Este plano foi finalizado e está somente para leitura.</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <div class="rp-alert rp-alert--danger">@ErrorMessage</div>
+    }
+
+    <EditForm EditContext="@editContext" OnValidSubmit="OnValidSubmit">
+        <DataAnnotationsValidator />
+        <fieldset disabled="@IsReadOnly" class="rp-readonly-fields">
+            <div class="rp-form-grid">
+                <RpPlanEntryOperationSection Form="State.Form" />
+                <RpPlanEntryClientSection State="State" />
+                <RpPlanEntryEquipmentSection State="State" />
+                <RpPlanEntryRiggerSection State="State" />
+                <RpPlanEntryLoadSection Form="State.Form" />
+                <div class="rp-field rp-col-12">
+                    <label class="rp-label" for="observations">Observações</label>
+                    <InputTextArea id="observations" class="rp-textarea" @bind-Value="State.Form.Observations" />
+                </div>
+            </div>
+        </fieldset>
+    </EditForm>
+</RpCard>
+
+@code {
+    [Parameter, EditorRequired] public PlanEntryState State { get; set; } = null!;
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public EventCallback<string?> ErrorMessageChanged { get; set; }
+    [Parameter] public EventCallback OnValidSubmit { get; set; }
+
+    [Inject] private IJSRuntime JS { get; set; } = null!;
+
+    private EditContext editContext = null!;
+
+    protected override void OnParametersSet()
+    {
+        if (editContext is null || !ReferenceEquals(editContext.Model, State.Form))
+        {
+            editContext = new EditContext(State.Form);
+        }
+    }
+
+    public async Task SubmitAsync()
+    {
+        if (IsReadOnly) return;
+        if (editContext.Validate())
+        {
+            await ErrorMessageChanged.InvokeAsync(null);
+            await OnValidSubmit.InvokeAsync();
+        }
+        else
+        {
+            var msg = "Valores obrigatórios faltando ou dados inválidos. Verifique os campos obrigatórios e preencha-os corretamente.";
+            await ErrorMessageChanged.InvokeAsync(msg);
+            StateHasChanged();
+            try
+            {
+                await JS.InvokeVoidAsync("eval", "window.scrollTo({ top: 0, behavior: 'smooth' });");
+            }
+            catch { }
+        }
+    }
+}

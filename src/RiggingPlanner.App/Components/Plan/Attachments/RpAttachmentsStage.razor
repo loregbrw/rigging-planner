@@ -1,0 +1,47 @@
+<RpCard Title="Anexos">
+    <div class="rp-stack" style="gap: var(--rp-space-6);">
+        <RpArtAttachmentSection Plan="Plan"
+                                IsReadOnly="IsReadOnly"
+                                ErrorMessage="@State.ArtErrorMessage"
+                                OnChange="State.OnArtFileChangeAsync"
+                                OnRemove="State.RemoveArtFileAsync" />
+
+        <RpDrawingsSection Plan="Plan"
+                           IsReadOnly="IsReadOnly"
+                           ErrorMessage="@State.DrawingsErrorMessage"
+                           OnChange="State.OnDrawingsChangeAsync"
+                           OnRemove="State.RemoveDrawingAsync"
+                           OnPreview="State.OpenPreview" />
+    </div>
+</RpCard>
+
+@if (State.PreviewDrawing is not null)
+{
+    var drawing = State.PreviewDrawing;
+    <RpDrawingPreviewModal Drawing="drawing"
+                           IsReadOnly="IsReadOnly"
+                           OnClose="State.ClosePreview"
+                           OnRemove="RemovePreviewAsync" />
+}
+
+@code {
+    [Parameter, EditorRequired] public RiggingPlan Plan { get; set; } = null!;
+    [Parameter] public bool IsReadOnly { get; set; }
+
+    [Inject] private PlanDraftState Draft { get; set; } = null!;
+
+    private AttachmentsState State = null!;
+
+    protected override void OnParametersSet()
+    {
+        State ??= new AttachmentsState(Draft) { Changed = StateHasChanged };
+        State.Plan = Plan;
+        State.IsReadOnly = IsReadOnly;
+    }
+
+    private async Task RemovePreviewAsync()
+    {
+        if (State.PreviewDrawing is null) return;
+        await State.RemoveDrawingAsync(State.PreviewDrawing);
+    }
+}

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using RiggingPlanner.Infrastructure;
+using RiggingPlanner.App.Components.Plan.Attachments;
 using RiggingPlanner.App.Components.Shared;
 using System.Globalization;
 
@@ -34,6 +35,7 @@ public static class MauiProgram
 
 		var app = builder.Build();
 		app.Services.ApplyMigrations();
+		AttachmentDraftState.CleanupStaleSessions();
 
 		return app;
 	}
