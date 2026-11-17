@@ -6,9 +6,11 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
+        <PackageReference Include="PDFsharp" Version="[6.2.4]" />
         <PackageReference Include="QuestPDF" Version="2026.9.2" />
         <PackageReference Include="SkiaSharp" Version="4.150.1" />
         <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.150.1" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.15" />
         <ProjectReference Include="..\RiggingPlanner.Application\RiggingPlanner.Application.csproj" />
     </ItemGroup>
 
