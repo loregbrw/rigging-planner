@@ -13,11 +13,24 @@ public sealed record PdfWordInfo(
     string FontName,
     double Size);
 
+public sealed record PdfLetterInfo(
+    string Text,
+    double X,
+    double Baseline,
+    double Size,
+    string FontName);
+
 public sealed record PdfPageWords(
     int PageNumber,
     double Width,
     double Height,
     IReadOnlyList<PdfWordInfo> Words);
+
+public sealed record PdfPageLetters(
+    int PageNumber,
+    double Width,
+    double Height,
+    IReadOnlyList<PdfLetterInfo> Letters);
 
 /// <summary>
 /// Extracts words with coordinates in points, origin at the top-left corner,
@@ -44,6 +57,37 @@ public static class PdfTextReader
                 .ToList();
 
             pages.Add(new PdfPageWords(page.Number, (double)page.Width, pageHeight, words));
+        }
+
+        return pages;
+    }
+
+    /// <summary>
+    /// Extracts glyphs (letters) of each page. X is the glyph origin and Baseline is the
+    /// text baseline, both in points with origin at the top-left corner. Size is the
+    /// nominal font size (content stream Tf value).
+    /// </summary>
+    public static IReadOnlyList<PdfPageLetters> ReadLetterPages(string pdfPath) =>
+        ReadLetterPages(File.ReadAllBytes(pdfPath));
+
+    public static IReadOnlyList<PdfPageLetters> ReadLetterPages(byte[] pdfBytes)
+    {
+        using var document = PdfDocument.Open(pdfBytes);
+        var pages = new List<PdfPageLetters>();
+
+        foreach (var page in document.GetPages())
+        {
+            var pageHeight = (double)page.Height;
+            var letters = page.Letters
+                .Select(l => new PdfLetterInfo(
+                    l.Value,
+                    (double)l.Location.X,
+                    pageHeight - (double)l.Location.Y,
+                    (double)l.FontSize,
+                    l.FontName ?? string.Empty))
+                .ToList();
+
+            pages.Add(new PdfPageLetters(page.Number, (double)page.Width, pageHeight, letters));
         }
 
         return pages;

@@ -10,7 +10,7 @@ public static class PdfRasterizer
 {
     public const int DefaultDpi = 150;
 
-    public static byte[] RasterizeToPng(byte[] pdfBytes, int page = 1, int dpi = DefaultDpi)
+    public static byte[] RasterizeToPng(byte[] pdfBytes, int page = 0, int dpi = DefaultDpi)
     {
         using var bitmap = Conversion.ToImage(pdfBytes, page, options: new RenderOptions { Dpi = dpi });
         using var image = SKImage.FromBitmap(bitmap);

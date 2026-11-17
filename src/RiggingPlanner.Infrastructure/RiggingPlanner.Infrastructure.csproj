@@ -20,6 +20,7 @@
         <EmbeddedResource Include="Pdf\Fonts\Carlito-Regular.ttf" />
         <EmbeddedResource Include="Pdf\Fonts\Carlito-Bold.ttf" />
         <EmbeddedResource Include="Pdf\Fonts\OFL.txt" />
+        <EmbeddedResource Include="Pdf\Images\guindastes-ribas-logo.png" />
     </ItemGroup>
 
 </Project>

@@ -15,45 +15,51 @@ public static class PdfOverlay
         using var reference = SKBitmap.Decode(referencePng);
         using var generated = SKBitmap.Decode(generatedPng);
 
-        if (reference.Width != generated.Width || reference.Height != generated.Height)
-        {
-            throw new InvalidOperationException(
-                $"Overlay images must have the same size. Reference: {reference.Width}x{reference.Height}, generated: {generated.Width}x{generated.Height}.");
-        }
+        // Rasterization rounds the page size to whole pixels, so the two pages may
+        // differ by 1 px; the overlay compares the common area.
+        var width = Math.Min(reference.Width, generated.Width);
+        var height = Math.Min(reference.Height, generated.Height);
 
         var referencePixels = reference.Pixels;
         var generatedPixels = generated.Pixels;
 
-        int totalPixels = referencePixels.Length;
+        int totalPixels = width * height;
         int divergent = 0;
         var output = new SKColor[totalPixels];
 
-        for (var i = 0; i < totalPixels; i++)
+        for (var y = 0; y < height; y++)
         {
-            var referenceInk = IsInk(referencePixels[i], inkLuminanceThreshold);
-            var generatedInk = IsInk(generatedPixels[i], inkLuminanceThreshold);
+            var referenceRow = y * reference.Width;
+            var generatedRow = y * generated.Width;
+            var outputRow = y * width;
+            for (var x = 0; x < width; x++)
+            {
+                var referenceInk = IsInk(referencePixels[referenceRow + x], inkLuminanceThreshold);
+                var generatedInk = IsInk(generatedPixels[generatedRow + x], inkLuminanceThreshold);
+                var index = outputRow + x;
 
-            if (referenceInk && generatedInk)
-            {
-                output[i] = new SKColor(60, 60, 60);
-            }
-            else if (referenceInk)
-            {
-                output[i] = SKColors.Red;
-                divergent++;
-            }
-            else if (generatedInk)
-            {
-                output[i] = SKColors.Cyan;
-                divergent++;
-            }
-            else
-            {
-                output[i] = SKColors.White;
+                if (referenceInk && generatedInk)
+                {
+                    output[index] = new SKColor(60, 60, 60);
+                }
+                else if (referenceInk)
+                {
+                    output[index] = SKColors.Red;
+                    divergent++;
+                }
+                else if (generatedInk)
+                {
+                    output[index] = SKColors.Cyan;
+                    divergent++;
+                }
+                else
+                {
+                    output[index] = SKColors.White;
+                }
             }
         }
 
-        var bitmap = new SKBitmap(reference.Width, reference.Height);
+        var bitmap = new SKBitmap(width, height);
         bitmap.Pixels = output;
 
         using var image = SKImage.FromBitmap(bitmap);

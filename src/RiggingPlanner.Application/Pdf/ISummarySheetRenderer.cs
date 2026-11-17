@@ -1,9 +1,12 @@
+using RiggingPlanner.Domain;
+
 namespace RiggingPlanner.Application.Pdf;
 
-// TODO(stage-1): uncomment once SummarySheetModel is created in stage 1 (folha-resumo).
-// The signature below is the agreed contract for the summary sheet renderer.
-//
-// public interface ISummarySheetRenderer
-// {
-//     byte[] Render(SummarySheetModel model);
-// }
+/// <summary>
+/// Renders the summary sheet (page 1, "Capacidade de carga") as a standalone PDF.
+/// Each stage renderer returns a single PDF; the assembler (stage 6) joins them.
+/// </summary>
+public interface ISummarySheetRenderer
+{
+    byte[] Render(SummarySheetModel model);
+}

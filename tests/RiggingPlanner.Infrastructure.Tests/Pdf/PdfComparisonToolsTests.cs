@@ -71,8 +71,8 @@ public class PdfComparisonToolsTests
     {
         var pdfBytes = ReadFixture("reference-plan-2607036.pdf");
 
-        var referencePng = PdfRasterizer.RasterizeToPng(pdfBytes, page: 1);
-        var generatedPng = PdfRasterizer.RasterizeToPng(pdfBytes, page: 1);
+        var referencePng = PdfRasterizer.RasterizeToPng(pdfBytes, page: 0);
+        var generatedPng = PdfRasterizer.RasterizeToPng(pdfBytes, page: 0);
 
         var result = PdfOverlay.Compose(referencePng, generatedPng);
 
