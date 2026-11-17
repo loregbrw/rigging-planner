@@ -7,9 +7,7 @@ using RiggingPlanner.Domain;
 namespace RiggingPlanner.Infrastructure.Pdf;
 
 /// <summary>
-/// Renders the drawing sheet (frame and stamp) as a standalone A4 PDF using QuestPDF.
-/// Stage 2A renders a single sheet without images; the geometry comes from
-/// DrawingSheetLayout (measured from the reference example).
+/// Renders the drawing sheet (frame, stamp and images) as an A4 PDF using QuestPDF.
 /// </summary>
 public sealed class DrawingSheetsRenderer : IDrawingSheetsRenderer
 {
@@ -27,7 +25,6 @@ public sealed class DrawingSheetsRenderer : IDrawingSheetsRenderer
                 page.Size(new PageSize((float)DrawingSheetLayout.PageWidth, (float)DrawingSheetLayout.PageHeight, Unit.Point));
                 page.Margin(0);
 
-                // The example was produced by Word WITHOUT kerning or ligatures (stage-1 finding).
                 page.DefaultTextStyle(text => text
                     .FontFamily(PdfFontRegistry.GothicFamilyName)
                     .DisableFontFeature(FontFeatures.Kerning)
@@ -45,6 +42,63 @@ public sealed class DrawingSheetsRenderer : IDrawingSheetsRenderer
                     layers.Layer().Element(c => ComposeTexts(c, content.Texts));
                 });
             });
+        }).GeneratePdf();
+    }
+
+    public byte[] RenderWithImages(DrawingSheetStampModel baseModel, IReadOnlyList<DrawingSheetImageItem> images)
+    {
+        ArgumentNullException.ThrowIfNull(baseModel);
+        ArgumentNullException.ThrowIfNull(images);
+
+        if (images.Count == 0)
+        {
+            return RenderFrameOnly(baseModel);
+        }
+
+        PdfFontRegistry.EnsureRegistered();
+        var inputs = images.Select(i => new DrawingSheetImageInput(i.Id, i.WidthPx, i.HeightPx)).ToList();
+        var planResult = DrawingSheetPlanner.Plan(inputs);
+        var imageDict = images.ToDictionary(i => i.Id);
+
+        return Document.Create(container =>
+        {
+            foreach (var pagePlan in planResult.Pages)
+            {
+                var stampModel = baseModel with { SheetLabel = $"FOLHA {pagePlan.SheetNumber} DE {pagePlan.SheetTotal}" };
+                var content = DrawingSheetLayout.Compose(stampModel);
+
+                container.Page(page =>
+                {
+                    page.Size(new PageSize((float)DrawingSheetLayout.PageWidth, (float)DrawingSheetLayout.PageHeight, Unit.Point));
+                    page.Margin(0);
+
+                    page.DefaultTextStyle(text => text
+                        .FontFamily(PdfFontRegistry.GothicFamilyName)
+                        .DisableFontFeature(FontFeatures.Kerning)
+                        .DisableFontFeature(FontFeatures.StandardLigatures));
+
+                    page.Content().Layers(layers =>
+                    {
+                        layers.PrimaryLayer().Element(c => ComposeRect(c, ToRect(content.Lines[0])));
+                        foreach (var line in content.Lines.Skip(1))
+                        {
+                            layers.Layer().Element(c => ComposeRect(c, ToRect(line)));
+                        }
+
+                        layers.Layer().Element(c => ComposeRect(c, ToRect(DrawingSheetLayout.SignatureLine)));
+
+                        foreach (var imgLayout in pagePlan.Images)
+                        {
+                            if (imageDict.TryGetValue(imgLayout.ImageId, out var item))
+                            {
+                                layers.Layer().Element(c => ComposeImage(c, imgLayout, item.Data));
+                            }
+                        }
+
+                        layers.Layer().Element(c => ComposeTexts(c, content.Texts));
+                    });
+                });
+            }
         }).GeneratePdf();
     }
 
@@ -79,6 +133,18 @@ public sealed class DrawingSheetsRenderer : IDrawingSheetsRenderer
         return result;
     }
 
+    private static IContainer ComposeImage(IContainer container, DrawingSheetImageLayout layout, byte[] imageBytes)
+    {
+        container
+            .PaddingTop((float)layout.Y)
+            .PaddingLeft((float)layout.X)
+            .Width((float)layout.Width)
+            .Height((float)layout.Height)
+            .Background(Colors.White)
+            .Image(imageBytes);
+        return container;
+    }
+
     private static IContainer ComposeRect(IContainer container, double[] rect)
     {
         var result = container
@@ -90,9 +156,6 @@ public sealed class DrawingSheetsRenderer : IDrawingSheetsRenderer
         return result;
     }
 
-    // A stroked line becomes a filled rectangle. Butt caps are the PDF default, so the
-    // line does not extend beyond its endpoints; only the thickness grows by half a
-    // width on each side of the stroke center.
     private static double[] ToRect(DrawingSheetLine line)
     {
         var half = line.Width / 2.0;

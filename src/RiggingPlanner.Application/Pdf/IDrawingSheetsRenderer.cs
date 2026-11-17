@@ -3,10 +3,17 @@ using RiggingPlanner.Domain;
 namespace RiggingPlanner.Application.Pdf;
 
 /// <summary>
-/// Renders the drawing sheets (frame and stamp). Stage 2A renders a single sheet
-/// without images; the image layout arrives in stage 2B.
+/// Renders the drawing sheets (frame and stamp) and image layouts.
 /// </summary>
 public interface IDrawingSheetsRenderer
 {
     byte[] RenderFrameOnly(DrawingSheetStampModel model);
+
+    byte[] RenderWithImages(DrawingSheetStampModel model, IReadOnlyList<DrawingSheetImageItem> images);
 }
+
+public sealed record DrawingSheetImageItem(
+    Guid Id,
+    byte[] Data,
+    int WidthPx,
+    int HeightPx);
