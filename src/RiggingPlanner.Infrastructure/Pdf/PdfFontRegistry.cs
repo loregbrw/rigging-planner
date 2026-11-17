@@ -1,14 +1,22 @@
-using System.Reflection;
 using QuestPDF.Drawing;
 
 namespace RiggingPlanner.Infrastructure.Pdf;
 
 /// <summary>
-/// Registers the embedded Carlito fonts (SIL OFL) with QuestPDF exactly once.
+/// Registers the embedded fonts (SIL OFL) with QuestPDF exactly once.
 /// </summary>
 public static class PdfFontRegistry
 {
     public const string FamilyName = "Carlito";
+
+    /// <summary>Substitute for Century Gothic, approved by the project owner in stage 2A.</summary>
+    public const string GothicFamilyName = "Questrial";
+
+    /// <summary>Substitute for Eras ITC Demi, approved by the project owner in stage 2A.</summary>
+    public const string BrandFamilyName = "Open Sans SemiBold";
+
+    public const string GothicFontFileName = "Questrial-Regular.ttf";
+    public const string BrandFontFileName = "OpenSans-SemiBold.ttf";
 
     private static readonly object RegistrationLock = new();
     private static bool _registered;
@@ -31,11 +39,25 @@ public static class PdfFontRegistry
             // (condition confirmed by the project owner on 16/11/2026). See https://www.questpdf.com/license/.
             QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
-            using var regular = OpenEmbeddedFont("Carlito-Regular.ttf");
-            FontManager.RegisterFontFromStream(regular);
+            using (var regular = OpenEmbeddedFont("Carlito-Regular.ttf"))
+            {
+                FontManager.RegisterFontFromStream(regular);
+            }
 
-            using var bold = OpenEmbeddedFont("Carlito-Bold.ttf");
-            FontManager.RegisterFontFromStream(bold);
+            using (var bold = OpenEmbeddedFont("Carlito-Bold.ttf"))
+            {
+                FontManager.RegisterFontFromStream(bold);
+            }
+
+            using (var gothic = OpenEmbeddedFont(GothicFontFileName))
+            {
+                FontManager.RegisterFontFromStream(gothic);
+            }
+
+            using (var brand = OpenEmbeddedFont(BrandFontFileName))
+            {
+                FontManager.RegisterFontFromStream(brand);
+            }
 
             _registered = true;
         }

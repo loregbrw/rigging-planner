@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
@@ -7,6 +7,8 @@
         </PackageReference>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
         <PackageReference Include="QuestPDF" Version="2026.9.2" />
+        <PackageReference Include="SkiaSharp" Version="4.150.1" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="4.150.1" />
         <ProjectReference Include="..\RiggingPlanner.Application\RiggingPlanner.Application.csproj" />
     </ItemGroup>
 
@@ -20,6 +22,10 @@
         <EmbeddedResource Include="Pdf\Fonts\Carlito-Regular.ttf" />
         <EmbeddedResource Include="Pdf\Fonts\Carlito-Bold.ttf" />
         <EmbeddedResource Include="Pdf\Fonts\OFL.txt" />
+        <EmbeddedResource Include="Pdf\Fonts\Questrial-Regular.ttf" />
+        <EmbeddedResource Include="Pdf\Fonts\Questrial-OFL.txt" />
+        <EmbeddedResource Include="Pdf\Fonts\OpenSans-SemiBold.ttf" />
+        <EmbeddedResource Include="Pdf\Fonts\OpenSans-OFL.txt" />
         <EmbeddedResource Include="Pdf\Images\guindastes-ribas-logo.png" />
     </ItemGroup>
 

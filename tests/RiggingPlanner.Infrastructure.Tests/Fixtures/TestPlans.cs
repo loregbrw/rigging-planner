@@ -44,6 +44,7 @@ public static class TestPlans
             MaxWindSpeedMs = 7.0m,
             RiggerName = "Giuliano Breda",
             RiggerRpp = "23-1040",
+            RiggerCrea = "78755/D",
             SupervisorName = null,
             ArtNumber = "1720264496217",
             Observations = string.Empty,

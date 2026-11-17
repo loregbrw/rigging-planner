@@ -18,7 +18,16 @@ public sealed record PdfLetterInfo(
     double X,
     double Baseline,
     double Size,
-    string FontName);
+    string FontName,
+    double GlyphLeft,
+    double GlyphRight,
+    double GlyphTop,
+    double GlyphBottom)
+{
+    public double GlyphCenterX => (GlyphLeft + GlyphRight) / 2.0;
+
+    public double GlyphCenterY => (GlyphTop + GlyphBottom) / 2.0;
+}
 
 public sealed record PdfPageWords(
     int PageNumber,
@@ -79,12 +88,20 @@ public static class PdfTextReader
         {
             var pageHeight = (double)page.Height;
             var letters = page.Letters
-                .Select(l => new PdfLetterInfo(
-                    l.Value,
-                    (double)l.Location.X,
-                    pageHeight - (double)l.Location.Y,
-                    (double)l.FontSize,
-                    l.FontName ?? string.Empty))
+                .Select(l =>
+                {
+                    var glyph = l.GlyphRectangle;
+                    return new PdfLetterInfo(
+                        l.Value,
+                        (double)l.Location.X,
+                        pageHeight - (double)l.Location.Y,
+                        (double)l.FontSize,
+                        l.FontName ?? string.Empty,
+                        (double)glyph.Left,
+                        (double)glyph.Right,
+                        pageHeight - (double)glyph.Top,
+                        pageHeight - (double)glyph.Bottom);
+                })
                 .ToList();
 
             pages.Add(new PdfPageLetters(page.Number, (double)page.Width, pageHeight, letters));
@@ -122,10 +139,18 @@ public sealed class ReferenceSheet
         double Bottom,
         string Kind);
 
+    public sealed record ReferenceLine(
+        double X0,
+        double X1,
+        double Top,
+        double Bottom,
+        double Width);
+
     public double Width { get; private init; }
     public double Height { get; private init; }
     public IReadOnlyList<PdfWordInfo> Words { get; private init; } = [];
     public IReadOnlyList<ReferenceRect> Rects { get; private init; } = [];
+    public IReadOnlyList<ReferenceLine> Lines { get; private init; } = [];
 
     public static ReferenceSheet Load(string jsonPath)
     {
@@ -158,12 +183,24 @@ public sealed class ReferenceSheet
                 .ToList()
             : new List<ReferenceRect>();
 
+        var lines = json.TryGetProperty("lines", out var linesElement)
+            ? linesElement.EnumerateArray()
+                .Select(l => new ReferenceLine(
+                    l.GetProperty("x0").GetDouble(),
+                    l.GetProperty("x1").GetDouble(),
+                    l.GetProperty("top").GetDouble(),
+                    l.GetProperty("bottom").GetDouble(),
+                    l.GetProperty("lw").GetDouble()))
+                .ToList()
+            : new List<ReferenceLine>();
+
         return new ReferenceSheet
         {
             Width = page.GetProperty("width").GetDouble(),
             Height = page.GetProperty("height").GetDouble(),
             Words = words,
-            Rects = rects
+            Rects = rects,
+            Lines = lines
         };
     }
 }

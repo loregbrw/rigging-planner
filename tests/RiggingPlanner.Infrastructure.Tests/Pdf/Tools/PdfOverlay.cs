@@ -5,12 +5,23 @@ namespace RiggingPlanner.Infrastructure.Tests.Pdf.Tools;
 /// <summary>
 /// Composes a visual overlay of two rasterized pages: reference in red,
 /// generated in cyan, coincident ink in dark gray, background white.
+/// A point filter (in points, top-left origin) restricts the comparison to a
+/// region of the page (e.g. frame and stamp, excluding the drawing views).
 /// </summary>
 public static class PdfOverlay
 {
     public sealed record OverlayResult(byte[] Png, int DivergentPixels, int TotalPixels, double DivergencePercent);
 
-    public static OverlayResult Compose(byte[] referencePng, byte[] generatedPng, byte inkLuminanceThreshold = 200)
+    public static OverlayResult Compose(byte[] referencePng, byte[] generatedPng, byte inkLuminanceThreshold = 200) =>
+        Compose(referencePng, generatedPng, null, 0, 0, inkLuminanceThreshold);
+
+    public static OverlayResult Compose(
+        byte[] referencePng,
+        byte[] generatedPng,
+        Func<double, double, bool>? includePoint,
+        double pageWidthPt,
+        double pageHeightPt,
+        byte inkLuminanceThreshold = 200)
     {
         using var reference = SKBitmap.Decode(referencePng);
         using var generated = SKBitmap.Decode(generatedPng);
@@ -23,9 +34,12 @@ public static class PdfOverlay
         var referencePixels = reference.Pixels;
         var generatedPixels = generated.Pixels;
 
-        int totalPixels = width * height;
+        var scaleX = pageWidthPt > 0 ? pageWidthPt / width : 1;
+        var scaleY = pageHeightPt > 0 ? pageHeightPt / height : 1;
+
+        int totalPixels = 0;
         int divergent = 0;
-        var output = new SKColor[totalPixels];
+        var output = new SKColor[width * height];
 
         for (var y = 0; y < height; y++)
         {
@@ -34,9 +48,16 @@ public static class PdfOverlay
             var outputRow = y * width;
             for (var x = 0; x < width; x++)
             {
+                var index = outputRow + x;
+                if (includePoint is not null && !includePoint((x + 0.5) * scaleX, (y + 0.5) * scaleY))
+                {
+                    output[index] = SKColors.White;
+                    continue;
+                }
+
+                totalPixels++;
                 var referenceInk = IsInk(referencePixels[referenceRow + x], inkLuminanceThreshold);
                 var generatedInk = IsInk(generatedPixels[generatedRow + x], inkLuminanceThreshold);
-                var index = outputRow + x;
 
                 if (referenceInk && generatedInk)
                 {
