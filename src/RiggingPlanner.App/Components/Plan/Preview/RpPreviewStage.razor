@@ -135,8 +135,8 @@
                 if (!File.Exists(filePath)) continue;
 
                 var bytes = await File.ReadAllBytesAsync(filePath);
-                using var codec = SkiaSharp.SKCodec.Create(bytes);
-                var info = codec?.Info ?? new SkiaSharp.SKImageInfo(800, 600);
+                var info = SkiaSharp.SKBitmap.DecodeBounds(bytes);
+                if (info.Width == 0) info = new SkiaSharp.SKImageInfo(800, 600);
                 imageItems.Add(new RiggingPlanner.Application.Pdf.DrawingSheetImageItem(
                     drawing.FileId,
                     bytes,

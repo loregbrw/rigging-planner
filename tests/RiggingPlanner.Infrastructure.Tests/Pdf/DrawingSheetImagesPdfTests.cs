@@ -2,6 +2,7 @@ using SkiaSharp;
 using UglyToad.PdfPig;
 using RiggingPlanner.Application.Pdf;
 using RiggingPlanner.Domain;
+using RiggingPlanner.Infrastructure.Pdf;
 using RiggingPlanner.Infrastructure.Tests.Fixtures;
 using RiggingPlanner.Infrastructure.Tests.Pdf.Tools;
 using Xunit;
@@ -28,7 +29,7 @@ public sealed class DrawingSheetImagesPdfTests(ITestOutputHelper output)
             new(Guid.NewGuid(), CreateSyntheticImage(900, 1400, SKColors.Purple, "Drawing 5 Tall"), 900, 1400),
         };
 
-        IDrawingSheetsRenderer renderer = new DrawingSheetsRenderer();
+        var renderer = new DrawingSheetsRenderer();
         var pdfBytes = renderer.RenderWithImages(baseModel, imageItems);
 
         ReviewOutput.WriteFile(Stage, "synthetic-drawings.pdf", pdfBytes);
@@ -77,15 +78,15 @@ public sealed class DrawingSheetImagesPdfTests(ITestOutputHelper output)
         foreach (var file in drawingFiles)
         {
             var bytes = File.ReadAllBytes(file);
-            using var codec = SKCodec.Create(bytes);
-            var info = codec?.Info ?? new SKImageInfo(800, 600);
+            var info = SKBitmap.DecodeBounds(bytes);
+            if (info.Width == 0) info = new SKImageInfo(800, 600);
             imageItems.Add(new DrawingSheetImageItem(Guid.NewGuid(), bytes, info.Width, info.Height));
         }
 
         var (plan, accessories) = TestPlans.Reference2607036();
         var baseModel = DrawingSheetStampBuilder.Build(plan, accessories, 1, 1);
 
-        IDrawingSheetsRenderer renderer = new DrawingSheetsRenderer();
+        var renderer = new DrawingSheetsRenderer();
         var pdfBytes = renderer.RenderWithImages(baseModel, imageItems);
 
         ReviewOutput.WriteFile(Stage, "real-drawings.pdf", pdfBytes);
@@ -118,10 +119,10 @@ public sealed class DrawingSheetImagesPdfTests(ITestOutputHelper output)
         using var textPaint = new SKPaint
         {
             Color = SKColors.Black,
-            TextSize = Math.Max(16, widthPx / 20),
             IsAntialias = true,
         };
-        canvas.DrawText(text, 30, heightPx / 2f, textPaint);
+        using var font = new SKFont(SKTypeface.Default, Math.Max(16, widthPx / 20f));
+        canvas.DrawText(text, 30, heightPx / 2f, SKTextAlign.Left, font, textPaint);
 
         using var image = SKImage.FromBitmap(bitmap);
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);
