@@ -90,7 +90,7 @@ public static class PdfTextReader
             var letters = page.Letters
                 .Select(l =>
                 {
-                    var glyph = l.GlyphRectangle;
+                    var glyph = l.BoundingBox;
                     return new PdfLetterInfo(
                         l.Value,
                         (double)l.Location.X,

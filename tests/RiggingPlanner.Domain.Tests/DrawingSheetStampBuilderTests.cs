@@ -37,7 +37,7 @@ public class DrawingSheetStampBuilderTests
     public void Build_PrintsDashForNullOptionals()
     {
         var (plan, _) = ReferencePlan();
-        plan.LoadDescription = null;
+        plan.LoadDescription = string.Empty;
         plan.LengthM = null;
         plan.WidthM = null;
         plan.HeightM = null;
@@ -46,7 +46,7 @@ public class DrawingSheetStampBuilderTests
         plan.LoadCapacityT = null;
         plan.FootingForceKgf = null;
         plan.MaxWindSpeedMs = null;
-        plan.OperationName = null;
+        plan.OperationName = string.Empty;
         plan.ClientName = null;
         plan.ArtNumber = null;
         plan.RiggerName = null;

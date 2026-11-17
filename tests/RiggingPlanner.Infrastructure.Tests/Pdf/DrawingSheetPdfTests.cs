@@ -352,7 +352,7 @@ public sealed class DrawingSheetPdfTests(ITestOutputHelper output)
     public void Null_optionals_print_dash()
     {
         var (plan, _) = TestPlans.Reference2607036();
-        plan.LoadDescription = null;
+        plan.LoadDescription = string.Empty;
         plan.LengthM = null;
         plan.WidthM = null;
         plan.HeightM = null;
@@ -361,7 +361,7 @@ public sealed class DrawingSheetPdfTests(ITestOutputHelper output)
         plan.LoadCapacityT = null;
         plan.FootingForceKgf = null;
         plan.MaxWindSpeedMs = null;
-        plan.OperationName = null;
+        plan.OperationName = string.Empty;
         plan.ClientName = null;
         plan.ArtNumber = null;
         plan.RiggerName = null;
