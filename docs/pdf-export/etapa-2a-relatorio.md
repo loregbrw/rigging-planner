@@ -1,6 +1,8 @@
-# Etapa 2A — Relatório (Passo 1: escolha das fontes)
+# Etapa 2A — Relatório
 
-> Branch: `feature/pdf-stage-2a` · Data: 17/11/2026 · Status: **Passo 1 concluído — aguardando a escolha das fontes (gótica e de marca) pelo responsável antes do Passo 2.** Nada do Passo 2 (moldura, carimbo, renderer) foi implementado.
+> Branch: `feature/pdf-stage-2a` · Data: 17/11/2026 · Status: **2A concluída — fontes escolhidas pelo responsável (Questrial e Open Sans SemiBold), moldura e carimbo implementadas; build Release 0 erros/0 avisos; 118/118 testes passando, 0 ignorados.**
+>
+> Seções 1–10 abaixo registram o **Passo 1 (medição de fontes)**. As seções 11–12 registram a escolha do responsável, a chegada da implementação (via cherry-pick de um commit que havia sido feito fora desta branch) e a validação final.
 
 ## 1. Escopo deste passo
 
@@ -121,3 +123,46 @@ Aguardando a decisão do responsável sobre:
 2. **Fonte de marca** — recomendação Open Sans SemiBold (alternativa Nunito Sans SemiBold).
 
 Com a escolha, o Passo 2 embute os TTFs + `OFL.txt` como `EmbeddedResource` e implementa a moldura e o carimbo da 2A (sem imagens, que ficam na 2B).
+
+---
+
+## 11. Escolha das fontes e reorganização das branches (17/11/2026)
+
+### 11.1 Escolha do responsável
+
+Confirmado nesta sessão, com base nas medições das seções 5–7:
+
+- **Gótica: Questrial** (recomendada; alternativa Poppins não escolhida);
+- **Marca: Open Sans SemiBold** (recomendada; alternativa Nunito Sans SemiBold não escolhida).
+
+### 11.2 Divergência encontrada e reorganização das branches
+
+Investigação nesta sessão encontrou a **implementação completa da 2A** (moldura, carimbo, `DrawingSheetLayout`, `DrawingSheetStampBuilder`, `DrawingSheetsRenderer.RenderFrameOnly`, fontes Questrial + Open Sans já embutidas, testes) commitada como `3a11cac "feat: stage 2a"` **na branch `feature/pdf-stage-2b`** — commit cujo pai é o tip da stage-1 (`7598e2f`), ou seja, criado fora da branch da 2A e sem conter o Passo 1 (`71bcf87`). As fontes embutidas eram exatamente as que o responsável escolheu nesta sessão, indicando que uma sessão anterior já as havia aplicado.
+
+Decisão do responsável (17/11/2026): **cherry-pick para a branch correta**. Executado:
+
+1. Trabalho 2B em andamento no diretório (não commitado) preservado em stash;
+2. `3a11cac` cherry-pickado para `feature/pdf-stage-2a` (`41b825e`);
+3. Branch `feature/pdf-stage-2b` reposicionada sobre a nova 2A;
+4. Nenhuma branch remota afetada (2a e 2b não estavam no remote).
+
+> Nota: `AGENTS.md` e `docs/agent-guide.md` ficaram trackados nesta branch (foram commitados em `71bcf87`); nas demais branches são arquivos não trackados. Sem alteração de histórico.
+
+### 11.3 Correções de build (avisos)
+
+A implementação chegada na 2A tinha **5 avisos** de build; corrigidos (commit `4616246 "fix: stage 2a build warnings"`):
+
+- 4× **CS8625** nos testes "nulos imprimem -" (`DrawingSheetStampBuilderTests.cs:40,49` e `DrawingSheetPdfTests.cs:355,364`): `OperationName` e `LoadDescription` são `string` **não-nulável** na entidade (campos obrigatórios); o teste passou a usar `string.Empty` (o `PlanValueFormatter.Text` mapeia vazio → "-", mesmo comportamento).
+- 1× **CS0618** em `PdfTextReader.cs:93`: `Letter.GlyphRectangle` (obsoleto) → `Letter.BoundingBox` (API recomendada do PdfPig). Suíte completa revalidada após a troca: 118/118 passando, sem regredir os testes de letras da etapa 1.
+
+## 12. Validação final (2A)
+
+- `dotnet build RiggingPlanner.slnx -c Release` — **0 erros, 0 avisos**.
+- `dotnet test RiggingPlanner.slnx -c Release --no-build` — **97/97 Domain + 21/21 Infrastructure = 118/118**, 0 falhas, 0 ignorados.
+- Artefatos de revisão da 2A em `artifacts/pdf-review/stage-2a/`: `drawing-sheet.pdf` / `.png`, `overlay.png`, `anchoring-deviations.txt`, `long-texts.*`, `null-optionals.pdf`, `diff-metrics.txt`, `font-candidates.png`, `font-measures.txt`.
+
+## 13. Pendências da 2A para revisão humana
+
+- **Revisar** `artifacts/pdf-review/stage-2a/overlay.png` e `drawing-sheet.pdf` ao lado da página 2 do exemplo (conforme seção 7 do documento da etapa 2): linhas, letras A–F e 1–4, textos dentro das células, esforço nas sapatas em kgf, cliente do plano e as fontes escolhidas.
+- **P-0d (herdado):** fixtures antigos com dados reais ainda commitados (seção 9.1).
+- **PENDING-CONFIRMATION no código:** `DrawingSheetStampBuilder.RiggerLabel`/`CreaLabel` — quando `RiggerRpp`/`RiggerCrea` vazio, imprime "RIGGER -" / "CREA-PR -" (prefixo fixo mantido, número como "-"); confirmar com o responsável.
