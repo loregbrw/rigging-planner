@@ -101,4 +101,6 @@ Tests           Domain.Tests (formatador, builder) · Infrastructure.Tests (rend
 - P-SUP. Como imprimir o nome do supervisor (`SupervisorName`) e se o campo ainda existe no formulário (etapa 1 traz a verificação).
 - P-WM. Marca d'água "RASCUNHO" em exportação de rascunho (etapa 6).
 - P-ROUND. Aviso quando um valor digitado é arredondado na exibição.
-- P-FONT. Substitutas de Century Gothic e Era ITC Demi (etapa 2).
+- P-FONT. Substitutas de Century Gothic e Eras ITC Demi: escolhidas por medição na etapa 2A, com aprovação do usuário.
+- P-IMG. Imagens anexadas são capturas de tela (resolução livre): resolução efetiva < 100 ppi gera aviso (etapa 2B); tratamento na UI fica para a etapa 6.
+- D14. A etapa 2 se divide em 2A (moldura e carimbo) e 2B (encaixe das imagens), cada uma com revisão.
