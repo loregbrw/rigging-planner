@@ -1,0 +1,206 @@
+using System.Text.Json;
+using UglyToad.PdfPig;
+using UglyToad.PdfPig.Content;
+
+namespace RiggingPlanner.Infrastructure.Tests.Pdf.Tools;
+
+public sealed record PdfWordInfo(
+    string Text,
+    double X0,
+    double X1,
+    double Top,
+    double Bottom,
+    string FontName,
+    double Size);
+
+public sealed record PdfLetterInfo(
+    string Text,
+    double X,
+    double Baseline,
+    double Size,
+    string FontName,
+    double GlyphLeft,
+    double GlyphRight,
+    double GlyphTop,
+    double GlyphBottom)
+{
+    public double GlyphCenterX => (GlyphLeft + GlyphRight) / 2.0;
+
+    public double GlyphCenterY => (GlyphTop + GlyphBottom) / 2.0;
+}
+
+public sealed record PdfPageWords(
+    int PageNumber,
+    double Width,
+    double Height,
+    IReadOnlyList<PdfWordInfo> Words);
+
+public sealed record PdfPageLetters(
+    int PageNumber,
+    double Width,
+    double Height,
+    IReadOnlyList<PdfLetterInfo> Letters);
+
+/// <summary>
+/// Extracts words with coordinates in points, origin at the top-left corner,
+/// matching the coordinate system used by the reference JSON files.
+/// Words keep their natural extraction order.
+/// </summary>
+public static class PdfTextReader
+{
+    public static IReadOnlyList<PdfPageWords> ReadPages(string pdfPath) =>
+        ReadPages(File.ReadAllBytes(pdfPath));
+
+    public static IReadOnlyList<PdfPageWords> ReadPages(byte[] pdfBytes)
+    {
+        using var document = PdfDocument.Open(pdfBytes);
+        var pages = new List<PdfPageWords>();
+
+        foreach (var page in document.GetPages())
+        {
+            var pageHeight = (double)page.Height;
+            // Default extractor: its word segmentation matches the reference JSON
+            // (NearestNeighbourWordExtractor over-segments this document: 450 words vs 295).
+            var words = page.GetWords()
+                .Select(w => ToWordInfo(w, pageHeight))
+                .ToList();
+
+            pages.Add(new PdfPageWords(page.Number, (double)page.Width, pageHeight, words));
+        }
+
+        return pages;
+    }
+
+    /// <summary>
+    /// Extracts glyphs (letters) of each page. X is the glyph origin and Baseline is the
+    /// text baseline, both in points with origin at the top-left corner. Size is the
+    /// nominal font size (content stream Tf value).
+    /// </summary>
+    public static IReadOnlyList<PdfPageLetters> ReadLetterPages(string pdfPath) =>
+        ReadLetterPages(File.ReadAllBytes(pdfPath));
+
+    public static IReadOnlyList<PdfPageLetters> ReadLetterPages(byte[] pdfBytes)
+    {
+        using var document = PdfDocument.Open(pdfBytes);
+        var pages = new List<PdfPageLetters>();
+
+        foreach (var page in document.GetPages())
+        {
+            var pageHeight = (double)page.Height;
+            var letters = page.Letters
+                .Select(l =>
+                {
+                    var glyph = l.BoundingBox;
+                    return new PdfLetterInfo(
+                        l.Value,
+                        (double)l.Location.X,
+                        pageHeight - (double)l.Location.Y,
+                        (double)l.FontSize,
+                        l.FontName ?? string.Empty,
+                        (double)glyph.Left,
+                        (double)glyph.Right,
+                        pageHeight - (double)glyph.Top,
+                        pageHeight - (double)glyph.Bottom);
+                })
+                .ToList();
+
+            pages.Add(new PdfPageLetters(page.Number, (double)page.Width, pageHeight, letters));
+        }
+
+        return pages;
+    }
+
+    private static PdfWordInfo ToWordInfo(Word word, double pageHeight)
+    {
+        var boundingBox = word.BoundingBox;
+        var top = pageHeight - (double)boundingBox.TopRight.Y;
+        var bottom = pageHeight - (double)boundingBox.BottomLeft.Y;
+        return new PdfWordInfo(
+            word.Text,
+            (double)boundingBox.BottomLeft.X,
+            (double)boundingBox.TopRight.X,
+            top,
+            bottom,
+            word.FontName ?? string.Empty,
+            bottom - top);
+    }
+}
+
+/// <summary>
+/// Loads a reference JSON with measured words/rects from the example plan PDF
+/// (coordinates in pt, top-left origin).
+/// </summary>
+public sealed class ReferenceSheet
+{
+    public sealed record ReferenceRect(
+        double X0,
+        double X1,
+        double Top,
+        double Bottom,
+        string Kind);
+
+    public sealed record ReferenceLine(
+        double X0,
+        double X1,
+        double Top,
+        double Bottom,
+        double Width);
+
+    public double Width { get; private init; }
+    public double Height { get; private init; }
+    public IReadOnlyList<PdfWordInfo> Words { get; private init; } = [];
+    public IReadOnlyList<ReferenceRect> Rects { get; private init; } = [];
+    public IReadOnlyList<ReferenceLine> Lines { get; private init; } = [];
+
+    public static ReferenceSheet Load(string jsonPath)
+    {
+        var json = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(jsonPath));
+        return FromJson(json);
+    }
+
+    public static ReferenceSheet FromJson(JsonElement json)
+    {
+        var page = json.GetProperty("page");
+        var words = json.GetProperty("words").EnumerateArray()
+            .Select(w => new PdfWordInfo(
+                w.GetProperty("text").GetString() ?? string.Empty,
+                w.GetProperty("x0").GetDouble(),
+                w.GetProperty("x1").GetDouble(),
+                w.GetProperty("top").GetDouble(),
+                w.GetProperty("bottom").GetDouble(),
+                w.GetProperty("font").GetString() ?? string.Empty,
+                w.GetProperty("size").GetDouble()))
+            .ToList();
+
+        var rects = json.TryGetProperty("rects", out var rectsElement)
+            ? rectsElement.EnumerateArray()
+                .Select(r => new ReferenceRect(
+                    r.GetProperty("x0").GetDouble(),
+                    r.GetProperty("x1").GetDouble(),
+                    r.GetProperty("top").GetDouble(),
+                    r.GetProperty("bottom").GetDouble(),
+                    r.TryGetProperty("kind", out var kind) ? kind.GetString() ?? string.Empty : string.Empty))
+                .ToList()
+            : new List<ReferenceRect>();
+
+        var lines = json.TryGetProperty("lines", out var linesElement)
+            ? linesElement.EnumerateArray()
+                .Select(l => new ReferenceLine(
+                    l.GetProperty("x0").GetDouble(),
+                    l.GetProperty("x1").GetDouble(),
+                    l.GetProperty("top").GetDouble(),
+                    l.GetProperty("bottom").GetDouble(),
+                    l.GetProperty("lw").GetDouble()))
+                .ToList()
+            : new List<ReferenceLine>();
+
+        return new ReferenceSheet
+        {
+            Width = page.GetProperty("width").GetDouble(),
+            Height = page.GetProperty("height").GetDouble(),
+            Words = words,
+            Rects = rects,
+            Lines = lines
+        };
+    }
+}

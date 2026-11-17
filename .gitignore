@@ -67,6 +67,11 @@ artifacts/
 **/artifacts/
 *.binlog
 
+# PDF reference fixtures contain real customer data (privacy, see docs/pdf-export)
+# Test sources stay trackable; only the reference documents/JSON are ignored.
+tests/RiggingPlanner.Infrastructure.Tests/Fixtures/*
+!tests/RiggingPlanner.Infrastructure.Tests/Fixtures/*.cs
+
 # Tye
 .tye/
 

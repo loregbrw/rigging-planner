@@ -1,4 +1,5 @@
 using RiggingPlanner.App.Components.Shared;
+using RiggingPlanner.Domain;
 using RiggingPlanner.Domain.Entities;
 
 namespace RiggingPlanner.App.Components.Plan.Capacity;
@@ -22,11 +23,9 @@ public sealed class CapacityState
     public CapacityAccessoryState Lingada { get; }
     public CapacityAccessoryState Device { get; }
 
-    public decimal GrossWeight => (Plan?.WeightKg ?? 0) + Lingada.Total + Device.Total + (Plan?.ExtraLoadKg ?? 0);
-    public decimal GrossWeightTons => GrossWeight / 1000;
-    public decimal? Utilization => Plan?.LoadCapacityT is > 0
-        ? GrossWeightTons / Plan.LoadCapacityT.Value * 100
-        : null;
+    public decimal GrossWeight => PlanTotals.GrossWeightKg(Plan?.WeightKg, Lingada.Total, Device.Total, Plan?.ExtraLoadKg);
+    public decimal GrossWeightTons => PlanTotals.GrossWeightTons(GrossWeight);
+    public decimal? Utilization => PlanTotals.CraneUtilizationPct(GrossWeightTons, Plan?.LoadCapacityT);
 
     internal List<PlanAccessory> Items => draft.Accessories;
     internal int NextSortOrder => Items.Count == 0 ? 1 : Items.Max(x => x.SortOrder) + 1;

@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using RiggingPlanner.Application.Pdf;
 using RiggingPlanner.Infrastructure.Persistence;
 
 namespace RiggingPlanner.Infrastructure;
@@ -13,6 +14,8 @@ public static class DependencyInjection
 
         // Factory (short-lived contexts) because a Blazor Hybrid scope lives as long as the app.
         services.AddDbContextFactory<AppDbContext>(options => options.UseSqlite(connectionString));
+        services.AddSingleton<ISummarySheetRenderer, Pdf.SummarySheetRenderer>();
+        services.AddSingleton<IDrawingSheetsRenderer, Pdf.DrawingSheetsRenderer>();
 
         return services;
     }
