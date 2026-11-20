@@ -1,6 +1,11 @@
 @using Microsoft.AspNetCore.Components.Forms
 
 <div class="rp-field">
+    @if (!IsReadOnly)
+    {
+        <InputFile id="@InputId" class="rp-file-input" OnChange="OnChange" accept="@Accept" />
+    }
+
     @if (!string.IsNullOrWhiteSpace(FileName))
     {
         <div style="display: flex; align-items: center; justify-content: space-between; padding: var(--rp-space-3) var(--rp-space-4); background: var(--rp-surface); border: 1px solid var(--rp-border-subtle); border-radius: var(--rp-radius-md);">
@@ -21,7 +26,6 @@
             @if (!IsReadOnly)
             {
                 <div style="display: flex; gap: var(--rp-space-2); flex-shrink: 0;">
-                    <InputFile id="@InputId" class="rp-file-input" OnChange="OnChange" accept="@Accept" />
                     <label class="rp-btn rp-btn--ghost rp-btn--sm" for="@InputId">Trocar</label>
                     @if (OnRemove.HasDelegate)
                     {
@@ -36,7 +40,6 @@
         @if (!IsReadOnly)
         {
             <div style="display: flex; flex-direction: column; gap: var(--rp-space-2);">
-                <InputFile id="@InputId" class="rp-file-input" OnChange="OnChange" accept="@Accept" />
                 <label class="rp-btn rp-btn--ghost-outline" for="@InputId"
                        style="display: inline-flex; align-items: center; justify-content: center; gap: var(--rp-space-2); cursor: pointer; width: 100%;">
                     <svg class="rp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

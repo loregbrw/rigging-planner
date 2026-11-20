@@ -70,11 +70,11 @@
                         <input id="modal-art-number" class="rp-input" @bind="draft.ArtNumber" placeholder="Ex: 2026/123456" />
                     </div>
                     <div class="rp-field rp-col-4">
-                        <label class="rp-label" for="modal-art-from">Data de início</label>
+                        <label class="rp-label" for="modal-art-from">Data de início <span class="rp-required-marker" aria-hidden="true">*</span></label>
                         <input id="modal-art-from" type="date" class="rp-input" @bind="draft.ValidFrom" />
                     </div>
                     <div class="rp-field rp-col-4">
-                        <label class="rp-label" for="modal-art-to">Previsão de término</label>
+                        <label class="rp-label" for="modal-art-to">Previsão de término <span class="rp-required-marker" aria-hidden="true">*</span></label>
                         <input id="modal-art-to" type="date" class="rp-input" @bind="draft.ValidTo" />
                     </div>
                     <div class="rp-field rp-col-12">
@@ -248,7 +248,9 @@
     private string? ValidateDraft()
     {
         if (string.IsNullOrWhiteSpace(draft.ArtNumber)) return "Informe o número da ART.";
-        if (draft.ValidFrom is not null && draft.ValidTo is not null && draft.ValidTo < draft.ValidFrom)
+        if (draft.ValidFrom is null) return "Informe a data de início da ART.";
+        if (draft.ValidTo is null) return "Informe a previsão de término da ART.";
+        if (draft.ValidTo < draft.ValidFrom)
             return "A previsão de término deve ser posterior à data de início.";
         if (draft.File is null && string.IsNullOrWhiteSpace(draft.ExistingFileName)) return "Anexe o arquivo PDF da ART.";
         if (draft.File is not null && !IsPdf(draft.File)) return "Anexe somente arquivos PDF.";

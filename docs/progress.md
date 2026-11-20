@@ -75,7 +75,7 @@
 
 ### Etapas 4 e 6 — Dados de entrada e capacidade de carga
 - [x] Cadastro persistente de equipamentos com modelo, caminhão, chassi, placas, ano e ARTs opcionais com validade e histórico
-- [x] Editor específico de ARTs dentro do formulário do equipamento, com adição múltipla, edição sem reenviar o PDF existente, datas opcionais, exclusão protegida e histórico visual de validade
+- [x] Editor específico de ARTs dentro do formulário do equipamento, com adição múltipla, edição sem reenviar o PDF existente, datas obrigatórias, exclusão protegida e histórico visual de validade
 - [x] Cadastro persistente de responsáveis (riggers), com nome completo, nome de exibição, RPP e CREA
 - [x] Seleção de equipamento e responsável no plano, copiando os dados para manter o plano autossuficiente
 - [x] Tela de capacidade de carga vinculada ao plano

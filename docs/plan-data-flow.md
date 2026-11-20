@@ -137,7 +137,7 @@ PlanNumberCounters (isolada, PK YearMonth)
 - `Clients`: `Id`, `Name` (200), `Cnpj` (18, único quando não nulo), `IsActive`, `CreatedAt`, `UpdatedAt`.
 - `Riggers`: `Id`, `FullName` (200), `DisplayName` (120), `RppNumber` (50), `CreaNumber` (50, nulo), `IsActive`.
 - `Equipments`: `Id`, `EquipmentType` (100), `TruckModel` (150), `LicensePlate` (20), `ChassisNumber` (100, único), `ManufactureYear`, `CraneBrand` (100), `CraneModel` (100), `IsActive`, `CreatedAt`, `UpdatedAt`.
-- `EquipmentReports`: `Id`, `EquipmentId` (Restrict), `FileId` (Restrict), `ArtNumber` (50), `ValidFrom`/`ValidTo` (nulos), `CreatedAt`.
+- `EquipmentReports`: `Id`, `EquipmentId` (Restrict), `FileId` (Restrict), `ArtNumber` (50), `ValidFrom`/`ValidTo` (obrigatórios), `CreatedAt`.
 - `PlanNumberCounters`: `YearMonth` (PK, 4, ex.: `"2611"`), `LastSequence`.
 
 ---
