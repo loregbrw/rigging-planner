@@ -33,11 +33,11 @@
                             <InputText id="new-art-number" class="rp-input" @bind-Value="initialArtNumber" placeholder="Ex: 2026/123456" />
                         </div>
                         <div class="rp-field rp-col-4">
-                            <label class="rp-label" for="new-art-from">Data de início da ART</label>
+                            <label class="rp-label" for="new-art-from">Data de início da ART <span class="rp-required-marker" aria-hidden="true">*</span></label>
                             <InputDate id="new-art-from" class="rp-input" @bind-Value="initialArtValidFrom" />
                         </div>
                         <div class="rp-field rp-col-4">
-                            <label class="rp-label" for="new-art-to">Previsão de término da ART</label>
+                            <label class="rp-label" for="new-art-to">Previsão de término da ART <span class="rp-required-marker" aria-hidden="true">*</span></label>
                             <InputDate id="new-art-to" class="rp-input" @bind-Value="initialArtValidTo" />
                         </div>
                         <div class="rp-field rp-col-12">
@@ -206,7 +206,19 @@
                 isError = true;
                 return;
             }
-            if (initialArtValidFrom is not null && initialArtValidTo is not null && initialArtValidTo < initialArtValidFrom)
+            if (initialArtValidFrom is null)
+            {
+                message = "Informe a data de início da ART inicial.";
+                isError = true;
+                return;
+            }
+            if (initialArtValidTo is null)
+            {
+                message = "Informe a previsão de término da ART inicial.";
+                isError = true;
+                return;
+            }
+            if (initialArtValidTo < initialArtValidFrom)
             {
                 message = "A previsão de término da ART deve ser posterior à data de início.";
                 isError = true;

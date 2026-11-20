@@ -1,1 +1,192 @@
-<RpStagePlaceholder Title="Exportação" />
+@using RiggingPlanner.Application.Pdf
+@inject IDbContextFactory<AppDbContext> DbFactory
+@inject PlanDraftState Draft
+@inject ISummarySheetRenderer SummarySheetRenderer
+@inject IDrawingSheetsRenderer DrawingsRenderer
+@inject IPdfDocumentMerger PdfMerger
+
+<RpCard Title="Exportação">
+    <p class="rp-muted">
+        O PDF completo reúne a folha-resumo, as folhas de desenho, a ART do plano e o laudo técnico do equipamento.
+        O procedimento operacional ainda não é incluído.
+    </p>
+
+    <div class="rp-form-actions">
+        <button class="rp-btn rp-btn--primary" type="button"
+                disabled="@(!Draft.IsPersisted || isExporting)"
+                @onclick="ExportFullPdf">
+            Exportar PDF completo
+        </button>
+    </div>
+
+    <p class="rp-muted">O PDF usa os dados salvos do plano.</p>
+    @if (!Draft.IsPersisted)
+    {
+        <p class="rp-muted">Salve o plano para liberar a exportação.</p>
+    }
+    @if (statusMessage is not null)
+    {
+        <p class="rp-muted">@statusMessage</p>
+    }
+</RpCard>
+
+@code {
+    private bool isExporting;
+    private string? statusMessage;
+
+    private async Task ExportFullPdf()
+    {
+        isExporting = true;
+        statusMessage = null;
+
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var plan = await db.RiggingPlans
+                .AsNoTracking()
+                .Include(x => x.ArtFile)
+                .Include(x => x.Drawings)
+                    .ThenInclude(x => x.File)
+                .Include(x => x.EquipmentReport)
+                    .ThenInclude(x => x!.File)
+                .SingleOrDefaultAsync(x => x.Id == Draft.PlanId && x.DeletedAt == null);
+            if (plan is null)
+            {
+                statusMessage = "Plano não encontrado.";
+                return;
+            }
+
+            var accessories = await db.PlanAccessories
+                .AsNoTracking()
+                .Where(x => x.PlanId == plan.Id)
+                .OrderBy(x => x.SortOrder)
+                .ToListAsync();
+
+            var documents = new List<byte[]>();
+
+            var summaryModel = RiggingPlanner.Domain.SummarySheetBuilder.Build(plan, accessories);
+            documents.Add(SummarySheetRenderer.Render(summaryModel));
+
+            var drawings = await BuildDrawingsPdfAsync(plan, accessories);
+            if (drawings is not null)
+            {
+                documents.Add(drawings);
+            }
+
+            var planArt = await TryReadFileAsync(plan.ArtFile);
+            if (planArt is not null)
+            {
+                documents.Add(planArt);
+            }
+
+            var equipmentReport = await ResolveEquipmentReportFileAsync(db, plan);
+            var reportPdf = await TryReadFileAsync(equipmentReport);
+            if (reportPdf is not null)
+            {
+                documents.Add(reportPdf);
+            }
+
+            var pdf = PdfMerger.Merge(documents);
+
+            var directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "RiggingPlanner", "pdf-review");
+            Directory.CreateDirectory(directory);
+            var filePath = Path.Combine(directory, $"plano-completo-{plan.PlanNumber}.pdf");
+            await File.WriteAllBytesAsync(filePath, pdf);
+
+            await Microsoft.Maui.ApplicationModel.Launcher.OpenAsync(
+                new Microsoft.Maui.ApplicationModel.OpenFileRequest("Plano completo", new Microsoft.Maui.Storage.ReadOnlyFile(filePath)));
+            statusMessage = $"PDF gerado: {filePath}";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Não foi possível gerar o PDF: {ex.Message}";
+        }
+        finally
+        {
+            isExporting = false;
+        }
+    }
+
+    private async Task<byte[]?> BuildDrawingsPdfAsync(RiggingPlan plan, IReadOnlyList<PlanAccessory> accessories)
+    {
+        var drawings = plan.Drawings.OrderBy(x => x.SortOrder).ToList();
+        if (drawings.Count == 0)
+        {
+            return null;
+        }
+
+        var imageItems = new List<DrawingSheetImageItem>();
+        foreach (var drawing in drawings)
+        {
+            if (drawing.File is null)
+            {
+                continue;
+            }
+
+            var filePath = Path.Combine(Microsoft.Maui.Storage.FileSystem.AppDataDirectory, drawing.File.RelativePath);
+            if (!File.Exists(filePath))
+            {
+                continue;
+            }
+
+            var bytes = await File.ReadAllBytesAsync(filePath);
+            var info = SkiaSharp.SKBitmap.DecodeBounds(bytes);
+            if (info.Width == 0) info = new SkiaSharp.SKImageInfo(800, 600);
+            imageItems.Add(new DrawingSheetImageItem(drawing.FileId, bytes, info.Width, info.Height));
+        }
+
+        if (imageItems.Count == 0)
+        {
+            return null;
+        }
+
+        var stampModel = RiggingPlanner.Domain.DrawingSheetStampBuilder.Build(plan, accessories, 1, 1);
+        return DrawingsRenderer.RenderWithImages(stampModel, imageItems);
+    }
+
+    private static async Task<StoredFile?> ResolveEquipmentReportFileAsync(
+        AppDbContext db,
+        RiggingPlan plan)
+    {
+        if (plan.EquipmentReport?.File is not null)
+        {
+            return plan.EquipmentReport.File;
+        }
+
+        if (plan.EquipmentId is null)
+        {
+            return null;
+        }
+
+        var report = await db.EquipmentReports
+            .AsNoTracking()
+            .Include(x => x.File)
+            .Where(x => x.EquipmentId == plan.EquipmentId && (x.ValidTo == null || x.ValidTo >= plan.PlanDate))
+            .OrderByDescending(x => x.ValidFrom)
+            .ThenByDescending(x => x.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        report ??= await db.EquipmentReports
+            .AsNoTracking()
+            .Include(x => x.File)
+            .Where(x => x.EquipmentId == plan.EquipmentId)
+            .OrderByDescending(x => x.ValidFrom)
+            .ThenByDescending(x => x.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        return report?.File;
+    }
+
+    private static async Task<byte[]?> TryReadFileAsync(StoredFile? file)
+    {
+        if (file is null)
+        {
+            return null;
+        }
+
+        var filePath = Path.Combine(Microsoft.Maui.Storage.FileSystem.AppDataDirectory, file.RelativePath);
+        return File.Exists(filePath) ? await File.ReadAllBytesAsync(filePath) : null;
+    }
+}

@@ -28,11 +28,11 @@
             <InputText id="@($"{Id}-number")" class="rp-input" @bind-Value="draft.ArtNumber" />
         </div>
         <div class="rp-field rp-col-4">
-            <label class="rp-label" for="@($"{Id}-from")">Data de início da ART</label>
+            <label class="rp-label" for="@($"{Id}-from")">Data de início da ART <span class="rp-required-marker" aria-hidden="true">*</span></label>
             <InputDate id="@($"{Id}-from")" class="rp-input" @bind-Value="draft.ValidFrom" />
         </div>
         <div class="rp-field rp-col-4">
-            <label class="rp-label" for="@($"{Id}-to")">Previsão de término da ART</label>
+            <label class="rp-label" for="@($"{Id}-to")">Previsão de término da ART <span class="rp-required-marker" aria-hidden="true">*</span></label>
             <InputDate id="@($"{Id}-to")" class="rp-input" @bind-Value="draft.ValidTo" />
         </div>
         <div class="rp-field rp-col-12">
@@ -146,7 +146,9 @@
     private string? ValidateDraft()
     {
         if (string.IsNullOrWhiteSpace(draft.ArtNumber)) return "Informe o número da ART do laudo.";
-        if (draft.ValidFrom is not null && draft.ValidTo is not null && draft.ValidTo < draft.ValidFrom)
+        if (draft.ValidFrom is null) return "Informe a data de início da ART.";
+        if (draft.ValidTo is null) return "Informe a previsão de término da ART.";
+        if (draft.ValidTo < draft.ValidFrom)
             return "A previsão de término deve ser posterior à data de início.";
         if (editingItem is null && draft.File is null) return "Anexe o arquivo PDF do laudo técnico de segurança.";
         if (draft.File is not null && !IsPdf(draft.File)) return "Anexe somente arquivos PDF.";
