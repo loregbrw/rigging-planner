@@ -12,8 +12,22 @@ public static class PlanEntryPersistence
     public static async Task<string?> SaveAsync(AppDbContext db, PlanDraftState draft, Guid? planId, bool isDraftPlan,
         PlanEntryState state)
     {
-        var form = draft.Form;
         await using var transaction = await db.Database.BeginTransactionAsync();
+        var error = await SaveCoreAsync(db, draft, planId, isDraftPlan, state);
+        if (error is not null)
+        {
+            await transaction.RollbackAsync();
+            return error;
+        }
+
+        await transaction.CommitAsync();
+        return null;
+    }
+
+    public static async Task<string?> SaveCoreAsync(AppDbContext db, PlanDraftState draft, Guid? planId, bool isDraftPlan,
+        PlanEntryState state)
+    {
+        var form = draft.Form;
         var attachmentResult = new AttachmentSaveResult();
 
         try
@@ -40,7 +54,6 @@ public static class PlanEntryPersistence
                 await db.SaveChangesAsync();
                 await SaveAccessoriesAsync(db, draft, existingPlan.Id);
                 await AttachmentPersistence.ApplyAsync(db, draft, existingPlan.Id, attachmentResult);
-                await transaction.CommitAsync();
                 attachmentResult.DeleteRemovedFiles();
                 return null;
             }
@@ -71,8 +84,8 @@ public static class PlanEntryPersistence
             await db.SaveChangesAsync();
             await SaveAccessoriesAsync(db, draft, newPlan.Id);
             await AttachmentPersistence.ApplyAsync(db, draft, newPlan.Id, attachmentResult);
-            await transaction.CommitAsync();
             attachmentResult.DeleteRemovedFiles();
+            draft.PlanId = newPlan.Id;
             return null;
         }
         catch

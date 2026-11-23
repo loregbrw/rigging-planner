@@ -1,5 +1,6 @@
 @page "/"
 @inject IDbContextFactory<AppDbContext> DbFactory
+@inject RiggingPlanner.App.Components.Plan.Export.PlanExportService ExportService
 
 @if (isLoading)
 {
@@ -14,6 +15,15 @@ else
     </RpPageHeader>
 
     <RpCard Title="Planos de rigging">
+        @if (rowMessage is not null)
+        {
+            <div class="rp-alert @(rowMessageIsError ? "rp-alert--danger" : "rp-alert--success")">@rowMessage</div>
+        }
+        @foreach (var warning in rowWarnings)
+        {
+            <div class="rp-alert rp-alert--warning">@warning</div>
+        }
+
         @if (plans.Count == 0)
         {
             <div class="rp-empty">
@@ -39,7 +49,20 @@ else
                                 <td class="rp-data">@plan.PlanDate.ToString("dd/MM/yyyy")</td>
                                 <td><span class="rp-badge @(plan.Status == "finalized" ? "rp-badge--success" : "rp-badge--primary")">@(plan.Status == "finalized" ? "Finalizado" : "Rascunho")</span></td>
                                 <td class="rp-row-actions">
-                                    <a class="rp-btn rp-btn--ghost rp-btn--sm" href="@($"new-plan/{plan.Id}")">@(plan.Status == "finalized" ? "Visualizar" : "Abrir")</a>
+                                    @if (plan.Status != "finalized")
+                                    {
+                                        <a class="rp-btn rp-btn--ghost rp-btn--sm" href="@($"new-plan/{plan.Id}")">Abrir</a>
+                                    }
+                                    <button class="rp-btn rp-btn--ghost rp-btn--sm" type="button"
+                                            title="Exportar PDF" aria-label="Exportar PDF"
+                                            disabled="@(exportingPlanId is not null)"
+                                            @onclick="() => ExportAsync(plan)">
+                                        <svg class="rp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                            <path d="M12 3v12" />
+                                            <path d="m7 10 5 5 5-5" />
+                                            <path d="M4 17v3h16v-3" />
+                                        </svg>
+                                    </button>
                                 </td>
                             </tr>
                         }
@@ -53,6 +76,10 @@ else
 @code {
     private List<RiggingPlan> plans = [];
     private bool isLoading = true;
+    private Guid? exportingPlanId;
+    private string? rowMessage;
+    private bool rowMessageIsError;
+    private IReadOnlyList<string> rowWarnings = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -68,5 +95,33 @@ else
             .ThenByDescending(plan => plan.PlanNumber)
             .ToListAsync();
         isLoading = false;
+    }
+
+    private async Task ExportAsync(RiggingPlan plan)
+    {
+        if (exportingPlanId is not null)
+        {
+            return;
+        }
+
+        exportingPlanId = plan.Id;
+        rowMessage = null;
+        rowMessageIsError = false;
+        rowWarnings = [];
+        try
+        {
+            var result = await ExportService.ExportAsync(plan.Id);
+            rowMessage = $"PDF exportado: {result.FilePath}";
+            rowWarnings = result.Warnings;
+        }
+        catch (Exception ex)
+        {
+            rowMessageIsError = true;
+            rowMessage = $"Não foi possível exportar o PDF: {ex.Message}";
+        }
+        finally
+        {
+            exportingPlanId = null;
+        }
     }
 }

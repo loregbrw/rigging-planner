@@ -1,180 +1,260 @@
 @using RiggingPlanner.Application.Pdf
+@using RiggingPlanner.Infrastructure.Persistence
 @inject IDbContextFactory<AppDbContext> DbFactory
+@inject NavigationManager Navigation
 @inject PlanDraftState Draft
-@inject ISummarySheetRenderer SummarySheetRenderer
-@inject IDrawingSheetsRenderer DrawingsRenderer
-@inject IOperationalProcedureRenderer ProcedureRenderer
-@inject FullPlanPdfAssembler FullPdfAssembler
+@inject PlanSaveService SaveService
+@inject PlanExportService ExportService
+@inject PlanFinalizationService FinalizationService
 
 <RpCard Title="Exportação">
     <p class="rp-muted">
         O PDF completo reúne a folha-resumo, as folhas de desenho, a ART do plano, o procedimento operacional e o laudo técnico do equipamento.
     </p>
 
-    <div class="rp-form-actions">
-        <button class="rp-btn rp-btn--primary" type="button"
-                disabled="@(!Draft.IsPersisted || isExporting)"
-                @onclick="ExportFullPdf">
-            Exportar PDF completo
-        </button>
-    </div>
+    @if (!IsReadOnly)
+    {
+        <div class="rp-form-actions">
+            <button class="rp-btn rp-btn--primary" type="button" disabled="@isBusy" @onclick="SaveAndExportAsync">
+                Salvar e exportar
+            </button>
+            <button class="rp-btn rp-btn--danger" type="button" disabled="@isBusy" @onclick="OpenFinalizeModalAsync">
+                Finalizar plano
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="rp-form-actions">
+            <button class="rp-btn rp-btn--primary" type="button" disabled="@isBusy" @onclick="ExportAsync">
+                Exportar PDF completo
+            </button>
+        </div>
+    }
 
-    <p class="rp-muted">O PDF usa os dados salvos do plano.</p>
-    @if (!Draft.IsPersisted)
-    {
-        <p class="rp-muted">Salve o plano para liberar a exportação.</p>
-    }
-    @if (statusMessage is not null)
-    {
-        <p class="rp-muted">@statusMessage</p>
-    }
+    <div class="rp-export-messages">
+        @if (isBusy)
+        {
+            <p class="rp-muted">Processando...</p>
+        }
+        @if (errorMessage is not null)
+        {
+            <div class="rp-alert rp-alert--danger">@errorMessage</div>
+        }
+        @foreach (var validationError in validationErrors)
+        {
+            <div class="rp-alert rp-alert--danger">@validationError</div>
+        }
+        @if (successMessage is not null)
+        {
+            <div class="rp-alert rp-alert--success">@successMessage</div>
+        }
+        @foreach (var warning in exportWarnings)
+        {
+            <div class="rp-alert rp-alert--warning">@warning</div>
+        }
+    </div>
 </RpCard>
 
+@if (showFinalizeModal)
+{
+    <div class="rp-modal-backdrop" @onclick="() => showFinalizeModal = false">
+        <section class="rp-modal" role="dialog" aria-modal="true" @onclick:stopPropagation>
+            <div class="rp-modal__header"><h2>Finalizar plano</h2></div>
+            <p class="rp-muted">
+                Ao finalizar o plano @planNumber: ele não poderá mais ser editado nem reaberto; o procedimento operacional ficará congelado com o texto atual; você ainda poderá exportar o PDF quantas vezes quiser. As alterações não salvas do formulário serão salvas antes de finalizar.
+            </p>
+            @foreach (var warning in modalWarnings)
+            {
+                <div class="rp-alert rp-alert--warning">@warning</div>
+            }
+            @if (errorMessage is not null)
+            {
+                <div class="rp-alert rp-alert--danger">@errorMessage</div>
+            }
+            @foreach (var validationError in validationErrors)
+            {
+                <div class="rp-alert rp-alert--danger">@validationError</div>
+            }
+            <div class="rp-form-actions">
+                <button class="rp-btn rp-btn--ghost" type="button" disabled="@isBusy" @onclick="() => showFinalizeModal = false">Cancelar</button>
+                <button class="rp-btn rp-btn--danger" type="button" disabled="@isBusy" @onclick="FinalizeAsync">Finalizar plano</button>
+            </div>
+        </section>
+    </div>
+}
+
 @code {
-    private bool isExporting;
-    private string? statusMessage;
+    [Parameter] public Guid PlanId { get; set; }
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public EventCallback OnFinalized { get; set; }
 
-    private async Task ExportFullPdf()
+    private bool isBusy;
+    private bool showFinalizeModal;
+    private string? errorMessage;
+    private string? successMessage;
+    private string? planNumber;
+    private IReadOnlyList<string> validationErrors = [];
+    private IReadOnlyList<string> exportWarnings = [];
+    private IReadOnlyList<string> modalWarnings = [];
+
+    private void ClearMessages()
     {
-        isExporting = true;
-        statusMessage = null;
+        errorMessage = null;
+        successMessage = null;
+        validationErrors = [];
+        exportWarnings = [];
+    }
 
+    private async Task SaveAndExportAsync()
+    {
+        isBusy = true;
+        ClearMessages();
         try
         {
-            await using var db = await DbFactory.CreateDbContextAsync();
-            var plan = await db.RiggingPlans
-                .AsNoTracking()
-                .Include(x => x.ArtFile)
-                .Include(x => x.Drawings)
-                    .ThenInclude(x => x.File)
-                .Include(x => x.EquipmentReport)
-                    .ThenInclude(x => x!.File)
-                .Include(x => x.ProcedureSnapshot)
-                .SingleOrDefaultAsync(x => x.Id == Draft.PlanId && x.DeletedAt == null);
-            if (plan is null)
+            var result = await SaveService.SaveAsync(Draft, PlanId);
+            if (result.ValidationErrors.Count > 0)
             {
-                statusMessage = "Plano não encontrado.";
+                validationErrors = result.ValidationErrors;
+                return;
+            }
+            if (result.Error is not null)
+            {
+                errorMessage = result.Error;
                 return;
             }
 
-            var accessories = await db.PlanAccessories
-                .AsNoTracking()
-                .Where(x => x.PlanId == plan.Id)
-                .OrderBy(x => x.SortOrder)
-                .ToListAsync();
+            var savedId = result.PlanId!.Value;
+            await ExportSavedPlanAsync(savedId);
 
-            var summaryModel = RiggingPlanner.Domain.SummarySheetBuilder.Build(plan, accessories);
-            var summaryPdf = SummarySheetRenderer.Render(summaryModel);
-
-            var drawings = await BuildDrawingsPdfAsync(plan, accessories);
-            var planArt = await TryReadFileAsync(plan.ArtFile);
-
-            var procedurePdf = ProcedureRenderer.Render(plan, plan.ProcedureSnapshot);
-
-            var equipmentReport = await ResolveEquipmentReportFileAsync(db, plan);
-            var reportPdf = await TryReadFileAsync(equipmentReport);
-
-            var pdf = FullPdfAssembler.Assemble(summaryPdf, drawings, planArt, procedurePdf, reportPdf);
-
-            var directory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "RiggingPlanner", "pdf-review");
-            Directory.CreateDirectory(directory);
-            var filePath = Path.Combine(directory, $"plano-completo-{plan.PlanNumber}.pdf");
-            await File.WriteAllBytesAsync(filePath, pdf);
-
-            await Microsoft.Maui.ApplicationModel.Launcher.OpenAsync(
-                new Microsoft.Maui.ApplicationModel.OpenFileRequest("Plano completo", new Microsoft.Maui.Storage.ReadOnlyFile(filePath)));
-            statusMessage = $"PDF gerado: {filePath}";
+            if (Draft.PlanId != savedId || !Draft.IsPersisted)
+            {
+                Draft.PlanId = savedId;
+                Draft.IsPersisted = true;
+                Draft.IsInitialized = true;
+                Navigation.NavigateTo($"/new-plan/{savedId}/export", replace: true);
+            }
         }
         catch (Exception ex)
         {
-            statusMessage = $"Não foi possível gerar o PDF: {ex.Message}";
+            errorMessage = $"Não foi possível salvar e exportar o plano: {ex.Message}";
         }
         finally
         {
-            isExporting = false;
+            isBusy = false;
         }
     }
 
-    private async Task<byte[]?> BuildDrawingsPdfAsync(RiggingPlan plan, IReadOnlyList<PlanAccessory> accessories)
+    private async Task ExportAsync()
     {
-        var drawings = plan.Drawings.OrderBy(x => x.SortOrder).ToList();
-        if (drawings.Count == 0)
+        isBusy = true;
+        ClearMessages();
+        try
         {
-            return null;
+            await ExportSavedPlanAsync(Draft.PlanId!.Value);
         }
-
-        var imageItems = new List<DrawingSheetImageItem>();
-        foreach (var drawing in drawings)
+        catch (Exception ex)
         {
-            if (drawing.File is null)
+            errorMessage = $"Não foi possível gerar o PDF: {ex.Message}";
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task ExportSavedPlanAsync(Guid savedPlanId)
+    {
+        var result = await ExportService.ExportAsync(savedPlanId);
+        successMessage = $"PDF gerado: {result.FilePath}";
+        exportWarnings = result.Warnings;
+    }
+
+    private async Task OpenFinalizeModalAsync()
+    {
+        isBusy = true;
+        ClearMessages();
+        try
+        {
+            var errors = PlanSaveService.Validate(Draft.Form);
+            if (errors.Count > 0)
             {
-                continue;
+                validationErrors = errors;
+                return;
             }
 
-            var filePath = Path.Combine(Microsoft.Maui.Storage.FileSystem.AppDataDirectory, drawing.File.RelativePath);
-            if (!File.Exists(filePath))
+            planNumber = string.IsNullOrWhiteSpace(Draft.Plan?.PlanNumber)
+                ? "ainda sem número"
+                : Draft.Plan.PlanNumber;
+            modalWarnings = Draft.IsPersisted && Draft.PlanId is not null
+                ? await ExportService.GetWarningsAsync(Draft.PlanId.Value)
+                : [];
+            showFinalizeModal = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Não foi possível abrir a finalização: {ex.Message}";
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task FinalizeAsync()
+    {
+        isBusy = true;
+        errorMessage = null;
+        validationErrors = [];
+        var wasPersisted = Draft.IsPersisted;
+        try
+        {
+            await using var db = await DbFactory.CreateDbContextAsync();
+            var error = await FinalizationService.FinalizeAsync(
+                db,
+                Draft.IsPersisted ? Draft.PlanId : null,
+                async context =>
+                {
+                    var save = await SaveService.SaveAsync(context, Draft, PlanId);
+                    if (save.ValidationErrors.Count > 0)
+                    {
+                        validationErrors = save.ValidationErrors;
+                        return new PlanDraftSaveResult("Valores obrigatórios faltando ou dados inválidos.", null);
+                    }
+                    return new PlanDraftSaveResult(save.Error, save.PlanId);
+                });
+            if (validationErrors.Count > 0)
             {
-                continue;
+                return;
+            }
+            if (error is not null)
+            {
+                errorMessage = error;
+                return;
             }
 
-            var bytes = await File.ReadAllBytesAsync(filePath);
-            var info = SkiaSharp.SKBitmap.DecodeBounds(bytes);
-            if (info.Width == 0) info = new SkiaSharp.SKImageInfo(800, 600);
-            imageItems.Add(new DrawingSheetImageItem(drawing.FileId, bytes, info.Width, info.Height));
+            showFinalizeModal = false;
+            var savedId = Draft.PlanId!.Value;
+            await using var reloadDb = await DbFactory.CreateDbContextAsync();
+            await PlanWorkflowLoader.LoadAsync(reloadDb, Draft, savedId, includeAccessories: true);
+            Draft.IsPersisted = true;
+            Draft.IsInitialized = true;
+            if (!wasPersisted || Draft.PlanId != PlanId)
+            {
+                Navigation.NavigateTo($"/new-plan/{savedId}/export", replace: true, forceLoad: true);
+            }
+            else
+            {
+                await OnFinalized.InvokeAsync();
+            }
         }
-
-        if (imageItems.Count == 0)
+        catch (Exception ex)
         {
-            return null;
+            errorMessage = $"Não foi possível finalizar o plano: {ex.Message}";
         }
-
-        var stampModel = RiggingPlanner.Domain.DrawingSheetStampBuilder.Build(plan, accessories, 1, 1);
-        return DrawingsRenderer.RenderWithImages(stampModel, imageItems);
-    }
-
-    private static async Task<StoredFile?> ResolveEquipmentReportFileAsync(
-        AppDbContext db,
-        RiggingPlan plan)
-    {
-        if (plan.EquipmentReport?.File is not null)
+        finally
         {
-            return plan.EquipmentReport.File;
+            isBusy = false;
         }
-
-        if (plan.EquipmentId is null)
-        {
-            return null;
-        }
-
-        var report = await db.EquipmentReports
-            .AsNoTracking()
-            .Include(x => x.File)
-            .Where(x => x.EquipmentId == plan.EquipmentId && (x.ValidTo == null || x.ValidTo >= plan.PlanDate))
-            .OrderByDescending(x => x.ValidFrom)
-            .ThenByDescending(x => x.CreatedAt)
-            .FirstOrDefaultAsync();
-
-        report ??= await db.EquipmentReports
-            .AsNoTracking()
-            .Include(x => x.File)
-            .Where(x => x.EquipmentId == plan.EquipmentId)
-            .OrderByDescending(x => x.ValidFrom)
-            .ThenByDescending(x => x.CreatedAt)
-            .FirstOrDefaultAsync();
-
-        return report?.File;
-    }
-
-    private static async Task<byte[]?> TryReadFileAsync(StoredFile? file)
-    {
-        if (file is null)
-        {
-            return null;
-        }
-
-        var filePath = Path.Combine(Microsoft.Maui.Storage.FileSystem.AppDataDirectory, file.RelativePath);
-        return File.Exists(filePath) ? await File.ReadAllBytesAsync(filePath) : null;
     }
 }

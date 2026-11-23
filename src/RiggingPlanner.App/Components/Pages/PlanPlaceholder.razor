@@ -26,7 +26,7 @@
     }
     else if (CurrentSegment == "export")
     {
-        <RpExportStage />
+        <RpExportStage PlanId="@PlanId" IsReadOnly="@isReadOnly" OnFinalized="OnPlanFinalizedAsync" />
     }
     else
     {
@@ -57,6 +57,22 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadFromDatabaseAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (loadedPlanId != PlanId)
+        {
+            await LoadFromDatabaseAsync();
+        }
+    }
+
+    private Guid loadedPlanId;
+
+    private async Task LoadFromDatabaseAsync()
+    {
+        isLoading = true;
         await using var db = await DbFactory.CreateDbContextAsync();
 
         plan = await PlanWorkflowLoader.LoadAsync(db, Draft, PlanId, useDraftFallback: true);
@@ -68,8 +84,17 @@
             plan = Draft.Plan;
         }
 
+        loadedPlanId = PlanId;
         isPersisted = Draft.IsPersisted;
         isReadOnly = plan?.Status == "finalized";
         isLoading = false;
+    }
+
+    private async Task OnPlanFinalizedAsync()
+    {
+        await using var db = await DbFactory.CreateDbContextAsync();
+        plan = await PlanWorkflowLoader.LoadAsync(db, Draft, PlanId, includeAccessories: true);
+        isPersisted = true;
+        isReadOnly = plan?.Status == "finalized";
     }
 }
