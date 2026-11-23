@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using RiggingPlanner.Infrastructure;
 using RiggingPlanner.App.Components.Plan.Attachments;
+using RiggingPlanner.App.Components.Plan.Entry;
+using RiggingPlanner.App.Components.Plan.Export;
 using RiggingPlanner.App.Components.Shared;
 using System.Globalization;
 
@@ -26,6 +28,8 @@ public static class MauiProgram
 
 		builder.Services.AddMauiBlazorWebView();
 		builder.Services.AddScoped<PlanDraftState>();
+		builder.Services.AddScoped<PlanSaveService>();
+		builder.Services.AddScoped<PlanExportService>();
 		builder.Services.AddInfrastructure(GetDatabasePath());
 
 #if DEBUG

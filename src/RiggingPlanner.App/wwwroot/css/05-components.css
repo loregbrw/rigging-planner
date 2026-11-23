@@ -159,6 +159,8 @@
     .rp-alert--info { background: var(--rp-primary-50); color: var(--rp-primary-800); }
     .rp-alert--danger { background: var(--rp-danger-50); color: var(--rp-danger-800); }
     .rp-alert--warning { background: var(--rp-warning-50); color: var(--rp-warning-800); }
+    .rp-export-messages { display: grid; gap: var(--rp-space-2); margin-top: var(--rp-space-4); }
+    .rp-export-messages .rp-alert { margin-bottom: 0; }
     .rp-badge {
         display: inline-flex;
         align-items: center;

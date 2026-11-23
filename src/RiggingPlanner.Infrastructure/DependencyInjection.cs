@@ -19,6 +19,7 @@ public static class DependencyInjection
         services.AddSingleton<IOperationalProcedureRenderer, Pdf.OperationalProcedureRenderer>();
         services.AddSingleton<IPdfDocumentMerger, Pdf.PdfDocumentMerger>();
         services.AddSingleton<FullPlanPdfAssembler>();
+        services.AddScoped<PlanFinalizationService>();
 
         return services;
     }

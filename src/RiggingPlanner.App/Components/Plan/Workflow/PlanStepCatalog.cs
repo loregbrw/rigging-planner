@@ -67,6 +67,7 @@ public static class PlanStepCatalog
         Capacity => $"new-plan/{workflowPlanId}/attachments",
         Attachments => $"new-plan/{workflowPlanId}/preview",
         Preview => $"new-plan/{workflowPlanId}/export",
+        Export => null,
         _ => null
     };
 }
