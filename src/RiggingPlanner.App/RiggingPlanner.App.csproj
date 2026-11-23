@@ -24,8 +24,20 @@
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
         <ApplicationVersion>1</ApplicationVersion>
 
-        <!-- Unpackaged desktop app -->
+        <!-- Unpackaged, self-contained desktop app (portable x64 folder, no MSIX) -->
         <WindowsPackageType>None</WindowsPackageType>
+        <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+        <SelfContained>true</SelfContained>
+        <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+        <PublishSingleFile>false</PublishSingleFile>
+        <PublishTrimmed>false</PublishTrimmed>
+        <PublishReadyToRun>false</PublishReadyToRun>
+
+        <!-- Version and metadata supplied by -p:Version=x.y.z -->
+        <ApplicationDisplayVersion>$(Version)</ApplicationDisplayVersion>
+        <Product>Rigging Planner</Product>
+        <Company>Guindastes Ribas</Company>
+        <Description>Planejamento e exportação de planos de rigging.</Description>
 
         <!-- Match min platform to target platform to eliminate CA1416 platform compatibility analyzer overhead -->
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.19041.0</SupportedOSPlatformVersion>
