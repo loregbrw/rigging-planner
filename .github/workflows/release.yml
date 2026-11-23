@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versão do pacote (ex.: 1.2.3)'
+        required: true
+        default: '0.0.0-dev'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Install MAUI workload
+        run: dotnet workload install maui
+
+      - name: Build
+        run: dotnet build RiggingPlanner.slnx -c Release
+
+      - name: Test
+        run: dotnet test RiggingPlanner.slnx -c Release --no-build
+
+      - name: Resolve version
+        id: version
+        shell: pwsh
+        run: |
+          if ('${{ github.ref_type }}' -eq 'tag') {
+            $value = '${{ github.ref_name }}'.TrimStart('v')
+          } else {
+            $value = '${{ inputs.version }}'
+          }
+          "value=$value" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Publish portable package
+        shell: pwsh
+        run: ./scripts/publish.ps1 -Version '${{ steps.version.outputs.value }}'
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $v = '${{ steps.version.outputs.value }}'
+          gh release create "v$v" `
+            --title "Rigging Planner v$v" `
+            --generate-notes `
+            "artifacts/RiggingPlanner-$v-win-x64.zip" `
+            "artifacts/RiggingPlanner-$v-win-x64.zip.sha256"

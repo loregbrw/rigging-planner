@@ -154,7 +154,7 @@
 | 4 | Preview | Ainda não implementado |
 | 5 | Exportação em PDF | Ainda não implementada |
 | 6 | Lixeira de planos | Ainda não implementada |
-| 7 | Instalador | Ainda não validado/entregue |
+| 7 | Instalador | Entregue como ZIP portátil self-contained win-x64 (sem MSIX); smoke test na máquina do usuário pendente |
 | 8 | Procedimento operacional, snapshot na finalização, imutabilidade e histórico de alterações | Geração e componente de visualização prontos para o Preview; finalização com snapshot, preview/exportação, imutabilidade fora da UI e histórico pendentes |
 
 O histórico de eventos e alertas de desgaste/descarte de itens de acesso permanecem fora da implementação atual; a interpolação de capacidade e o backup local continuam fora do escopo definido.
