@@ -13,8 +13,8 @@
         <RpStepper Steps="PlanStepCatalog.Steps"
                    Links="PlanStepCatalog.GetLinks(WorkflowPlanId, IsNewEntry)"
                    Current="CurrentStep" />
-        <RpPlanNavigation PreviousUrl="PlanStepCatalog.GetPreviousUrl(CurrentStep, WorkflowPlanId)"
-                          NextUrl="PlanStepCatalog.GetNextUrl(CurrentStep, WorkflowPlanId)" />
+        <RpPlanNavigation PreviousUrl="@PlanStepCatalog.GetPreviousUrl(CurrentStep, WorkflowPlanId)"
+                          NextUrl="@(CurrentStep == PlanStepCatalog.Export ? null : PlanStepCatalog.GetNextUrl(CurrentStep, WorkflowPlanId))" />
     }
     @ChildContent
 </div>
