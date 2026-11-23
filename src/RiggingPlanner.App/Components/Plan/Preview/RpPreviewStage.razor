@@ -1,92 +1,109 @@
+@using RiggingPlanner.Application.Pdf
 @inject IDbContextFactory<AppDbContext> DbFactory
 @inject PlanDraftState Draft
-@inject RiggingPlanner.Application.Pdf.ISummarySheetRenderer SummarySheetRenderer
-@inject RiggingPlanner.Application.Pdf.IDrawingSheetsRenderer DrawingsRenderer
+@inject ISummarySheetRenderer SummarySheetRenderer
+@inject IDrawingSheetsRenderer DrawingsRenderer
+@inject IOperationalProcedureRenderer ProcedureRenderer
+@inject FullPlanPdfAssembler FullPdfAssembler
+@implements IDisposable
 
 <RpCard Title="Pré-visualização">
-    <div class="rp-empty">
-        <p class="rp-empty__title">Impressão completa em construção</p>
-        <p class="rp-muted">A impressão integral do plano será implementada nas próximas etapas.</p>
-    </div>
-
-    <!-- TEMPORARY: removed in stage 6 -->
-    <div class="rp-form-actions">
-        <button class="rp-btn rp-btn--primary" type="button"
-                disabled="@(!Draft.IsPersisted || isGenerating)"
-                @onclick="GenerateSummarySheet">
-            Gerar folha-resumo (PDF)
-        </button>
-        <button class="rp-btn rp-btn--secondary" type="button"
-                disabled="@(!Draft.IsPersisted || isGeneratingDrawings)"
-                @onclick="GenerateDrawingsSheet"
-                style="margin-top: 0.5rem;">
-            Gerar folhas de desenho (PDF)
-        </button>
-    </div>
-    <p class="rp-muted">O PDF usa os dados salvos do plano.</p>
     @if (!Draft.IsPersisted)
     {
-        <p class="rp-muted">Salve o plano para liberar a geração do PDF.</p>
+        <p class="rp-muted">Salve o plano para ver o preview.</p>
     }
     else
     {
-        <p class="rp-muted">Há alterações não salvas; o PDF usa a versão salva.</p>
-    }
-    @if (statusMessage is not null)
-    {
-        <p class="rp-muted">@statusMessage</p>
-    }
-    @if (drawingsStatusMessage is not null)
-    {
-        <p class="rp-muted">@drawingsStatusMessage</p>
+        <div class="rp-preview-header">
+            <p class="rp-muted">Páginas do PDF final, geradas a partir da versão salva do plano.</p>
+            <button class="rp-btn rp-btn--ghost" type="button"
+                    disabled="@isGenerating"
+                    @onclick="GenerateAsync">
+                Atualizar
+            </button>
+        </div>
+
+        @if (isGenerating)
+        {
+            <p class="rp-muted">Gerando preview…</p>
+        }
+        else if (errorMessage is not null)
+        {
+            <div class="rp-alert rp-alert--danger">@errorMessage</div>
+        }
+        else
+        {
+            @if (warnings.Count > 0)
+            {
+                <div class="rp-alert rp-alert--warning">
+                    @foreach (var warning in warnings)
+                    {
+                        <div>@warning</div>
+                    }
+                </div>
+            }
+
+            @if (pages.Count > 0)
+            {
+                <div class="rp-doc-preview">
+                    @foreach (var page in pages)
+                    {
+                        <figure class="rp-doc-page">
+                            <img src="@(page.DataUrl)" alt="Página @(page.Number) do plano" />
+                            <figcaption class="rp-muted">Página @(page.Number) de @pages.Count</figcaption>
+                        </figure>
+                    }
+                </div>
+            }
+        }
     }
 </RpCard>
 
 @code {
-    private bool isGenerating;
-    private bool isGeneratingDrawings;
-    private string? statusMessage;
-    private string? drawingsStatusMessage;
+    private sealed record PreviewPage(int Number, string DataUrl);
 
-    private async Task GenerateSummarySheet()
+    private readonly List<PreviewPage> pages = [];
+    private readonly List<string> warnings = [];
+    private byte[]? generatedPdf;
+    private bool isGenerating;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
     {
+        if (Draft.IsPersisted)
+        {
+            await GenerateAsync();
+        }
+    }
+
+    private async Task GenerateAsync()
+    {
+        if (isGenerating)
+        {
+            return;
+        }
+
         isGenerating = true;
-        statusMessage = null;
+        errorMessage = null;
+        pages.Clear();
+        warnings.Clear();
+        StateHasChanged();
+
         try
         {
-            await using var db = await DbFactory.CreateDbContextAsync();
-            var plan = await db.RiggingPlans
-                .AsNoTracking()
-                .SingleOrDefaultAsync(x => x.Id == Draft.PlanId && x.DeletedAt == null);
-            if (plan is null)
-            {
-                statusMessage = "Plano não encontrado.";
-                return;
-            }
+            var (pdf, pdfWarnings) = await BuildPdfAsync();
+            var images = await RasterizePagesAsync(pdf);
 
-            var accessories = await db.PlanAccessories
-                .AsNoTracking()
-                .Where(x => x.PlanId == plan.Id)
-                .OrderBy(x => x.SortOrder)
-                .ToListAsync();
-
-            var model = RiggingPlanner.Domain.SummarySheetBuilder.Build(plan, accessories);
-            var pdf = SummarySheetRenderer.Render(model);
-
-            var directory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "RiggingPlanner", "pdf-review");
-            Directory.CreateDirectory(directory);
-            var filePath = Path.Combine(directory, $"folha-resumo-{model.PlanNumber}.pdf");
-            await File.WriteAllBytesAsync(filePath, pdf);
-
-            await Microsoft.Maui.ApplicationModel.Launcher.OpenAsync(
-                new Microsoft.Maui.ApplicationModel.OpenFileRequest("Folha-resumo", new Microsoft.Maui.Storage.ReadOnlyFile(filePath)));
-            statusMessage = $"PDF gerado: {filePath}";
+            generatedPdf = pdf;
+            warnings.AddRange(pdfWarnings);
+            pages.AddRange(images);
         }
         catch (Exception ex)
         {
-            statusMessage = $"Não foi possível gerar o PDF: {ex.Message}";
+            generatedPdf = null;
+            warnings.Clear();
+            pages.Clear();
+            errorMessage = $"Não foi possível gerar o preview: {ex.Message}";
         }
         finally
         {
@@ -94,82 +111,163 @@
         }
     }
 
-    private async Task GenerateDrawingsSheet()
+    private async Task<(byte[] Pdf, List<string> Warnings)> BuildPdfAsync()
     {
-        isGeneratingDrawings = true;
-        drawingsStatusMessage = null;
-        try
+        await using var db = await DbFactory.CreateDbContextAsync();
+        var plan = await db.RiggingPlans
+            .AsNoTracking()
+            .Include(x => x.ArtFile)
+            .Include(x => x.Drawings)
+                .ThenInclude(x => x.File)
+            .Include(x => x.EquipmentReport)
+                .ThenInclude(x => x!.File)
+            .Include(x => x.ProcedureSnapshot)
+            .SingleOrDefaultAsync(x => x.Id == Draft.PlanId && x.DeletedAt == null);
+        if (plan is null)
         {
-            await using var db = await DbFactory.CreateDbContextAsync();
-            var plan = await db.RiggingPlans
-                .AsNoTracking()
-                .Include(x => x.Drawings)
-                    .ThenInclude(x => x.File)
-                .SingleOrDefaultAsync(x => x.Id == Draft.PlanId && x.DeletedAt == null);
-            if (plan is null)
-            {
-                drawingsStatusMessage = "Plano não encontrado.";
-                return;
-            }
-
-            var drawings = plan.Drawings.OrderBy(x => x.SortOrder).ToList();
-            if (drawings.Count == 0)
-            {
-                drawingsStatusMessage = "O plano não possui desenhos salvos.";
-                return;
-            }
-
-            var accessories = await db.PlanAccessories
-                .AsNoTracking()
-                .Where(x => x.PlanId == plan.Id)
-                .OrderBy(x => x.SortOrder)
-                .ToListAsync();
-
-            var stampModel = RiggingPlanner.Domain.DrawingSheetStampBuilder.Build(plan, accessories, 1, 1);
-
-            var imageItems = new List<RiggingPlanner.Application.Pdf.DrawingSheetImageItem>();
-            foreach (var drawing in drawings)
-            {
-                if (drawing.File is null) continue;
-                var filePath = Path.Combine(Microsoft.Maui.Storage.FileSystem.AppDataDirectory, drawing.File.RelativePath);
-                if (!File.Exists(filePath)) continue;
-
-                var bytes = await File.ReadAllBytesAsync(filePath);
-                var info = SkiaSharp.SKBitmap.DecodeBounds(bytes);
-                if (info.Width == 0) info = new SkiaSharp.SKImageInfo(800, 600);
-                imageItems.Add(new RiggingPlanner.Application.Pdf.DrawingSheetImageItem(
-                    drawing.FileId,
-                    bytes,
-                    info.Width,
-                    info.Height));
-            }
-
-            if (imageItems.Count == 0)
-            {
-                drawingsStatusMessage = "Nenhum arquivo de desenho foi encontrado em disco.";
-                return;
-            }
-
-            var pdf = DrawingsRenderer.RenderWithImages(stampModel, imageItems);
-
-            var directory = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "RiggingPlanner", "pdf-review");
-            Directory.CreateDirectory(directory);
-            var targetPath = Path.Combine(directory, $"folhas-desenho-{stampModel.PlanNumber}.pdf");
-            await File.WriteAllBytesAsync(targetPath, pdf);
-
-            await Microsoft.Maui.ApplicationModel.Launcher.OpenAsync(
-                new Microsoft.Maui.ApplicationModel.OpenFileRequest("Folhas de desenho", new Microsoft.Maui.Storage.ReadOnlyFile(targetPath)));
-            drawingsStatusMessage = $"PDF de desenhos gerado: {targetPath}";
+            throw new InvalidOperationException("Plano não encontrado.");
         }
-        catch (Exception ex)
+
+        var accessories = await db.PlanAccessories
+            .AsNoTracking()
+            .Where(x => x.PlanId == plan.Id)
+            .OrderBy(x => x.SortOrder)
+            .ToListAsync();
+
+        var warnings = new List<string>();
+
+        var summaryModel = RiggingPlanner.Domain.SummarySheetBuilder.Build(plan, accessories);
+        var summaryPdf = SummarySheetRenderer.Render(summaryModel);
+
+        var drawingsPdf = await BuildDrawingsPdfAsync(plan, accessories);
+        if (drawingsPdf is null)
         {
-            drawingsStatusMessage = $"Não foi possível gerar o PDF de desenhos: {ex.Message}";
+            warnings.Add("As folhas de desenho não foram incluídas: o plano não possui desenhos salvos ou os arquivos não foram encontrados.");
         }
-        finally
+
+        var planArt = await TryReadFileAsync(plan.ArtFile);
+        if (planArt is null)
         {
-            isGeneratingDrawings = false;
+            warnings.Add("A ART do plano não foi encontrada e não foi incluída no PDF.");
         }
+
+        var procedurePdf = ProcedureRenderer.Render(plan, plan.ProcedureSnapshot);
+
+        var equipmentReport = await ResolveEquipmentReportFileAsync(db, plan);
+        var reportPdf = await TryReadFileAsync(equipmentReport);
+        if (reportPdf is null)
+        {
+            warnings.Add("O laudo técnico do equipamento não foi encontrado e não foi incluído no PDF.");
+        }
+
+        var pdf = FullPdfAssembler.Assemble(summaryPdf, drawingsPdf, planArt, procedurePdf, reportPdf);
+        return (pdf, warnings);
+    }
+
+    private async Task<byte[]?> BuildDrawingsPdfAsync(RiggingPlan plan, IReadOnlyList<PlanAccessory> accessories)
+    {
+        var drawings = plan.Drawings.OrderBy(x => x.SortOrder).ToList();
+        if (drawings.Count == 0)
+        {
+            return null;
+        }
+
+        var imageItems = new List<DrawingSheetImageItem>();
+        foreach (var drawing in drawings)
+        {
+            if (drawing.File is null)
+            {
+                continue;
+            }
+
+            var filePath = Path.Combine(Microsoft.Maui.Storage.FileSystem.AppDataDirectory, drawing.File.RelativePath);
+            if (!File.Exists(filePath))
+            {
+                continue;
+            }
+
+            var bytes = await File.ReadAllBytesAsync(filePath);
+            var info = SkiaSharp.SKBitmap.DecodeBounds(bytes);
+            if (info.Width == 0) info = new SkiaSharp.SKImageInfo(800, 600);
+            imageItems.Add(new DrawingSheetImageItem(drawing.FileId, bytes, info.Width, info.Height));
+        }
+
+        if (imageItems.Count == 0)
+        {
+            return null;
+        }
+
+        var stampModel = RiggingPlanner.Domain.DrawingSheetStampBuilder.Build(plan, accessories, 1, 1);
+        return DrawingsRenderer.RenderWithImages(stampModel, imageItems);
+    }
+
+    private static async Task<StoredFile?> ResolveEquipmentReportFileAsync(
+        AppDbContext db,
+        RiggingPlan plan)
+    {
+        if (plan.EquipmentReport?.File is not null)
+        {
+            return plan.EquipmentReport.File;
+        }
+
+        if (plan.EquipmentId is null)
+        {
+            return null;
+        }
+
+        var report = await db.EquipmentReports
+            .AsNoTracking()
+            .Include(x => x.File)
+            .Where(x => x.EquipmentId == plan.EquipmentId && (x.ValidTo == null || x.ValidTo >= plan.PlanDate))
+            .OrderByDescending(x => x.ValidFrom)
+            .ThenByDescending(x => x.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        report ??= await db.EquipmentReports
+            .AsNoTracking()
+            .Include(x => x.File)
+            .Where(x => x.EquipmentId == plan.EquipmentId)
+            .OrderByDescending(x => x.ValidFrom)
+            .ThenByDescending(x => x.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        return report?.File;
+    }
+
+    private static async Task<byte[]?> TryReadFileAsync(StoredFile? file)
+    {
+        if (file is null)
+        {
+            return null;
+        }
+
+        var filePath = Path.Combine(Microsoft.Maui.Storage.FileSystem.AppDataDirectory, file.RelativePath);
+        return File.Exists(filePath) ? await File.ReadAllBytesAsync(filePath) : null;
+    }
+
+    private static async Task<List<PreviewPage>> RasterizePagesAsync(byte[] pdf)
+    {
+        return await Task.Run(() =>
+        {
+            var images = new List<PreviewPage>();
+            var pageCount = PDFtoImage.Conversion.GetPageCount(pdf);
+            for (var index = 0; index < pageCount; index++)
+            {
+                using var bitmap = PDFtoImage.Conversion.ToImage(
+                    pdf, index, options: new PDFtoImage.RenderOptions { Dpi = 110 });
+                using var image = SkiaSharp.SKImage.FromBitmap(bitmap);
+                using var data = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
+                var dataUrl = $"data:image/png;base64,{Convert.ToBase64String(data.ToArray())}";
+                images.Add(new PreviewPage(index + 1, dataUrl));
+            }
+            return images;
+        });
+    }
+
+    public void Dispose()
+    {
+        generatedPdf = null;
+        pages.Clear();
+        warnings.Clear();
     }
 }
