@@ -16,7 +16,9 @@ public static class DependencyInjection
         services.AddDbContextFactory<AppDbContext>(options => options.UseSqlite(connectionString));
         services.AddSingleton<ISummarySheetRenderer, Pdf.SummarySheetRenderer>();
         services.AddSingleton<IDrawingSheetsRenderer, Pdf.DrawingSheetsRenderer>();
+        services.AddSingleton<IOperationalProcedureRenderer, Pdf.OperationalProcedureRenderer>();
         services.AddSingleton<IPdfDocumentMerger, Pdf.PdfDocumentMerger>();
+        services.AddSingleton<FullPlanPdfAssembler>();
 
         return services;
     }

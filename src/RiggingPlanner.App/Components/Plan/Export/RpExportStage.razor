@@ -3,12 +3,12 @@
 @inject PlanDraftState Draft
 @inject ISummarySheetRenderer SummarySheetRenderer
 @inject IDrawingSheetsRenderer DrawingsRenderer
-@inject IPdfDocumentMerger PdfMerger
+@inject IOperationalProcedureRenderer ProcedureRenderer
+@inject FullPlanPdfAssembler FullPdfAssembler
 
 <RpCard Title="Exportação">
     <p class="rp-muted">
-        O PDF completo reúne a folha-resumo, as folhas de desenho, a ART do plano e o laudo técnico do equipamento.
-        O procedimento operacional ainda não é incluído.
+        O PDF completo reúne a folha-resumo, as folhas de desenho, a ART do plano, o procedimento operacional e o laudo técnico do equipamento.
     </p>
 
     <div class="rp-form-actions">
@@ -49,6 +49,7 @@
                     .ThenInclude(x => x.File)
                 .Include(x => x.EquipmentReport)
                     .ThenInclude(x => x!.File)
+                .Include(x => x.ProcedureSnapshot)
                 .SingleOrDefaultAsync(x => x.Id == Draft.PlanId && x.DeletedAt == null);
             if (plan is null)
             {
@@ -62,31 +63,18 @@
                 .OrderBy(x => x.SortOrder)
                 .ToListAsync();
 
-            var documents = new List<byte[]>();
-
             var summaryModel = RiggingPlanner.Domain.SummarySheetBuilder.Build(plan, accessories);
-            documents.Add(SummarySheetRenderer.Render(summaryModel));
+            var summaryPdf = SummarySheetRenderer.Render(summaryModel);
 
             var drawings = await BuildDrawingsPdfAsync(plan, accessories);
-            if (drawings is not null)
-            {
-                documents.Add(drawings);
-            }
-
             var planArt = await TryReadFileAsync(plan.ArtFile);
-            if (planArt is not null)
-            {
-                documents.Add(planArt);
-            }
+
+            var procedurePdf = ProcedureRenderer.Render(plan, plan.ProcedureSnapshot);
 
             var equipmentReport = await ResolveEquipmentReportFileAsync(db, plan);
             var reportPdf = await TryReadFileAsync(equipmentReport);
-            if (reportPdf is not null)
-            {
-                documents.Add(reportPdf);
-            }
 
-            var pdf = PdfMerger.Merge(documents);
+            var pdf = FullPdfAssembler.Assemble(summaryPdf, drawings, planArt, procedurePdf, reportPdf);
 
             var directory = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

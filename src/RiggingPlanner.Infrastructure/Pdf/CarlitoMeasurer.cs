@@ -27,15 +27,16 @@ public static class CarlitoMeasurer
 
     private static object _fontCollection = null!;
     private static object _builder = null!;
-    private static Dictionary<(double Size, bool Bold), object> _styleCache = null!;
+    private static Dictionary<(double Size, bool Bold, string Family), object> _styleCache = null!;
     private static MethodInfo _builderAddText = null!;
     private static MethodInfo _builderCreateParagraph = null!;
     private static MethodInfo _paragraphPlanLayout = null!;
     private static MethodInfo _paragraphGetSize = null!;
     private static MethodInfo _paragraphGetLineExtents = null!;
     private static IntPtr _familyNamePtr;
+    private static IntPtr _sansFamilyNamePtr;
 
-    public static double MeasureWidth(string text, double sizePt, bool bold)
+    public static double MeasureWidth(string text, double sizePt, bool bold, string family = FamilyName)
     {
         EnsureInitialized();
 
@@ -43,7 +44,7 @@ public static class CarlitoMeasurer
         // (parallel tests, UI threads) crash with an access violation.
         lock (Lock)
         {
-            var style = GetStyle(sizePt, bold);
+            var style = GetStyle(sizePt, bold, family);
             var builder = _builder;
             _builderAddText.Invoke(builder, [text, style]);
             using var paragraphHandle = CreateParagraph(builder);
@@ -56,13 +57,13 @@ public static class CarlitoMeasurer
     }
 
     /// <summary>Number of wrapped lines and total height of a paragraph constrained to maxLayoutWidth.</summary>
-    public static (int LineCount, double TotalHeight) MeasureWrapped(string text, double sizePt, bool bold, double maxLayoutWidth)
+    public static (int LineCount, double TotalHeight) MeasureWrapped(string text, double sizePt, bool bold, double maxLayoutWidth, string family = FamilyName)
     {
         EnsureInitialized();
 
         lock (Lock)
         {
-            var style = GetStyle(sizePt, bold);
+            var style = GetStyle(sizePt, bold, family);
             var builder = _builder;
             _builderAddText.Invoke(builder, [text, style]);
             using var paragraphHandle = CreateParagraph(builder);
@@ -82,14 +83,14 @@ public static class CarlitoMeasurer
         builder.GetType().InvokeMember("Reset", BindingFlags.Public | BindingFlags.Instance | BindingFlags.InvokeMethod, null, builder, []);
     }
 
-    private static object GetStyle(double sizePt, bool bold)
+    private static object GetStyle(double sizePt, bool bold, string family)
     {
         lock (Lock)
         {
-            var key = (sizePt, bold);
+            var key = (sizePt, bold, family);
             if (!_styleCache.TryGetValue(key, out var style))
             {
-                style = CreateTextStyle(sizePt, bold);
+                style = CreateTextStyle(sizePt, bold, family);
                 _styleCache[key] = style;
             }
 
@@ -148,6 +149,8 @@ public static class CarlitoMeasurer
                 ?? throw new MissingMethodException("QuestPDF.Skia.SkText", "MarshalFromManagedToNative");
             _familyNamePtr = (IntPtr)(marshal.Invoke(null, [FamilyName])
                 ?? throw new InvalidOperationException("Failed to marshal the Carlito family name."));
+            _sansFamilyNamePtr = (IntPtr)(marshal.Invoke(null, [PdfFontRegistry.SansFamilyName])
+                ?? throw new InvalidOperationException("Failed to marshal the Liberation Sans family name."));
 
             _builder = _builderType.InvokeMember(
                 "Create",
@@ -156,12 +159,12 @@ public static class CarlitoMeasurer
                 null,
                 [Activator.CreateInstance(_paragraphStyleType), _fontCollection])!;
 
-            _styleCache = new Dictionary<(double, bool), object>();
+            _styleCache = new Dictionary<(double, bool, string), object>();
             _initialized = true;
         }
     }
 
-    private static object CreateTextStyle(double sizePt, bool bold)
+    private static object CreateTextStyle(double sizePt, bool bold, string family)
     {
         var configuration = Activator.CreateInstance(_configurationType)!;
         _configurationType.InvokeMember("FontSize", BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetField, null, configuration, [(float)sizePt]);
@@ -169,7 +172,7 @@ public static class CarlitoMeasurer
 
         // Both arrays are marshalled as ByValArray with fixed capacities (128 families, 32 features).
         var families = new IntPtr[128];
-        families[0] = _familyNamePtr;
+        families[0] = family == PdfFontRegistry.SansFamilyName ? _sansFamilyNamePtr : _familyNamePtr;
         _configurationType.InvokeMember("FontFamilies", BindingFlags.Public | BindingFlags.Instance | BindingFlags.SetField, null, configuration, [families]);
 
         // Must match the renderer: the reference example is shaped without kerning/ligatures.

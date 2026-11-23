@@ -18,6 +18,10 @@ public static class PdfFontRegistry
     public const string GothicFontFileName = "Questrial-Regular.ttf";
     public const string BrandFontFileName = "OpenSans-SemiBold.ttf";
 
+    public const string SansFamilyName = "Liberation Sans";
+    public const string SansRegularFileName = "LiberationSans-Regular.ttf";
+    public const string SansBoldFileName = "LiberationSans-Bold.ttf";
+
     private static readonly object RegistrationLock = new();
     private static bool _registered;
 
@@ -57,6 +61,16 @@ public static class PdfFontRegistry
             using (var brand = OpenEmbeddedFont(BrandFontFileName))
             {
                 FontManager.RegisterFontFromStream(brand);
+            }
+
+            using (var sansRegular = OpenEmbeddedFont(SansRegularFileName))
+            {
+                FontManager.RegisterFontFromStream(sansRegular);
+            }
+
+            using (var sansBold = OpenEmbeddedFont(SansBoldFileName))
+            {
+                FontManager.RegisterFontFromStream(sansBold);
             }
 
             _registered = true;
