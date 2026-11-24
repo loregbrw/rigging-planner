@@ -1,6 +1,6 @@
 @page "/clients"
 @using System.ComponentModel.DataAnnotations
-@inject IDbContextFactory<AppDbContext> DbFactory
+@inject ICatalogService Catalog
 
 <RpPageHeader Title="Clientes" Subtitle="Cadastre as empresas clientes para reutilizar nos planos de rigging" />
 
@@ -75,9 +75,9 @@
 
     private async Task LoadAsync()
     {
-        await using var db = await DbFactory.CreateDbContextAsync();
-        activeClients = await db.Clients.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync();
-        inactiveClients = await db.Clients.AsNoTracking().Where(x => !x.IsActive).OrderBy(x => x.Name).ToListAsync();
+        var clients = await Catalog.GetClientsAsync();
+        activeClients = clients.Where(x => x.IsActive).OrderBy(x => x.Name).ToList();
+        inactiveClients = clients.Where(x => !x.IsActive).OrderBy(x => x.Name).ToList();
     }
 
     private async Task SaveAsync()
@@ -85,52 +85,27 @@
         isSaving = true;
         message = null;
         isError = false;
-        await using var db = await DbFactory.CreateDbContextAsync();
-        var name = form.Name.Trim();
-        var cnpj = FormatCnpj(form.Cnpj);
-        if (cnpj is null || NormalizeCnpj(cnpj)?.Length != 14)
+        var result = await Catalog.SaveClientAsync(new ClientSaveRequest
         {
-            form.Cnpj = string.Empty;
-            isError = true;
-            message = "Informe um CNPJ válido no formato 00.000.000/0000-00 ou 00.000.000/E08G-12.";
-            isSaving = false;
-            return;
-        }
-
-        var duplicate = (await db.Clients.AsNoTracking().Where(x => x.Id != editingId).Select(x => x.Cnpj).ToListAsync())
-            .Any(value => NormalizeCnpj(value) == NormalizeCnpj(cnpj));
-        if (duplicate)
+            Id = editingId,
+            Name = form.Name,
+            Cnpj = form.Cnpj
+        });
+        if (result.Error is not null)
         {
-            message = "Já existe um cliente cadastrado com este CNPJ.";
+            if (result.Error == CatalogMessages.InvalidCnpj)
+            {
+                form.Cnpj = string.Empty;
+            }
+            message = result.Error;
             isError = true;
             isSaving = false;
             return;
         }
 
-        var stored = editingId is null ? null : await db.Clients.FindAsync(editingId.Value);
-        if (editingId is not null && stored is null)
-        {
-            message = "O cliente não foi encontrado.";
-            isError = true;
-            isSaving = false;
-            return;
-        }
-
-        if (stored is null)
-        {
-            db.Clients.Add(new Client { Id = Guid.NewGuid(), Name = name, Cnpj = cnpj, IsActive = true, CreatedAt = DateTime.Now, UpdatedAt = DateTime.Now });
-        }
-        else
-        {
-            stored.Name = name;
-            stored.Cnpj = cnpj;
-            stored.UpdatedAt = DateTime.Now;
-        }
-
-        await db.SaveChangesAsync();
         form = new();
         editingId = null;
-        message = stored is null ? "Cliente cadastrado com sucesso." : "Cliente atualizado com sucesso.";
+        message = result.Created ? CatalogMessages.ClientCreated : CatalogMessages.ClientUpdated;
         isSaving = false;
         await LoadAsync();
     }
@@ -151,12 +126,7 @@
 
     private async Task ToggleStatusAsync(Client client)
     {
-        await using var db = await DbFactory.CreateDbContextAsync();
-        var stored = await db.Clients.FindAsync(client.Id);
-        if (stored is null) return;
-        stored.IsActive = !stored.IsActive;
-        stored.UpdatedAt = DateTime.Now;
-        await db.SaveChangesAsync();
+        await Catalog.ToggleClientStatusAsync(client.Id);
         await LoadAsync();
     }
 
@@ -166,16 +136,12 @@
     private async Task DeleteAsync()
     {
         if (deleteId is null) return;
-        await using var db = await DbFactory.CreateDbContextAsync();
-        var client = await db.Clients.FindAsync(deleteId.Value);
-        if (client is null) { CancelDelete(); return; }
-        if (await db.RiggingPlans.AnyAsync(x => x.ClientId == client.Id && x.DeletedAt == null && x.Status != "finalized"))
+        var error = await Catalog.DeleteClientAsync(deleteId.Value);
+        if (error is not null)
         {
-            deleteMessage = "Não é possível excluir: o cliente está ligado a um plano em andamento.";
+            deleteMessage = error;
             return;
         }
-        db.Clients.Remove(client);
-        await db.SaveChangesAsync();
         CancelDelete();
         await LoadAsync();
     }

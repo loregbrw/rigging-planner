@@ -4,9 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using RiggingPlanner.Application;
 using RiggingPlanner.Application.Abstractions;
 using RiggingPlanner.Application.Catalog;
+using RiggingPlanner.Application.EquipmentArts;
 using RiggingPlanner.Application.Export;
 using RiggingPlanner.Application.Pdf;
 using RiggingPlanner.Application.Plans;
+using RiggingPlanner.Infrastructure.EquipmentArts;
 using RiggingPlanner.Infrastructure.Export;
 using RiggingPlanner.Infrastructure.Persistence;
 using RiggingPlanner.Infrastructure.Plans;
@@ -30,6 +32,7 @@ public static class DependencyInjection
         services.AddSingleton<IFileStore>(new FileStore(databasePath));
         services.AddScoped<IPlanService, PlanService>();
         services.AddScoped<ICatalogService, Catalog.CatalogService>();
+        services.AddScoped<IEquipmentArtService, EquipmentArtService>();
         services.AddScoped<IExportService, ExportService>();
         services.AddScoped<PlanFinalizationService>();
 

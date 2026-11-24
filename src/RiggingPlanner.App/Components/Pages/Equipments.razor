@@ -2,7 +2,9 @@
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.Maui.Storage
-@inject IDbContextFactory<AppDbContext> DbFactory
+@using RiggingPlanner.Application.EquipmentArts
+@inject ICatalogService Catalog
+@inject IEquipmentArtService ArtService
 
 <RpPageHeader Title="Equipamentos" Subtitle="Cadastre os equipamentos e gerencie suas ARTs e laudos de conformidade" />
 
@@ -166,9 +168,9 @@
 
     private async Task LoadAsync()
     {
-        await using var db = await DbFactory.CreateDbContextAsync();
-        activeEquipments = await db.Equipments.AsNoTracking().Include(x => x.Reports).Where(x => x.IsActive).OrderBy(x => x.CraneModel).ToListAsync();
-        inactiveEquipments = await db.Equipments.AsNoTracking().Include(x => x.Reports).Where(x => !x.IsActive).OrderBy(x => x.CraneModel).ToListAsync();
+        var equipments = await Catalog.GetEquipmentsAsync(includeReports: true);
+        activeEquipments = equipments.Where(x => x.IsActive).OrderBy(x => x.CraneModel).ToList();
+        inactiveEquipments = equipments.Where(x => !x.IsActive).OrderBy(x => x.CraneModel).ToList();
     }
 
     private async Task OnInitialFileChange(InputFileChangeEventArgs args)
@@ -227,46 +229,44 @@
         }
 
         isSaving = true;
-        await using var db = await DbFactory.CreateDbContextAsync();
-        var stored = editingId is null ? null : await db.Equipments.Include(x => x.Reports).SingleOrDefaultAsync(x => x.Id == editingId);
-        if (editingId is not null && stored is null)
+        var result = await Catalog.SaveEquipmentAsync(new EquipmentSaveRequest
         {
-            message = "O equipamento não foi encontrado.";
+            Id = editingId,
+            CraneModel = form.CraneModel,
+            TruckModel = form.TruckModel,
+            ChassisNumber = form.ChassisNumber,
+            LicensePlate = form.LicensePlate,
+            ManufactureYear = form.ManufactureYear
+        });
+        if (result.Error is not null)
+        {
+            message = result.Error;
             isError = true;
             isSaving = false;
             return;
         }
 
-        stored ??= new Equipment { Id = Guid.NewGuid(), IsActive = true, CreatedAt = DateTime.Now };
-        stored.EquipmentType = "munck";
-        stored.TruckModel = form.TruckModel.Trim();
-        stored.LicensePlate = form.LicensePlate.Trim().ToUpperInvariant();
-        stored.ChassisNumber = form.ChassisNumber.Trim();
-        stored.ManufactureYear = form.ManufactureYear;
-        stored.CraneBrand = string.Empty;
-        stored.CraneModel = form.CraneModel.Trim();
-        stored.UpdatedAt = DateTime.Now;
-
-        if (editingId is null)
+        if (result.Created)
         {
-            db.Equipments.Add(stored);
-            var file = await SaveFileAsync(initialArtFile!);
-            db.StoredFiles.Add(file);
-            db.EquipmentReports.Add(new EquipmentReport
+            var artError = await ArtService.SaveAsync(new EquipmentArtSaveRequest
             {
-                Id = Guid.NewGuid(),
-                EquipmentId = stored.Id,
-                FileId = file.Id,
-                ArtNumber = initialArtNumber.Trim(),
+                EquipmentId = result.EquipmentId!.Value,
+                ArtNumber = initialArtNumber,
                 ValidFrom = initialArtValidFrom,
                 ValidTo = initialArtValidTo,
-                CreatedAt = DateTime.Now
+                FileName = initialArtFile!.Name,
+                ContentType = initialArtFile.ContentType,
+                PdfContent = await ReadFileBytesAsync(initialArtFile)
             });
+            if (artError is not null)
+            {
+                message = artError;
+                isError = true;
+                isSaving = false;
+                return;
+            }
         }
 
-        await db.SaveChangesAsync();
-        var wasEditing = editingId is not null;
-        
         form = new();
         initialArtNumber = string.Empty;
         initialArtValidFrom = null;
@@ -274,7 +274,7 @@
         initialArtFile = null;
         editingId = null;
 
-        message = wasEditing ? "Equipamento atualizado com sucesso." : "Equipamento e ART inicial cadastrados com sucesso.";
+        message = result.Created ? CatalogMessages.EquipmentCreated : CatalogMessages.EquipmentUpdated;
         isSaving = false;
         await LoadAsync();
     }
@@ -350,47 +350,17 @@
         await LoadAsync();
     }
 
-    private static async Task<StoredFile> SaveFileAsync(IBrowserFile browserFile)
+    private static async Task<byte[]> ReadFileBytesAsync(IBrowserFile browserFile)
     {
-        var fileId = Guid.NewGuid();
-        var extension = Path.GetExtension(browserFile.Name);
-        var folder = Path.Combine(FileSystem.AppDataDirectory, "equipment-art");
-        Directory.CreateDirectory(folder);
-        var relativePath = Path.Combine("equipment-art", fileId + extension);
-        var absolutePath = Path.Combine(FileSystem.AppDataDirectory, relativePath);
         await using var input = browserFile.OpenReadStream(10 * 1024 * 1024);
-        await using var output = File.Create(absolutePath);
-        using var sha = System.Security.Cryptography.SHA256.Create();
-        var buffer = new byte[81920];
-        int read;
-        long size = 0;
-        while ((read = await input.ReadAsync(buffer)) > 0)
-        {
-            await output.WriteAsync(buffer.AsMemory(0, read));
-            sha.TransformBlock(buffer, 0, read, null, 0);
-            size += read;
-        }
-        sha.TransformFinalBlock([], 0, 0);
-        return new StoredFile
-        {
-            Id = fileId,
-            RelativePath = relativePath,
-            OriginalName = browserFile.Name,
-            ContentType = browserFile.ContentType,
-            SizeBytes = size,
-            Sha256 = Convert.ToHexString(sha.Hash!).ToLowerInvariant(),
-            CreatedAt = DateTime.Now
-        };
+        using var memory = new MemoryStream();
+        await input.CopyToAsync(memory);
+        return memory.ToArray();
     }
 
     private async Task ToggleStatusAsync(Equipment equipment)
     {
-        await using var db = await DbFactory.CreateDbContextAsync();
-        var stored = await db.Equipments.FindAsync(equipment.Id);
-        if (stored is null) return;
-        stored.IsActive = !stored.IsActive;
-        stored.UpdatedAt = DateTime.Now;
-        await db.SaveChangesAsync();
+        await Catalog.ToggleEquipmentStatusAsync(equipment.Id);
         await LoadAsync();
     }
 
@@ -400,19 +370,13 @@
     private async Task DeleteAsync()
     {
         if (deleteId is null) return;
-        await using var db = await DbFactory.CreateDbContextAsync();
-        var equipment = await db.Equipments.FindAsync(deleteId.Value);
-        if (equipment is null) { CancelDelete(); return; }
-        var inProgressUse = await db.RiggingPlans.AnyAsync(x => x.EquipmentId == equipment.Id
-            && x.DeletedAt == null && x.Status != "finalized");
-        if (inProgressUse)
+        var error = await Catalog.DeleteEquipmentAsync(deleteId.Value);
+        if (error is not null)
         {
-            message = "Não é possível excluir: o equipamento está ligado a um plano em andamento.";
+            message = error;
             CancelDelete();
             return;
         }
-        db.Equipments.Remove(equipment);
-        await db.SaveChangesAsync();
         message = null;
         CancelDelete();
         await LoadAsync();

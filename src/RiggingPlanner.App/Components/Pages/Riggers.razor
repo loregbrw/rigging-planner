@@ -1,6 +1,6 @@
 @page "/riggers"
 @using System.ComponentModel.DataAnnotations
-@inject IDbContextFactory<AppDbContext> DbFactory
+@inject ICatalogService Catalog
 
 <RpPageHeader Title="Responsáveis" Subtitle="Cadastre os responsáveis e seus registros para reutilizar nos planos" />
 
@@ -64,46 +64,31 @@
     protected override async Task OnInitializedAsync() => await LoadAsync();
     private async Task LoadAsync()
     {
-        await using var db = await DbFactory.CreateDbContextAsync();
-        activeRiggers = await db.Riggers.AsNoTracking().Where(x => x.IsActive).OrderBy(x => x.DisplayName).ToListAsync();
-        inactiveRiggers = await db.Riggers.AsNoTracking().Where(x => !x.IsActive).OrderBy(x => x.DisplayName).ToListAsync();
+        var riggers = await Catalog.GetRiggersAsync();
+        activeRiggers = riggers.Where(x => x.IsActive).OrderBy(x => x.DisplayName).ToList();
+        inactiveRiggers = riggers.Where(x => !x.IsActive).OrderBy(x => x.DisplayName).ToList();
     }
     private async Task SaveAsync()
     {
         isSaving = true;
-        await using var db = await DbFactory.CreateDbContextAsync();
-        var stored = editingId is null ? null : await db.Riggers.FindAsync(editingId.Value);
-        if (editingId is not null && stored is null)
+        var result = await Catalog.SaveRiggerAsync(new RiggerSaveRequest
         {
-            message = "O rigger não foi encontrado.";
+            Id = editingId,
+            FullName = form.FullName,
+            DisplayName = form.DisplayName,
+            RppNumber = form.RppNumber,
+            CreaNumber = form.CreaNumber
+        });
+        if (result.Error is not null)
+        {
+            message = result.Error;
             isSaving = false;
             return;
         }
 
-        if (stored is null)
-        {
-            db.Riggers.Add(new Rigger
-            {
-                Id = Guid.NewGuid(),
-                FullName = form.FullName.Trim(),
-                DisplayName = form.DisplayName.Trim(),
-                RppNumber = form.RppNumber.Trim(),
-                CreaNumber = string.IsNullOrWhiteSpace(form.CreaNumber) ? null : form.CreaNumber.Trim(),
-                IsActive = true
-            });
-        }
-        else
-        {
-            stored.FullName = form.FullName.Trim();
-            stored.DisplayName = form.DisplayName.Trim();
-            stored.RppNumber = form.RppNumber.Trim();
-            stored.CreaNumber = string.IsNullOrWhiteSpace(form.CreaNumber) ? null : form.CreaNumber.Trim();
-        }
-
-        await db.SaveChangesAsync();
         form = new();
         editingId = null;
-        message = stored is null ? "Responsável cadastrado com sucesso." : "Responsável atualizado com sucesso.";
+        message = result.Created ? CatalogMessages.RiggerCreated : CatalogMessages.RiggerUpdated;
         isSaving = false;
         await LoadAsync();
     }
@@ -131,27 +116,18 @@
     }
     private async Task ToggleStatusAsync(Rigger rigger)
     {
-        await using var db = await DbFactory.CreateDbContextAsync();
-        var stored = await db.Riggers.FindAsync(rigger.Id);
-        if (stored is null) return;
-        stored.IsActive = !stored.IsActive;
-        await db.SaveChangesAsync();
+        await Catalog.ToggleRiggerStatusAsync(rigger.Id);
         await LoadAsync();
     }
     private async Task DeleteAsync()
     {
         if (deleteId is null) return;
-        await using var db = await DbFactory.CreateDbContextAsync();
-        var rigger = await db.Riggers.FindAsync(deleteId.Value);
-        if (rigger is null) { CancelDelete(); return; }
-        var inProgressUse = await db.RiggingPlans.AnyAsync(x => x.RiggerId == rigger.Id && x.DeletedAt == null && x.Status != "finalized");
-        if (inProgressUse)
+        var error = await Catalog.DeleteRiggerAsync(deleteId.Value);
+        if (error is not null)
         {
-            deleteMessage = "Não é possível excluir: o responsável está ligado a um plano em andamento.";
+            deleteMessage = error;
             return;
         }
-        db.Riggers.Remove(rigger);
-        await db.SaveChangesAsync();
         CancelDelete();
         await LoadAsync();
     }

@@ -1,5 +1,6 @@
 @using Microsoft.AspNetCore.Components.Forms
-@inject IDbContextFactory<AppDbContext> DbFactory
+@using RiggingPlanner.Application.EquipmentArts
+@inject IEquipmentArtService ArtService
 
 @if (IsOpen && Equipment is not null)
 {
@@ -134,21 +135,15 @@
     private async Task LoadItemsAsync()
     {
         if (Equipment is null) return;
-        await using var db = await DbFactory.CreateDbContextAsync();
-        items = await db.EquipmentReports
-            .AsNoTracking()
-            .Include(x => x.File)
-            .Where(x => x.EquipmentId == Equipment.Id)
-            .OrderByDescending(x => x.ValidFrom)
-            .Select(x => new EquipmentArtDraft
-            {
-                Id = x.Id,
-                ArtNumber = x.ArtNumber,
-                ValidFrom = x.ValidFrom,
-                ValidTo = x.ValidTo,
-                ExistingFileName = x.File.OriginalName
-            })
-            .ToListAsync();
+        var reports = await ArtService.ListAsync(Equipment.Id);
+        items = reports.Select(x => new EquipmentArtDraft
+        {
+            Id = x.Id,
+            ArtNumber = x.ArtNumber,
+            ValidFrom = x.ValidFrom,
+            ValidTo = x.ValidTo,
+            ExistingFileName = x.FileName
+        }).ToList();
     }
 
     private async Task OnFileChange(InputFileChangeEventArgs args)
@@ -182,54 +177,26 @@
 
         try
         {
-            await using var db = await DbFactory.CreateDbContextAsync();
-            if (editingItem is null || editingItem.Id is null)
+            var creating = editingItem is null || editingItem.Id is null;
+            var error = await ArtService.SaveAsync(new EquipmentArtSaveRequest
             {
-                // Create new ART
-                var file = await SaveFileAsync(draft.File!);
-                db.StoredFiles.Add(file);
-                db.EquipmentReports.Add(new EquipmentReport
-                {
-                    Id = Guid.NewGuid(),
-                    EquipmentId = Equipment!.Id,
-                    FileId = file.Id,
-                    ArtNumber = draft.ArtNumber.Trim(),
-                    ValidFrom = draft.ValidFrom,
-                    ValidTo = draft.ValidTo,
-                    CreatedAt = DateTime.Now
-                });
-                await db.SaveChangesAsync();
-                message = "ART adicionada com sucesso.";
-            }
-            else
+                Id = editingItem?.Id,
+                EquipmentId = Equipment!.Id,
+                ArtNumber = draft.ArtNumber,
+                ValidFrom = draft.ValidFrom,
+                ValidTo = draft.ValidTo,
+                FileName = draft.File?.Name,
+                ContentType = draft.File?.ContentType,
+                PdfContent = draft.File is null ? null : await ReadFileBytesAsync(draft.File)
+            });
+            if (error is not null)
             {
-                // Update existing ART
-                var report = await db.EquipmentReports.Include(x => x.File).SingleOrDefaultAsync(x => x.Id == editingItem.Id.Value);
-                if (report is null)
-                {
-                    message = "A ART não foi encontrada.";
-                    isError = true;
-                    isBusy = false;
-                    return;
-                }
-
-                report.ArtNumber = draft.ArtNumber.Trim();
-                report.ValidFrom = draft.ValidFrom;
-                report.ValidTo = draft.ValidTo;
-
-                if (draft.File is not null)
-                {
-                    var oldFile = report.File;
-                    var file = await SaveFileAsync(draft.File);
-                    report.FileId = file.Id;
-                    db.StoredFiles.Add(file);
-                    if (oldFile is not null) db.StoredFiles.Remove(oldFile);
-                }
-
-                await db.SaveChangesAsync();
-                message = "ART atualizada com sucesso.";
+                message = error;
+                isError = true;
+                return;
             }
 
+            message = creating ? EquipmentArtMessages.Added : EquipmentArtMessages.Updated;
             await LoadItemsAsync();
             CancelEdit();
             await OnChanged.InvokeAsync();
@@ -301,27 +268,19 @@
 
         try
         {
-            await using var db = await DbFactory.CreateDbContextAsync();
-            var report = await db.EquipmentReports.Include(x => x.File).SingleOrDefaultAsync(x => x.Id == pendingRemoval.Id.Value);
-            if (report is not null)
+            var error = await ArtService.DeleteAsync(pendingRemoval.Id.Value);
+            if (error is not null)
             {
-                if (await db.RiggingPlans.AnyAsync(x => x.EquipmentReportId == report.Id && x.DeletedAt == null))
-                {
-                    message = $"A ART {report.ArtNumber} está vinculada a um plano e não pode ser excluída.";
-                    isError = true;
-                    pendingRemoval = null;
-                    isBusy = false;
-                    return;
-                }
-
-                db.EquipmentReports.Remove(report);
-                if (report.File is not null) db.StoredFiles.Remove(report.File);
-                await db.SaveChangesAsync();
+                message = error;
+                isError = true;
+                pendingRemoval = null;
+                isBusy = false;
+                return;
             }
 
             if (editingItem == pendingRemoval) CancelEdit();
             pendingRemoval = null;
-            message = "ART excluída com sucesso.";
+            message = EquipmentArtMessages.Deleted;
             await LoadItemsAsync();
             await OnChanged.InvokeAsync();
         }
@@ -347,36 +306,11 @@
     private static bool IsPdf(IBrowserFile file) =>
         string.Equals(Path.GetExtension(file.Name), ".pdf", StringComparison.OrdinalIgnoreCase);
 
-    private static async Task<StoredFile> SaveFileAsync(IBrowserFile browserFile)
+    private static async Task<byte[]> ReadFileBytesAsync(IBrowserFile browserFile)
     {
-        var fileId = Guid.NewGuid();
-        var extension = Path.GetExtension(browserFile.Name);
-        var folder = Path.Combine(FileSystem.AppDataDirectory, "equipment-art");
-        Directory.CreateDirectory(folder);
-        var relativePath = Path.Combine("equipment-art", fileId + extension);
-        var absolutePath = Path.Combine(FileSystem.AppDataDirectory, relativePath);
         await using var input = browserFile.OpenReadStream(10 * 1024 * 1024);
-        await using var output = File.Create(absolutePath);
-        using var sha = System.Security.Cryptography.SHA256.Create();
-        var buffer = new byte[81920];
-        int read;
-        long size = 0;
-        while ((read = await input.ReadAsync(buffer)) > 0)
-        {
-            await output.WriteAsync(buffer.AsMemory(0, read));
-            sha.TransformBlock(buffer, 0, read, null, 0);
-            size += read;
-        }
-        sha.TransformFinalBlock([], 0, 0);
-        return new StoredFile
-        {
-            Id = fileId,
-            RelativePath = relativePath,
-            OriginalName = browserFile.Name,
-            ContentType = browserFile.ContentType,
-            SizeBytes = size,
-            Sha256 = Convert.ToHexString(sha.Hash!).ToLowerInvariant(),
-            CreatedAt = DateTime.Now
-        };
+        using var memory = new MemoryStream();
+        await input.CopyToAsync(memory);
+        return memory.ToArray();
     }
 }
