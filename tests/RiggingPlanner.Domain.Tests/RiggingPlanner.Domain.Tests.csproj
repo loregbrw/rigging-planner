@@ -20,7 +20,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\RiggingPlanner.Domain\RiggingPlanner.Domain.csproj" />
-    <ProjectReference Include="..\..\src\RiggingPlanner.Application\RiggingPlanner.Application.csproj" />
   </ItemGroup>
 
 </Project>
