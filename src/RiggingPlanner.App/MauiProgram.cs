@@ -19,12 +19,7 @@ public static class MauiProgram
 		CultureInfo.CurrentUICulture = ptBr;
 
 		var builder = MauiApp.CreateBuilder();
-		builder
-			.UseMauiApp<App>()
-			.ConfigureFonts(fonts =>
-			{
-				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-			});
+		builder.UseMauiApp<App>();
 
 		builder.Services.AddMauiBlazorWebView();
 		builder.Services.AddScoped<PlanDraftState>();

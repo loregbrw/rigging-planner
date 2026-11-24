@@ -54,7 +54,7 @@ public static class DrawingSheetStampBuilder
             SheetLabel: $"FOLHA {sheetNumber} DE {sheetTotal}");
     }
 
-    // PENDING-CONFIRMATION: RiggerRpp and RiggerCrea hold only the numbers (stage 0).
+    // RiggerRpp and RiggerCrea hold only the registration numbers.
     // When a number is not filled the fixed prefix is kept and the number prints as "-".
     private static string RiggerLabel(RiggingPlan plan) =>
         string.IsNullOrWhiteSpace(plan.RiggerRpp)

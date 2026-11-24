@@ -9,10 +9,10 @@ public static class PdfFontRegistry
 {
     public const string FamilyName = "Carlito";
 
-    /// <summary>Substitute for Century Gothic, approved by the project owner in stage 2A.</summary>
+    /// <summary>Substitute for Century Gothic.</summary>
     public const string GothicFamilyName = "Questrial";
 
-    /// <summary>Substitute for Eras ITC Demi, approved by the project owner in stage 2A.</summary>
+    /// <summary>Substitute for Eras ITC Demi.</summary>
     public const string BrandFamilyName = "Open Sans SemiBold";
 
     public const string GothicFontFileName = "Questrial-Regular.ttf";

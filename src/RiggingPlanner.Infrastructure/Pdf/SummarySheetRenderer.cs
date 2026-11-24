@@ -226,7 +226,7 @@ public sealed class SummarySheetRenderer : ISummarySheetRenderer
 
         Add(model.DeviceTotal, SummarySheetLayout.DeviceTotalCenterX, deviceTotalsBase + SummarySheetLayout.DeviceTotalsValueOffset, 11.04, false, SummarySheetAlign.Center);
 
-        // Intentional difference #1 (stage-1 doc): the device totals label has its own text,
+        // The device totals label has its own text,
         // right-aligned so it ends where the sling totals label ends in the example.
         var slingLabelWidth = CarlitoMeasurer.MeasureWidth(SummarySheetLayout.SlingTotalsLabelText, SummarySheetLayout.TotalsLabelSizePt, bold: true);
         Add(SummarySheetLayout.DeviceTotalsLabelText, SummarySheetLayout.TotalsLabelLeftX + slingLabelWidth, deviceTotalsBase + SummarySheetLayout.DeviceTotalsLabelOffset, SummarySheetLayout.TotalsLabelSizePt, true, SummarySheetAlign.Right);

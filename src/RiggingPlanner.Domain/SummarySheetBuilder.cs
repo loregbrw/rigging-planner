@@ -93,10 +93,7 @@ public static class SummarySheetBuilder
     private static string FormatYear(int? year) =>
         year is null ? "-" : year.Value.ToString(CultureInfo.InvariantCulture);
 
-    // PENDING-CONFIRMATION (user decision dependency): the equipment screen never fills
-    // CraneBrand today (always string.Empty). "Modelo" on page 1 must show brand and model
-    // together, ignoring the empty brand part without a leftover space. If the brand ever
-    // starts being captured in the UI, revisit this single point.
+    // "Modelo" shows brand and model together, ignoring an empty brand part.
     private static string CraneModelDisplay(RiggingPlan plan)
     {
         var brand = plan.CraneBrand?.Trim() ?? string.Empty;
@@ -126,8 +123,7 @@ public static class SummarySheetBuilder
         return value == "-" ? "-" : $"ART {value}";
     }
 
-    // PENDING-CONFIRMATION: RiggerName holds the display name and RiggerRpp holds only the
-    // number (no "RPP-" prefix), as verified in stage 0 (PlanEntryPersistence.ApplyReferences).
+    // RiggerName holds the display name and RiggerRpp holds only the number.
     // When the RPP is not filled, the " - RPP-..." part is omitted.
     private static string RiggerSignature(RiggingPlan plan)
     {

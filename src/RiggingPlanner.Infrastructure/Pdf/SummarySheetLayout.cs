@@ -46,7 +46,7 @@ public enum SummarySheetRectKind
 
 /// <summary>
 /// Measured layout constants of the summary sheet ("Capacidade de carga", page 1).
-/// Every number was extracted from the reference example (reference-plan.pdf)
+/// Every number was measured against the approved document layout
 /// using the letter-level reader; unit is PDF points with a top-left page origin.
 /// </summary>
 public static class SummarySheetLayout
@@ -315,7 +315,7 @@ public static class SummarySheetLayout
     public const double TotalsLabelSizePt = 11.04;
 
     /// <summary>Totals label texts. The device label is right-aligned so it ends where the
-    /// sling label ends in the example (intentional difference #1 of the stage-1 doc).</summary>
+    /// sling label ends.</summary>
     public const string SlingTotalsLabelText = "PESO TOTAL DA LINGADA / AMARRAÇÃO:";
     public const string DeviceTotalsLabelText = "PESO TOTAL DOS DISPOSITIVOS / BALANCIM:";
 

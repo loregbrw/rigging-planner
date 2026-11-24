@@ -1,4 +1,4 @@
-@page "/new-plan/{PlanId:guid}/{Stage}"
+@page "/new-plan/{PlanId:guid}/{Step}"
 @inject NavigationManager Navigation
 @inject IPlanService Plans
 @inject PlanDraftState Draft
@@ -18,27 +18,27 @@
     }
     else if (CurrentSegment == "attachments")
     {
-        <RpAttachmentsStage Plan="plan!" IsReadOnly="isReadOnly" />
+        <RpAttachmentsStep Plan="plan!" IsReadOnly="isReadOnly" />
     }
     else if (CurrentSegment == "preview")
     {
-        <RpPreviewStage />
+        <RpPreviewStep />
     }
     else if (CurrentSegment == "export")
     {
-        <RpExportStage PlanId="@PlanId" IsReadOnly="@isReadOnly" OnFinalized="OnPlanFinalizedAsync" />
+        <RpExportStep PlanId="@PlanId" IsReadOnly="@isReadOnly" OnFinalized="OnPlanFinalizedAsync" />
     }
     else
     {
-        <RpStagePlaceholder Title="@PageTitle" />
+        <p class="rp-muted">Etapa não encontrada.</p>
     }
 </RpPlanStepLayout>
 
 @code {
     [Parameter] public Guid PlanId { get; set; }
-    [Parameter] public string Stage { get; set; } = "attachments";
+    [Parameter] public string Step { get; set; } = "attachments";
 
-    private string CurrentSegment => string.IsNullOrWhiteSpace(Stage) ? "attachments" : Stage.ToLowerInvariant();
+    private string CurrentSegment => string.IsNullOrWhiteSpace(Step) ? "attachments" : Step.ToLowerInvariant();
     private string PageTitle => PlanStepCatalog.GetTitle(CurrentSegment);
     private RiggingPlan? plan;
     private string PlanTitle => Draft.GetPageTitle(plan);
