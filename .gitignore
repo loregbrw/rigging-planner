@@ -493,3 +493,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Versioned installers under releases/ are part of the repository
+!releases/
+!releases/**
