@@ -1,7 +1,7 @@
 # Procedimento Operacional — Texto de referência
 
-> Referência da Seção 6.4 do `project-brief.md`. O texto é **padrão e único para todos os guindastes**, fica **embutido no app** (não no banco) e **não tem cadastro, edição pelo usuário nem versões**. Alterá-lo exige uma nova versão do app e a atualização deste arquivo.
-> Origem: transcrito do plano de rigging de exemplo nº 2607001 (Cliente, 24/07/2026). Tomado como definitivo para todos os modelos de guindaste por decisão de 12/11/2026, **sem confirmação do engenheiro**.
+> O texto é **padrão e único para todos os guindastes**, fica **embutido no app** (não no banco) e **não tem cadastro, edição pelo usuário nem versões**. Alterá-lo exige uma nova versão do app e a atualização deste arquivo.
+> Origem: transcrito de um plano de rigging de exemplo. Alterações no texto exigem confirmação do engenheiro responsável.
 
 ## 1. Estrutura do documento
 
@@ -13,8 +13,8 @@
 | Campo | Origem |
 |---|---|
 | Nome da operação (ex.: "Içamento Chiller") | `operation_name` do plano |
-| Número da ART (ex.: 0000000000000) | `art_number` do plano |
-| Número do plano (ex.: 2607001) | `plan_number` do plano |
+| Número da ART | `art_number` do plano |
+| Número do plano | `plan_number` do plano |
 | Código do modelo no título da seção 2 (ex.: `MD45007`) | Derivado do modelo do guindaste (`crane_model`), sem a marca, removendo espaços e pontos |
 
 Valor ausente é exibido como "-".
