@@ -5,21 +5,21 @@ using RiggingPlanner.Infrastructure.Persistence;
 
 namespace RiggingPlanner.Infrastructure.Tests;
 
-public sealed class LegacyMigrationTests : IDisposable
+public sealed class MigrationCompatibilityTests : IDisposable
 {
-    private readonly string databasePath = Path.Combine(Path.GetTempPath(), $"legacy-{Guid.NewGuid():N}.db");
+    private readonly string databasePath = Path.Combine(Path.GetTempPath(), $"migration-{Guid.NewGuid():N}.db");
 
     [Fact]
-    public void ApplyMigrations_StampsInitialCreateWhenLegacyHistoryIsPresent()
+    public void ApplyMigrations_ReconcilesExistingHistory()
     {
         using (var connection = new SqliteConnection($"Data Source={databasePath}"))
         {
             connection.Open();
             Execute(connection,
                 "CREATE TABLE __EFMigrationsHistory (MigrationId TEXT NOT NULL PRIMARY KEY, ProductVersion TEXT NOT NULL)",
-                "INSERT INTO __EFMigrationsHistory VALUES ('20261112234418_AddPlanProcedureSnapshot', '10.0.13')",
-                "CREATE TABLE LegacyData (Value TEXT NOT NULL)",
-                "INSERT INTO LegacyData VALUES ('kept')");
+                "INSERT INTO __EFMigrationsHistory VALUES ('20250101000000_PreviousSchema', '10.0.13')",
+                "CREATE TABLE ExistingData (Value TEXT NOT NULL)",
+                "INSERT INTO ExistingData VALUES ('kept')");
         }
 
         var services = new ServiceCollection();
@@ -32,7 +32,7 @@ public sealed class LegacyMigrationTests : IDisposable
         using (var connection = new SqliteConnection($"Data Source={databasePath}"))
         {
             connection.Open();
-            Assert.Equal("kept", Scalar(connection, "SELECT Value FROM LegacyData"));
+            Assert.Equal("kept", Scalar(connection, "SELECT Value FROM ExistingData"));
             using var current = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>()
                 .UseSqlite($"Data Source={databasePath};Pooling=False").Options);
             var migration = Assert.Single(current.Database.GetMigrations());

@@ -37,7 +37,7 @@ dotnet ef migrations add NomeDaMigration --project src/RiggingPlanner.Infrastruc
 
 ## Versions and releases
 
-Versions are Git tags in the form `vX.Y.Z` (semantic numbering). `v1.0.0` marks the first portable release and now points to the rewritten history. Pushing a `v*` tag triggers `.github/workflows/release.yml`, which installs the MAUI workload and Inno Setup, runs the build and all tests, publishes the installer and creates a GitHub Release with automatic notes and the SHA-256 sidecar. The same workflow can be started manually from **Actions → Release → Run workflow** with an explicit version.
+Versions are Git tags in the form `vX.Y.Z` (semantic numbering). `v1.0.0` marks the first portable release. Pushing a `v*` tag triggers `.github/workflows/release.yml`, which installs the MAUI workload and Inno Setup, runs the build and all tests, publishes the installer and creates a GitHub Release with automatic notes and the SHA-256 sidecar. The same workflow can be started manually from **Actions → Release → Run workflow** with an explicit version.
 
 The published asset is `RiggingPlanner-<version>-win-x64-setup.exe` plus `.sha256`. The installer is self-contained (no system .NET/SQLite/Windows App SDK setup), unsigned, and requires Microsoft Edge WebView2 Runtime; Windows may show a SmartScreen warning on first run. Installing a newer version over the old one preserves the SQLite database and attachments in the user profile.
 
@@ -49,8 +49,6 @@ choco install innosetup -y
 ```
 
 Outputs go to `artifacts/` (not versioned). See [`docs/release.md`](docs/release.md) for the installer wizard and update details.
-
-> The default branch was replaced by a rewritten, linear history. Older branches and backup tags still point to the pre-refactor tree and must not be used as a base for new work.
 
 ## Structure
 ```
