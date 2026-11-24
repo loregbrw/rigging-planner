@@ -31,8 +31,8 @@ public sealed class PlanServiceTests : IDisposable
                 EquipmentTruckModel = "Caminhão de teste",
                 EquipmentChassisNumber = "CHASSIS-TESTE",
                 EquipmentLicensePlate = "AAA-0000",
-                RiggerDisplayName = "Responsável de teste",
-                RiggerFullName = "Responsável de teste",
+                RiggerDisplayName = "Ana Silva",
+                RiggerFullName = "Ana Silva",
                 RiggerRppNumber = "123"
             }
         });
