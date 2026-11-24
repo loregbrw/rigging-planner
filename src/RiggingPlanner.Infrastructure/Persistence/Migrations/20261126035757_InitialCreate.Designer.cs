@@ -11,8 +11,8 @@ using RiggingPlanner.Infrastructure.Persistence;
 namespace RiggingPlanner.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261110234746_RemoveEquipmentNominalCapacityAndPlanCraneNominalCapacity")]
-    partial class RemoveEquipmentNominalCapacityAndPlanCraneNominalCapacity
+    [Migration("20261126035757_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -279,6 +279,33 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.ToTable("PlanNumberCounters");
                 });
 
+            modelBuilder.Entity("RiggingPlanner.Domain.Entities.PlanProcedureSnapshot", b =>
+                {
+                    b.Property<Guid>("PlanId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContentSha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CraneModelCode")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("PlanId");
+
+                    b.ToTable("PlanProcedureSnapshots");
+                });
+
             modelBuilder.Entity("RiggingPlanner.Domain.Entities.Rigger", b =>
                 {
                     b.Property<Guid>("Id")
@@ -350,6 +377,10 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("CraneModel")
                         .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("CraneNominalCapacity")
+                        .HasPrecision(18, 3)
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
@@ -560,29 +591,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.ToTable("StoredFiles");
                 });
 
-            modelBuilder.Entity("RiggingPlanner.Domain.Entities.Tag", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT")
-                        .UseCollation("NOCASE");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("Tags");
-                });
-
             modelBuilder.Entity("RiggingPlanner.Domain.Entities.EquipmentReport", b =>
                 {
                     b.HasOne("RiggingPlanner.Domain.Entities.Equipment", "Equipment")
@@ -637,6 +645,17 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.HasOne("RiggingPlanner.Domain.Entities.RiggingPlan", "Plan")
                         .WithMany("Exports")
                         .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Plan");
+                });
+
+            modelBuilder.Entity("RiggingPlanner.Domain.Entities.PlanProcedureSnapshot", b =>
+                {
+                    b.HasOne("RiggingPlanner.Domain.Entities.RiggingPlan", "Plan")
+                        .WithOne("ProcedureSnapshot")
+                        .HasForeignKey("RiggingPlanner.Domain.Entities.PlanProcedureSnapshot", "PlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -722,6 +741,8 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.Navigation("Drawings");
 
                     b.Navigation("Exports");
+
+                    b.Navigation("ProcedureSnapshot");
                 });
 
             modelBuilder.Entity("RiggingPlanner.Domain.Entities.StoredFile", b =>

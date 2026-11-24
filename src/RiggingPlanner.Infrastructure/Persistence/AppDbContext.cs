@@ -9,7 +9,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Rigger> Riggers => Set<Rigger>();
     public DbSet<Equipment> Equipments => Set<Equipment>();
     public DbSet<EquipmentReport> EquipmentReports => Set<EquipmentReport>();
-    public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<StoredFile> StoredFiles => Set<StoredFile>();
     public DbSet<Folder> Folders => Set<Folder>();
     public DbSet<PlanNumberCounter> PlanNumberCounters => Set<PlanNumberCounter>();
@@ -56,13 +55,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(x => x.ArtNumber).HasMaxLength(50).IsRequired();
             entity.HasOne(x => x.Equipment).WithMany(x => x.Reports).HasForeignKey(x => x.EquipmentId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(x => x.File).WithMany(x => x.EquipmentReports).HasForeignKey(x => x.FileId).OnDelete(DeleteBehavior.Restrict);
-        });
-
-        modelBuilder.Entity<Tag>(entity =>
-        {
-            ConfigureGuidKey(entity);
-            entity.Property(x => x.Name).HasMaxLength(100).UseCollation("NOCASE").IsRequired();
-            entity.HasIndex(x => x.Name).IsUnique();
         });
 
         modelBuilder.Entity<StoredFile>(entity =>

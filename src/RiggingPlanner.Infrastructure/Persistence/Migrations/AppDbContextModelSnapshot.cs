@@ -588,29 +588,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     b.ToTable("StoredFiles");
                 });
 
-            modelBuilder.Entity("RiggingPlanner.Domain.Entities.Tag", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("TEXT")
-                        .UseCollation("NOCASE");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("Tags");
-                });
-
             modelBuilder.Entity("RiggingPlanner.Domain.Entities.EquipmentReport", b =>
                 {
                     b.HasOne("RiggingPlanner.Domain.Entities.Equipment", "Equipment")

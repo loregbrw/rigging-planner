@@ -12,27 +12,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Accessories",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    Category = table.Column<string>(type: "TEXT", maxLength: 80, nullable: false),
-                    Description = table.Column<string>(type: "TEXT", maxLength: 500, nullable: false),
-                    LengthM = table.Column<decimal>(type: "TEXT", precision: 18, scale: 3, nullable: true),
-                    CapacityT = table.Column<decimal>(type: "TEXT", precision: 18, scale: 3, nullable: true),
-                    UnitWeightKg = table.Column<decimal>(type: "TEXT", precision: 18, scale: 3, nullable: false),
-                    DrawingRef = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
-                    Status = table.Column<string>(type: "TEXT", maxLength: 40, nullable: false),
-                    ReviewDueDate = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Accessories", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Clients",
                 columns: table => new
                 {
@@ -60,7 +39,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     ManufactureYear = table.Column<int>(type: "INTEGER", nullable: true),
                     CraneBrand = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
                     CraneModel = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    NominalCapacity = table.Column<decimal>(type: "TEXT", precision: 18, scale: 3, nullable: true),
                     IsActive = table.Column<bool>(type: "INTEGER", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
@@ -129,27 +107,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "AccessoryEvents",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    AccessoryId = table.Column<Guid>(type: "TEXT", nullable: false),
-                    EventDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    EventType = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Notes = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AccessoryEvents", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_AccessoryEvents_Accessories_AccessoryId",
-                        column: x => x.AccessoryId,
-                        principalTable: "Accessories",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "EquipmentReports",
                 columns: table => new
                 {
@@ -157,8 +114,8 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     EquipmentId = table.Column<Guid>(type: "TEXT", nullable: false),
                     FileId = table.Column<Guid>(type: "TEXT", nullable: false),
                     ArtNumber = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    ValidFrom = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    ValidTo = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ValidFrom = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ValidTo = table.Column<DateTime>(type: "TEXT", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
@@ -225,6 +182,7 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     RiggerId = table.Column<Guid>(type: "TEXT", nullable: true),
                     RiggerName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     RiggerRpp = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
+                    RiggerCrea = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
                     SupervisorName = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     ArtNumber = table.Column<string>(type: "TEXT", maxLength: 50, nullable: true),
                     ArtFileId = table.Column<Guid>(type: "TEXT", nullable: true),
@@ -279,7 +237,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     PlanId = table.Column<Guid>(type: "TEXT", nullable: false),
                     Section = table.Column<string>(type: "TEXT", maxLength: 40, nullable: false),
-                    AccessoryId = table.Column<Guid>(type: "TEXT", nullable: true),
                     Description = table.Column<string>(type: "TEXT", maxLength: 500, nullable: false),
                     DrawingRef = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
                     Quantity = table.Column<decimal>(type: "TEXT", precision: 18, scale: 3, nullable: false),
@@ -289,12 +246,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_PlanAccessories", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_PlanAccessories_Accessories_AccessoryId",
-                        column: x => x.AccessoryId,
-                        principalTable: "Accessories",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
                     table.ForeignKey(
                         name: "FK_PlanAccessories_RiggingPlans_PlanId",
                         column: x => x.PlanId,
@@ -351,15 +302,26 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_Accessories_Status",
-                table: "Accessories",
-                column: "Status");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AccessoryEvents_AccessoryId",
-                table: "AccessoryEvents",
-                column: "AccessoryId");
+            migrationBuilder.CreateTable(
+                name: "PlanProcedureSnapshots",
+                columns: table => new
+                {
+                    PlanId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    CraneModelCode = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Content = table.Column<string>(type: "TEXT", nullable: false),
+                    ContentSha256 = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PlanProcedureSnapshots", x => x.PlanId);
+                    table.ForeignKey(
+                        name: "FK_PlanProcedureSnapshots_RiggingPlans_PlanId",
+                        column: x => x.PlanId,
+                        principalTable: "RiggingPlans",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Clients_Cnpj",
@@ -389,11 +351,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                 table: "Folders",
                 column: "Name",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_PlanAccessories_AccessoryId",
-                table: "PlanAccessories",
-                column: "AccessoryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PlanAccessories_PlanId_SortOrder",
@@ -468,9 +425,6 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "AccessoryEvents");
-
-            migrationBuilder.DropTable(
                 name: "PlanAccessories");
 
             migrationBuilder.DropTable(
@@ -483,7 +437,7 @@ namespace RiggingPlanner.Infrastructure.Persistence.Migrations
                 name: "PlanNumberCounters");
 
             migrationBuilder.DropTable(
-                name: "Accessories");
+                name: "PlanProcedureSnapshots");
 
             migrationBuilder.DropTable(
                 name: "RiggingPlans");
