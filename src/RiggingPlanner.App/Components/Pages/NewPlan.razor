@@ -1,7 +1,8 @@
 @page "/new-plan"
 @page "/new-plan/{PlanId:guid}"
 @using Microsoft.AspNetCore.Components
-@inject IDbContextFactory<AppDbContext> DbFactory
+@inject IPlanService Plans
+@inject ICatalogService Catalog
 @inject NavigationManager Navigation
 
 <RpPlanStepLayout Title="@PageTitle"
@@ -37,8 +38,7 @@
     protected override async Task OnInitializedAsync()
     {
         state = new PlanEntryState(Draft);
-        await using var db = await DbFactory.CreateDbContextAsync();
-        await state.LoadActiveLookupsAsync(db);
+        await state.LoadActiveLookupsAsync(Catalog);
         var form = Draft.Form;
 
         if (Draft.IsInitialized
@@ -66,7 +66,7 @@
             return;
         }
 
-        plan = await PlanWorkflowLoader.LoadAsync(db, Draft, PlanId.Value, includeAccessories: true);
+        plan = await PlanDraftLoader.LoadAsync(Plans, Draft, PlanId.Value, includeAccessories: true);
         if (plan is null)
         {
             errorMessage = "Plano não encontrado.";
@@ -74,7 +74,7 @@
         }
 
         isReadOnly = plan.Status == "finalized";
-        await state.ConfigureForPlanAsync(db, plan, isReadOnly);
+        await state.ConfigureForPlanAsync(Catalog, plan, isReadOnly);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -94,11 +94,20 @@
         errorMessage = null;
         try
         {
-            await using var db = await DbFactory.CreateDbContextAsync();
-            var error = await PlanEntryPersistence.SaveAsync(db, Draft, PlanId, isDraftPlan, state);
-            if (error is not null)
+            var result = await Plans.SaveAsync(new PlanSaveRequest
             {
-                errorMessage = error;
+                PlanId = PlanId,
+                IsDraftPlan = isDraftPlan,
+                Form = Draft.Form,
+                CapacitySource = Draft.Plan,
+                Accessories = Draft.Accessories,
+                AttachmentSource = Draft.Plan,
+                EquipmentOptions = state.EquipmentOptions,
+                RiggerOptions = state.RiggerOptions
+            });
+            if (!result.Success)
+            {
+                errorMessage = result.Error ?? string.Join(" ", result.ValidationErrors);
                 return;
             }
 

@@ -1,11 +1,8 @@
-@using RiggingPlanner.Application.Pdf
-@using RiggingPlanner.Infrastructure.Persistence
-@inject IDbContextFactory<AppDbContext> DbFactory
 @inject NavigationManager Navigation
 @inject PlanDraftState Draft
-@inject PlanSaveService SaveService
-@inject PlanExportService ExportService
-@inject PlanFinalizationService FinalizationService
+@inject IPlanService Plans
+@inject ICatalogService Catalog
+@inject IExportService ExportService
 
 <RpCard Title="Exportação">
     <p class="rp-muted">
@@ -106,13 +103,42 @@
         exportWarnings = [];
     }
 
+    private async Task<PlanSaveRequest> BuildRequestAsync()
+    {
+        List<Equipment> equipmentOptions = [.. await Catalog.GetEquipmentsAsync(activeOnly: true)];
+        List<Rigger> riggerOptions = [.. await Catalog.GetRiggersAsync(activeOnly: true)];
+
+        if (Draft.Plan?.EquipmentId is not null && equipmentOptions.All(x => x.Id != Draft.Plan.EquipmentId))
+        {
+            var linked = await Catalog.FindEquipmentAsync(Draft.Plan.EquipmentId.Value);
+            if (linked is not null) equipmentOptions.Add(linked);
+        }
+        if (Draft.Plan?.RiggerId is not null && riggerOptions.All(x => x.Id != Draft.Plan.RiggerId))
+        {
+            var linked = await Catalog.FindRiggerAsync(Draft.Plan.RiggerId.Value);
+            if (linked is not null) riggerOptions.Add(linked);
+        }
+
+        return new PlanSaveRequest
+        {
+            PlanId = Draft.IsPersisted ? Draft.PlanId : null,
+            IsDraftPlan = !Draft.IsPersisted,
+            Form = Draft.Form,
+            CapacitySource = Draft.Plan,
+            Accessories = Draft.Accessories,
+            AttachmentSource = Draft.Plan,
+            EquipmentOptions = equipmentOptions,
+            RiggerOptions = riggerOptions
+        };
+    }
+
     private async Task SaveAndExportAsync()
     {
         isBusy = true;
         ClearMessages();
         try
         {
-            var result = await SaveService.SaveAsync(Draft, PlanId);
+            var result = await Plans.SaveAsync(await BuildRequestAsync());
             if (result.ValidationErrors.Count > 0)
             {
                 validationErrors = result.ValidationErrors;
@@ -165,9 +191,10 @@
 
     private async Task ExportSavedPlanAsync(Guid savedPlanId)
     {
-        var result = await ExportService.ExportAsync(savedPlanId);
-        successMessage = $"PDF gerado: {result.FilePath}";
-        exportWarnings = result.Warnings;
+        var document = await ExportService.BuildAsync(savedPlanId);
+        var filePath = await PlanPdfWriter.SaveAndOpenAsync(document);
+        successMessage = $"PDF gerado: {filePath}";
+        exportWarnings = document.Warnings;
     }
 
     private async Task OpenFinalizeModalAsync()
@@ -176,7 +203,7 @@
         ClearMessages();
         try
         {
-            var errors = PlanSaveService.Validate(Draft.Form);
+            var errors = PlanFormValidator.Validate(Draft.Form);
             if (errors.Count > 0)
             {
                 validationErrors = errors;
@@ -209,37 +236,24 @@
         var wasPersisted = Draft.IsPersisted;
         try
         {
-            await using var db = await DbFactory.CreateDbContextAsync();
-            var error = await FinalizationService.FinalizeAsync(
-                db,
-                Draft.IsPersisted ? Draft.PlanId : null,
-                async context =>
-                {
-                    var save = await SaveService.SaveAsync(context, Draft, PlanId);
-                    if (save.ValidationErrors.Count > 0)
-                    {
-                        validationErrors = save.ValidationErrors;
-                        return new PlanDraftSaveResult("Valores obrigatórios faltando ou dados inválidos.", null);
-                    }
-                    return new PlanDraftSaveResult(save.Error, save.PlanId);
-                });
+            var result = await Plans.FinalizeAsync(await BuildRequestAsync());
+            validationErrors = result.ValidationErrors;
             if (validationErrors.Count > 0)
             {
                 return;
             }
-            if (error is not null)
+            if (result.Error is not null)
             {
-                errorMessage = error;
+                errorMessage = result.Error;
                 return;
             }
 
             showFinalizeModal = false;
-            var savedId = Draft.PlanId!.Value;
-            await using var reloadDb = await DbFactory.CreateDbContextAsync();
-            await PlanWorkflowLoader.LoadAsync(reloadDb, Draft, savedId, includeAccessories: true);
+            var savedId = result.PlanId!.Value;
+            await PlanDraftLoader.LoadAsync(Plans, Draft, savedId, includeAccessories: true);
             Draft.IsPersisted = true;
             Draft.IsInitialized = true;
-            if (!wasPersisted || Draft.PlanId != PlanId)
+            if (!wasPersisted || savedId != PlanId)
             {
                 Navigation.NavigateTo($"/new-plan/{savedId}/export", replace: true, forceLoad: true);
             }

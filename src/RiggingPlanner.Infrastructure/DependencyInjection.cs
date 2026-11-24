@@ -2,8 +2,15 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using RiggingPlanner.Application;
+using RiggingPlanner.Application.Abstractions;
+using RiggingPlanner.Application.Catalog;
+using RiggingPlanner.Application.Export;
 using RiggingPlanner.Application.Pdf;
+using RiggingPlanner.Application.Plans;
+using RiggingPlanner.Infrastructure.Export;
 using RiggingPlanner.Infrastructure.Persistence;
+using RiggingPlanner.Infrastructure.Plans;
+using RiggingPlanner.Infrastructure.Storage;
 
 namespace RiggingPlanner.Infrastructure;
 
@@ -20,6 +27,10 @@ public static class DependencyInjection
         services.AddSingleton<IOperationalProcedureRenderer, Pdf.OperationalProcedureRenderer>();
         services.AddSingleton<IPdfDocumentMerger, Pdf.PdfDocumentMerger>();
         services.AddApplication();
+        services.AddSingleton<IFileStore>(new FileStore(databasePath));
+        services.AddScoped<IPlanService, PlanService>();
+        services.AddScoped<ICatalogService, Catalog.CatalogService>();
+        services.AddScoped<IExportService, ExportService>();
         services.AddScoped<PlanFinalizationService>();
 
         return services;

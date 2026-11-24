@@ -28,8 +28,6 @@ public static class MauiProgram
 
 		builder.Services.AddMauiBlazorWebView();
 		builder.Services.AddScoped<PlanDraftState>();
-		builder.Services.AddScoped<PlanSaveService>();
-		builder.Services.AddScoped<PlanExportService>();
 		builder.Services.AddInfrastructure(GetDatabasePath());
 
 #if DEBUG

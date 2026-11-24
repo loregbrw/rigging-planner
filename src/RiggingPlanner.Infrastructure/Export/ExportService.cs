@@ -1,27 +1,23 @@
 using Microsoft.EntityFrameworkCore;
+using RiggingPlanner.Application.Abstractions;
+using RiggingPlanner.Application.Export;
 using RiggingPlanner.Application.Pdf;
+using RiggingPlanner.Domain;
 using RiggingPlanner.Domain.Entities;
 using RiggingPlanner.Infrastructure.Persistence;
+using SkiaSharp;
 
-namespace RiggingPlanner.App.Components.Plan.Export;
+namespace RiggingPlanner.Infrastructure.Export;
 
-public sealed record PlanExportResult(string FilePath, IReadOnlyList<string> Warnings);
-
-public sealed class PlanExportService(
+public sealed class ExportService(
     IDbContextFactory<AppDbContext> dbFactory,
+    IFileStore fileStore,
     ISummarySheetRenderer summarySheetRenderer,
     IDrawingSheetsRenderer drawingsRenderer,
     IOperationalProcedureRenderer procedureRenderer,
-    FullPlanPdfAssembler pdfAssembler)
+    FullPlanPdfAssembler pdfAssembler) : IExportService
 {
-    public async Task<IReadOnlyList<string>> GetWarningsAsync(Guid planId)
-    {
-        await using var db = await dbFactory.CreateDbContextAsync();
-        var plan = await LoadPlanAsync(db, planId);
-        return await BuildWarningsAsync(db, plan);
-    }
-
-    public async Task<PlanExportResult> ExportAsync(Guid planId)
+    public async Task<PlanExportDocument> BuildAsync(Guid planId)
     {
         await using var db = await dbFactory.CreateDbContextAsync();
         var plan = await LoadPlanAsync(db, planId);
@@ -32,7 +28,7 @@ public sealed class PlanExportService(
             .OrderBy(x => x.SortOrder)
             .ToListAsync();
 
-        var summaryModel = RiggingPlanner.Domain.SummarySheetBuilder.Build(plan, accessories);
+        var summaryModel = SummarySheetBuilder.Build(plan, accessories);
         var summaryPdf = summarySheetRenderer.Render(summaryModel);
 
         var drawingsPdf = await BuildDrawingsPdfAsync(plan, accessories);
@@ -44,16 +40,14 @@ public sealed class PlanExportService(
         var pdf = pdfAssembler.Assemble(summaryPdf, drawingsPdf, planArt, procedurePdf, reportPdf);
         var warnings = await BuildWarningsAsync(db, plan);
 
-        var downloads = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
-        Directory.CreateDirectory(downloads);
-        var filePath = Path.Combine(downloads, $"plano-completo-{plan.PlanNumber}.pdf");
-        await File.WriteAllBytesAsync(filePath, pdf);
+        return new PlanExportDocument(pdf, $"plano-completo-{plan.PlanNumber}.pdf", warnings);
+    }
 
-        await Microsoft.Maui.ApplicationModel.Launcher.OpenAsync(
-            new Microsoft.Maui.ApplicationModel.OpenFileRequest("Plano completo", new Microsoft.Maui.Storage.ReadOnlyFile(filePath)));
-
-        return new PlanExportResult(filePath, warnings);
+    public async Task<IReadOnlyList<string>> GetWarningsAsync(Guid planId)
+    {
+        await using var db = await dbFactory.CreateDbContextAsync();
+        var plan = await LoadPlanAsync(db, planId);
+        return await BuildWarningsAsync(db, plan);
     }
 
     private static async Task<RiggingPlan> LoadPlanAsync(AppDbContext db, Guid planId)
@@ -87,15 +81,17 @@ public sealed class PlanExportService(
                 continue;
             }
 
-            var filePath = Path.Combine(Microsoft.Maui.Storage.FileSystem.AppDataDirectory, drawing.File.RelativePath);
-            if (!File.Exists(filePath))
+            var bytes = await TryReadFileAsync(drawing.File);
+            if (bytes is null)
             {
                 continue;
             }
 
-            var bytes = await File.ReadAllBytesAsync(filePath);
-            var info = SkiaSharp.SKBitmap.DecodeBounds(bytes);
-            if (info.Width == 0) info = new SkiaSharp.SKImageInfo(800, 600);
+            var info = SKBitmap.DecodeBounds(bytes);
+            if (info.Width == 0)
+            {
+                info = new SKImageInfo(800, 600);
+            }
             imageItems.Add(new DrawingSheetImageItem(drawing.FileId, bytes, info.Width, info.Height));
         }
 
@@ -104,7 +100,7 @@ public sealed class PlanExportService(
             return null;
         }
 
-        var stampModel = RiggingPlanner.Domain.DrawingSheetStampBuilder.Build(plan, accessories, 1, 1);
+        var stampModel = DrawingSheetStampBuilder.Build(plan, accessories, 1, 1);
         return drawingsRenderer.RenderWithImages(stampModel, imageItems);
     }
 
@@ -160,14 +156,14 @@ public sealed class PlanExportService(
         return warnings;
     }
 
-    private static async Task<byte[]?> TryReadFileAsync(StoredFile? file)
+    private async Task<byte[]?> TryReadFileAsync(StoredFile? file)
     {
         if (file is null)
         {
             return null;
         }
 
-        var filePath = Path.Combine(Microsoft.Maui.Storage.FileSystem.AppDataDirectory, file.RelativePath);
-        return File.Exists(filePath) ? await File.ReadAllBytesAsync(filePath) : null;
+        var absolutePath = fileStore.AbsolutePath(file.RelativePath);
+        return File.Exists(absolutePath) ? await fileStore.ReadAsync(file.RelativePath) : null;
     }
 }

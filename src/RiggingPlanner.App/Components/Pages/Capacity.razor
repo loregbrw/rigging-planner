@@ -1,6 +1,6 @@
 @page "/new-plan/{PlanId:guid}/capacity"
 @inject PlanDraftState Draft
-@inject IDbContextFactory<AppDbContext> DbFactory
+@inject IPlanService Plans
 @inject NavigationManager Navigation
 
 <RpPlanStepLayout Title="@PageTitle"
@@ -96,9 +96,7 @@
 
         var hasDraft = Draft.PlanId == PlanId && Draft.Plan is not null && Draft.IsInitialized;
 
-        await using var db = await DbFactory.CreateDbContextAsync();
-
-        State.Plan = await PlanWorkflowLoader.LoadAsync(db, Draft, PlanId, includeAccessories: true);
+        State.Plan = await PlanDraftLoader.LoadAsync(Plans, Draft, PlanId, includeAccessories: true);
         State.IsReadOnly = State.Plan?.Status == "finalized";
 
         if (hasDraft && State.Plan is not null && !string.IsNullOrWhiteSpace(Draft.Form.OperationName))

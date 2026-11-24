@@ -1,14 +1,12 @@
-using Microsoft.EntityFrameworkCore;
-using RiggingPlanner.App.Components.Shared;
+using RiggingPlanner.Application.Plans;
 using RiggingPlanner.Domain.Entities;
-using RiggingPlanner.Infrastructure.Persistence;
 
 namespace RiggingPlanner.App.Components.Plan.Workflow;
 
-public static class PlanWorkflowLoader
+public static class PlanDraftLoader
 {
     public static async Task<RiggingPlan?> LoadAsync(
-        AppDbContext db,
+        IPlanService plans,
         PlanDraftState draft,
         Guid planId,
         bool includeAccessories = false,
@@ -18,19 +16,13 @@ public static class PlanWorkflowLoader
         {
             if (includeAccessories && draft.IsPersisted && draft.Accessories.Count == 0)
             {
-                await LoadAccessoriesAsync(db, draft, planId);
+                await LoadAccessoriesAsync(plans, draft, planId);
             }
 
             return draft.Plan;
         }
 
-        var plan = await db.RiggingPlans
-            .AsNoTracking()
-            .Include(x => x.ArtFile)
-            .Include(x => x.Drawings)
-            .ThenInclude(x => x.File)
-            .SingleOrDefaultAsync(x => x.Id == planId && x.DeletedAt == null);
-
+        var plan = await plans.LoadPlanAsync(planId, includeAccessories, includeAttachments: true);
         if (plan is not null)
         {
             draft.Attachments.Reset();
@@ -41,7 +33,7 @@ public static class PlanWorkflowLoader
 
             if (includeAccessories)
             {
-                await LoadAccessoriesAsync(db, draft, planId);
+                await LoadAccessoriesAsync(plans, draft, planId);
             }
 
             return plan;
@@ -55,13 +47,9 @@ public static class PlanWorkflowLoader
         return null;
     }
 
-    private static async Task LoadAccessoriesAsync(AppDbContext db, PlanDraftState draft, Guid planId)
+    private static async Task LoadAccessoriesAsync(IPlanService plans, PlanDraftState draft, Guid planId)
     {
-        var accessories = await db.PlanAccessories
-            .Where(x => x.PlanId == planId)
-            .OrderBy(x => x.SortOrder)
-            .ToListAsync();
-
+        var accessories = await plans.GetAccessoriesAsync(planId);
         draft.Accessories.Clear();
         draft.Accessories.AddRange(accessories);
     }

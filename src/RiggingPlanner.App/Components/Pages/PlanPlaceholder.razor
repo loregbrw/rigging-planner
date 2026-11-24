@@ -1,6 +1,6 @@
 @page "/new-plan/{PlanId:guid}/{Stage}"
 @inject NavigationManager Navigation
-@inject IDbContextFactory<AppDbContext> DbFactory
+@inject IPlanService Plans
 @inject PlanDraftState Draft
 
 <RpPlanStepLayout Title="@PlanTitle"
@@ -73,9 +73,7 @@
     private async Task LoadFromDatabaseAsync()
     {
         isLoading = true;
-        await using var db = await DbFactory.CreateDbContextAsync();
-
-        plan = await PlanWorkflowLoader.LoadAsync(db, Draft, PlanId, useDraftFallback: true);
+        plan = await PlanDraftLoader.LoadAsync(Plans, Draft, PlanId, useDraftFallback: true);
 
         if (plan is null)
         {
@@ -92,8 +90,7 @@
 
     private async Task OnPlanFinalizedAsync()
     {
-        await using var db = await DbFactory.CreateDbContextAsync();
-        plan = await PlanWorkflowLoader.LoadAsync(db, Draft, PlanId, includeAccessories: true);
+        plan = await PlanDraftLoader.LoadAsync(Plans, Draft, PlanId, includeAccessories: true);
         isPersisted = true;
         isReadOnly = plan?.Status == "finalized";
     }

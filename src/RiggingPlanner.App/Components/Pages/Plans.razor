@@ -1,6 +1,6 @@
 @page "/"
-@inject IDbContextFactory<AppDbContext> DbFactory
-@inject RiggingPlanner.App.Components.Plan.Export.PlanExportService ExportService
+@inject IPlanService PlanService
+@inject IExportService ExportService
 
 @if (isLoading)
 {
@@ -88,12 +88,7 @@ else
 
     private async Task LoadPlansAsync()
     {
-        await using var db = await DbFactory.CreateDbContextAsync();
-        plans = await db.RiggingPlans.AsNoTracking()
-            .Where(plan => plan.DeletedAt == null)
-            .OrderByDescending(plan => plan.PlanDate)
-            .ThenByDescending(plan => plan.PlanNumber)
-            .ToListAsync();
+        plans = [.. await PlanService.ListPlansAsync()];
         isLoading = false;
     }
 
@@ -110,9 +105,10 @@ else
         rowWarnings = [];
         try
         {
-            var result = await ExportService.ExportAsync(plan.Id);
-            rowMessage = $"PDF exportado: {result.FilePath}";
-            rowWarnings = result.Warnings;
+            var document = await ExportService.BuildAsync(plan.Id);
+            var filePath = await PlanPdfWriter.SaveAndOpenAsync(document);
+            rowMessage = $"PDF exportado: {filePath}";
+            rowWarnings = document.Warnings;
         }
         catch (Exception ex)
         {

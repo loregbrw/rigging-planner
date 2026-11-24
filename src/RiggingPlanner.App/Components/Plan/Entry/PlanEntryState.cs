@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.EntityFrameworkCore;
-using RiggingPlanner.App.Components.Shared;
+using RiggingPlanner.Application.Catalog;
+using RiggingPlanner.Application.Plans;
 using RiggingPlanner.Domain.Entities;
-using RiggingPlanner.Infrastructure.Persistence;
 
 namespace RiggingPlanner.App.Components.Plan.Entry;
 
@@ -50,25 +49,22 @@ public sealed class PlanEntryState
         : EquipmentOptions.Where(x => x.CraneModel.Contains(Form.EquipmentModel.Trim(),
             StringComparison.CurrentCultureIgnoreCase)).Take(8).ToList();
 
-    public async Task LoadActiveLookupsAsync(AppDbContext db)
+    public async Task LoadActiveLookupsAsync(ICatalogService catalog)
     {
-        EquipmentOptions = await db.Equipments.AsNoTracking().Where(x => x.IsActive)
-            .OrderBy(x => x.CraneModel).ToListAsync();
-        RiggerOptions = await db.Riggers.AsNoTracking().Where(x => x.IsActive)
-            .OrderBy(x => x.DisplayName).ToListAsync();
-        ClientOptions = await db.Clients.AsNoTracking().Where(x => x.IsActive)
-            .OrderBy(x => x.Name).ToListAsync();
+        EquipmentOptions = [.. await catalog.GetEquipmentsAsync(activeOnly: true)];
+        RiggerOptions = [.. await catalog.GetRiggersAsync(activeOnly: true)];
+        ClientOptions = [.. await catalog.GetClientsAsync(activeOnly: true)];
     }
 
-    public async Task ConfigureForPlanAsync(AppDbContext db, RiggingPlan plan, bool isReadOnly)
+    public async Task ConfigureForPlanAsync(ICatalogService catalog, RiggingPlan plan, bool isReadOnly)
     {
         if (isReadOnly)
         {
-            await LoadAllLookupsAsync(db);
+            await LoadAllLookupsAsync(catalog);
         }
         else
         {
-            await AddLinkedOptionsAsync(db, plan);
+            await AddLinkedOptionsAsync(catalog, plan);
         }
 
         LoadFromPlan(plan);
@@ -204,30 +200,30 @@ public sealed class PlanEntryState
         Form.IsNewRigger = false;
     }
 
-    private async Task LoadAllLookupsAsync(AppDbContext db)
+    private async Task LoadAllLookupsAsync(ICatalogService catalog)
     {
-        EquipmentOptions = await db.Equipments.AsNoTracking().OrderBy(x => x.CraneModel).ToListAsync();
-        RiggerOptions = await db.Riggers.AsNoTracking().OrderBy(x => x.DisplayName).ToListAsync();
-        ClientOptions = await db.Clients.AsNoTracking().OrderBy(x => x.Name).ToListAsync();
+        EquipmentOptions = [.. await catalog.GetEquipmentsAsync()];
+        RiggerOptions = [.. await catalog.GetRiggersAsync()];
+        ClientOptions = [.. await catalog.GetClientsAsync()];
     }
 
-    private async Task AddLinkedOptionsAsync(AppDbContext db, RiggingPlan plan)
+    private async Task AddLinkedOptionsAsync(ICatalogService catalog, RiggingPlan plan)
     {
         if (plan.ClientId is not null && ClientOptions.All(x => x.Id != plan.ClientId))
         {
-            var linkedClient = await db.Clients.AsNoTracking().SingleOrDefaultAsync(x => x.Id == plan.ClientId);
+            var linkedClient = await catalog.FindClientAsync(plan.ClientId.Value);
             if (linkedClient is not null) ClientOptions.Add(linkedClient);
         }
 
         if (plan.RiggerId is not null && RiggerOptions.All(x => x.Id != plan.RiggerId))
         {
-            var linkedRigger = await db.Riggers.AsNoTracking().SingleOrDefaultAsync(x => x.Id == plan.RiggerId);
+            var linkedRigger = await catalog.FindRiggerAsync(plan.RiggerId.Value);
             if (linkedRigger is not null) RiggerOptions.Add(linkedRigger);
         }
 
         if (plan.EquipmentId is not null && EquipmentOptions.All(x => x.Id != plan.EquipmentId))
         {
-            var linkedEquipment = await db.Equipments.AsNoTracking().SingleOrDefaultAsync(x => x.Id == plan.EquipmentId);
+            var linkedEquipment = await catalog.FindEquipmentAsync(plan.EquipmentId.Value);
             if (linkedEquipment is not null) EquipmentOptions.Add(linkedEquipment);
         }
     }
