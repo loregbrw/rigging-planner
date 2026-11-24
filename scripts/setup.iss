@@ -76,7 +76,7 @@ begin
   Memo.ScrollBars := ssVertical;
   Memo.Lines.Add('O assistente vai pedir a pasta de instalação e confirmar a instalação antes de começar.');
   Memo.Lines.Add('');
-  Memo.Lines.Add('O aplicativo é instalado com todos os seus componentes (inclui .NET, SQLite e Windows App SDK).');
+  Memo.Lines.Add('O aplicativo é publicado de forma autossuficiente: traz seus componentes e não instala runtimes no sistema.');
   Memo.Lines.Add('Requisito: Microsoft Edge WebView2 Runtime, já presente no Windows 11 e na maioria dos Windows 10 atualizados.');
   Memo.Lines.Add('');
   Memo.Lines.Add('SEUS DADOS NÃO FICAM NA PASTA DE INSTALAÇÃO:');

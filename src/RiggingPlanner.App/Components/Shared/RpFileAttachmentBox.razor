@@ -1,4 +1,5 @@
 @using Microsoft.AspNetCore.Components.Forms
+@using RiggingPlanner.App.Components.Plan.Attachments
 
 <div class="rp-field">
     @if (!IsReadOnly)
@@ -19,7 +20,7 @@
                     <div style="font-weight: 600; font-size: var(--rp-text-sm);">@FileName</div>
                     @if (FileSize.HasValue && FileSize.Value > 0)
                     {
-                        <div style="font-size: var(--rp-text-xs); color: var(--rp-text-secondary);">@FormatByteSize(FileSize.Value)</div>
+                        <div style="font-size: var(--rp-text-xs); color: var(--rp-text-secondary);">@AttachmentsState.FormatByteSize(FileSize.Value)</div>
                     }
                 </div>
             </div>
@@ -70,17 +71,4 @@
     [Parameter] public bool IsReadOnly { get; set; }
     [Parameter] public EventCallback<InputFileChangeEventArgs> OnChange { get; set; }
     [Parameter] public EventCallback OnRemove { get; set; }
-
-    private static string FormatByteSize(long bytes)
-    {
-        string[] suffixes = ["B", "KB", "MB", "GB"];
-        int i = 0;
-        double d = bytes;
-        while (d >= 1024 && i < suffixes.Length - 1)
-        {
-            d /= 1024;
-            i++;
-        }
-        return $"{d:0.##} {suffixes[i]}";
-    }
 }

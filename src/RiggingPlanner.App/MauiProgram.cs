@@ -1,9 +1,6 @@
 using Microsoft.Extensions.Logging;
 using RiggingPlanner.Infrastructure;
 using RiggingPlanner.App.Components.Plan.Attachments;
-using RiggingPlanner.App.Components.Plan.Entry;
-using RiggingPlanner.App.Components.Plan.Export;
-using RiggingPlanner.App.Components.Shared;
 using System.Globalization;
 
 namespace RiggingPlanner.App;

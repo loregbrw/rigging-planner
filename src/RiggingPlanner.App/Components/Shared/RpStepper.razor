@@ -6,7 +6,7 @@
         <li class="rp-step @(isComplete ? "is-complete" : string.Empty)" aria-current="@(isCurrent ? "step" : null)">
             @if (Links.Count > i && !string.IsNullOrWhiteSpace(Links[i]))
             {
-                <a class="rp-step__link" href="@NormalizeUrl(Links[i])">
+                <a class="rp-step__link" href="@AppUrl.Normalize(Links[i])">
                     <span class="rp-step__dot">@(i + 1)</span>
                     <span class="rp-step__label">@Steps[i]</span>
                 </a>
@@ -26,6 +26,4 @@
     [Parameter, EditorRequired] public IReadOnlyList<string> Steps { get; set; } = [];
     [Parameter] public int Current { get; set; }
     [Parameter] public IReadOnlyList<string> Links { get; set; } = [];
-
-    private static string NormalizeUrl(string url) => url.StartsWith('/') ? url : $"/{url}";
 }
