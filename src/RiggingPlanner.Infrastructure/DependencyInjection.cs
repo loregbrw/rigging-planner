@@ -44,9 +44,27 @@ public static class DependencyInjection
         var factory = services.GetRequiredService<IDbContextFactory<AppDbContext>>();
 
         using var context = factory.CreateDbContext();
-        if (context.Database.GetPendingMigrations().Any())
+        var migrations = context.Database.GetMigrations().ToList();
+        var applied = context.Database.GetAppliedMigrations().ToList();
+        var pending = context.Database.GetPendingMigrations().ToList();
+
+        if (pending.Count == 0)
         {
-            context.Database.Migrate();
+            return;
         }
+
+        if (applied.Except(migrations).Any() && !applied.Intersect(migrations).Any())
+        {
+            foreach (var migration in migrations.Where(pending.Contains))
+            {
+                context.Database.ExecuteSqlRaw(
+                    "INSERT INTO __EFMigrationsHistory (MigrationId, ProductVersion) VALUES ({0}, {1})",
+                    migration, "10.0.13");
+            }
+
+            return;
+        }
+
+        context.Database.Migrate();
     }
 }

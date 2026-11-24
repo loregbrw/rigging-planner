@@ -17,6 +17,8 @@ App ──────► Application ◄────── Infrastructure
 
 `AddInfrastructure(databasePath)` registers the `AppDbContext` factory, `IFileStore` (rooted at the database directory), the PDF renderers, and the Application implementations (`AddApplication()` registers the assembler). `ApplyMigrations()` runs pending migrations on startup; `AttachmentDraftState.CleanupStaleSessions()` removes abandoned staging folders.
 
+Databases created before the migration squash carry IDs from the old migration chain. `ApplyMigrations()` detects that case and stamps the single `InitialCreate` as applied instead of rerunning its DDL, so existing plans and attachments are preserved. Fresh databases are migrated normally.
+
 Culture is forced to `pt-BR` at startup because all amounts, dates and printed documents use Brazilian formatting.
 
 ## Presentation state
