@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using RiggingPlanner.Application.Catalog;
 
-namespace RiggingPlanner.App.Components.Shared;
+namespace RiggingPlanner.Application.Plans;
 
 public sealed class PlanFormModel : IValidatableObject
 {

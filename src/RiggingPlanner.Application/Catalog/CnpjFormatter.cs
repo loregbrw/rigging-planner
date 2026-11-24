@@ -1,4 +1,4 @@
-namespace RiggingPlanner.App.Components.Shared;
+namespace RiggingPlanner.Application.Catalog;
 
 public static class CnpjFormatter
 {

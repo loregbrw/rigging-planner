@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using RiggingPlanner.Application;
 using RiggingPlanner.Application.Pdf;
 using RiggingPlanner.Infrastructure.Persistence;
 
@@ -18,7 +19,7 @@ public static class DependencyInjection
         services.AddSingleton<IDrawingSheetsRenderer, Pdf.DrawingSheetsRenderer>();
         services.AddSingleton<IOperationalProcedureRenderer, Pdf.OperationalProcedureRenderer>();
         services.AddSingleton<IPdfDocumentMerger, Pdf.PdfDocumentMerger>();
-        services.AddSingleton<FullPlanPdfAssembler>();
+        services.AddApplication();
         services.AddScoped<PlanFinalizationService>();
 
         return services;

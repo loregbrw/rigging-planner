@@ -1,7 +1,7 @@
-using RiggingPlanner.App.Components.Shared;
+using RiggingPlanner.Application.Catalog;
 using RiggingPlanner.Domain.Entities;
 
-namespace RiggingPlanner.App.Components.Plan.Shared;
+namespace RiggingPlanner.Application.Plans;
 
 public static class PlanFormMapper
 {

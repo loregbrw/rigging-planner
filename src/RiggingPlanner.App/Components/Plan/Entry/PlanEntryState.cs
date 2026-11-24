@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
-using RiggingPlanner.App.Components.Plan.Shared;
 using RiggingPlanner.App.Components.Shared;
 using RiggingPlanner.Domain.Entities;
 using RiggingPlanner.Infrastructure.Persistence;
